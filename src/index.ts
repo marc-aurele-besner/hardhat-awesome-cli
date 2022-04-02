@@ -11,6 +11,7 @@ import { exit } from 'process'
 import MockContractsList from './mockContracts'
 
 const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
+const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
 const fileContractsAddressDeployed = 'contractsAddressDeployed.json'
 const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.json'
 let contractsAddressDeployed = []
@@ -110,13 +111,15 @@ const buildFullChainList = async () => {
             name: 'Polygon - Mainnet',
             chainName: 'polygon',
             chainId: 137,
-            gas: 'auto'
+            gas: 'auto',
+            defaultRpcUrl: 'https://polygon-rpc.com'
         },
         {
             name: 'Polygon - Mumbai',
             chainName: 'mumbai',
             chainId: 80001,
-            gas: 'auto'
+            gas: 'auto',
+            defaultRpcUrl: 'https://rpc-mumbai.maticvigil.com'
         },
     ]
     return chainList
@@ -124,11 +127,13 @@ const buildFullChainList = async () => {
 
 const buildActivatedChainList = async () => {
     const FullChainList = await buildFullChainList()
-    let chainList = FullChainList.filter(chain => chain.chainName === 'hardhat')
+    let chainList = []
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
+    } else {
+        FullChainList.filter(chain => chain.chainName === 'hardhat')
     }
     if(fileSetting && fileSetting.activatedChain) {
         if(fileSetting.activatedChain.length > 0) {
@@ -208,9 +213,7 @@ const buildMockContract = async (contractName) => {
     }
 }
 
-const addActivatedChain = async (chainName) => {
-    const FullChainList = await buildFullChainList()
-    const chainToAdd = FullChainList.find(chain => chain.chainName === chainName)
+const addChain = async (chainName, chainToAdd) => {
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
@@ -246,6 +249,12 @@ const addActivatedChain = async (chainName) => {
     }
 }
 
+const addActivatedChain = async (chainName) => {
+    const FullChainList = await buildFullChainList()
+    const chainToAdd = FullChainList.find(chain => chain.chainName === chainName)
+    await addChain(chainName, chainToAdd)
+}
+
 const removeActivatedChain = async (chainName) => {
     const FullChainList = await buildFullChainList()
     const chainToRemove = FullChainList.find(chain => chain.chainName === chainName)
@@ -264,7 +273,38 @@ const removeActivatedChain = async (chainName) => {
     }
 }
 
-const serveNetworkSelector = async (env: any, command: string, getAccountBalance: any) => {
+const addCustomChain = async (chainDetails) => {
+    const FullChainList = await buildFullChainList()
+    const ActivatedChainList = await buildActivatedChainList()
+    // Verify if the chain already exists in regular full chain list
+    if(FullChainList.find(chain => chain.chainName === chainDetails.chainName)) {
+        console.log(chalk.yellow('Chain with same Short-Name already exists in regular chain selection'))
+    } else if (FullChainList.find(chain => chain.chainId === chainDetails.chainId)) {
+        console.log(chalk.yellow('Chain with same chainId already exists in regular chain selection'))
+    }
+    // Verify if the chain already exists in user setting activated chain list
+    else if(ActivatedChainList.find(chain => chain.chainName === chainDetails.chainName)) {
+        console.log(chalk.yellow('Chain with same Short-Name already exists in your settings activated chain list'))
+    } else if (ActivatedChainList.find(chain => chain.chainId === chainDetails.chainId)) {
+        console.log(chalk.yellow('Chain with same chainId already exists in your settings activated chain list'))
+    } else {
+        await addChain(chainDetails.chainName, chainDetails)
+    }
+}
+
+const writeToEnv = async (chainName, envToBuild) => {
+    console.log('chainName', chainName)
+    console.log('envToBuild', envToBuild)
+
+    if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
+        console.log('env file exists')
+    } else {
+        console.log('env file does not exist')
+        fs.writeFileSync(fileEnvHardhatAwesomeCLI, '')
+    }
+}
+
+const serveNetworkSelector = async (env: any, command: string, getAccountBalance?: any, serveEnvBuilder?: any) => {
     const ActivatedChainList = await buildActivatedChainList()
     const activatedChainList: string[] = []
     ActivatedChainList.map((chain: any) => {
@@ -288,8 +328,10 @@ const serveNetworkSelector = async (env: any, command: string, getAccountBalance
             })
             if(command) {
                 await runCommand(command, commandFlags)
-            } else if(run) {
-                getAccountBalance(env)
+            } else if(getAccountBalance) {
+                await getAccountBalance(env)
+            } else if(serveEnvBuilder) {
+                await serveEnvBuilder(env, networkSelected.network)
             }
             await sleep(5000)
         })
@@ -350,7 +392,32 @@ const serveScriptSelector = async (env) => {
         })
 }
 
-const serveSettingSelector = async () => {
+const serveEnvBuilder = async (env, chainSelected) => {
+    console.log('chainSelected', chainSelected)
+    const ActivatedChainList = await buildActivatedChainList()
+    console.log('ActivatedChainList', ActivatedChainList)
+    const selectedChain = ActivatedChainList.find(chain => chain.name === chainSelected)
+    console.log('selectedChain', selectedChain)
+    await inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'rpcUrl' + selectedChain.chainName,
+                message: selectedChain.name + ' RPC Url'
+            },
+            {
+                type: 'input',
+                name: 'privateKeyOrMnemonic' + selectedChain.chainName,
+                message: selectedChain.name + ' private key or mnemonic'
+            }
+        ])
+        .then(async (envToBuild) => {
+            await writeToEnv(selectedChain.chainName, envToBuild)
+        })
+        await sleep(5000)
+}
+
+const serveSettingSelector = async (env) => {
     await inquirer
         .prompt([
             {
@@ -358,10 +425,9 @@ const serveSettingSelector = async () => {
                 name: 'settings',
                 message: 'Select a setting',
                 choices: [
-                    'Chain selection',
-                    'Setup RPC Url and private key',
-                    'Add a chain to the current chain selection',
-                    'Remove a chain from the current chain selection'
+                    'Add/Remove chains from the chain selection',
+                    'Set RPC Url and private key for all or one chain',
+                    'Add a custom chain to the current chain selection'
                 ]
             }
         ])
@@ -376,7 +442,7 @@ const serveSettingSelector = async () => {
             FullChainList.map((chain: any) => {
                 fullChainList.push(chain.name)
             })
-            if(settingSelected.settings === 'Chain selection') {
+            if(settingSelected.settings === 'Add/Remove chains from the chain selection') {
                 const fullChainList = await buildFullChainList()
                 await inquirer
                     .prompt([
@@ -398,6 +464,47 @@ const serveSettingSelector = async () => {
                         })
                         console.log(chalk.green('Settings updated!'))
                     })
+            }
+            if(settingSelected.settings === 'Set RPC Url and private key for all or one chain') {
+                await serveNetworkSelector(env, '', '',serveEnvBuilder)
+            }
+            if(settingSelected.settings === 'Add a custom chain to the current chain selection') {
+                await inquirer
+                    .prompt([
+                        {
+                            type: 'input',
+                            name: 'name',
+                            message: 'Chain Name'
+                        },
+                        {
+                            type: 'input',
+                            name: 'chainName',
+                            message: 'Chain Short-Name (used in the settings file)'
+                        },
+                        {
+                            type: 'input',
+                            name: 'chainId',
+                            message: 'Chain Id'
+                        },
+                        {
+                            type: 'input',
+                            name: 'gas',
+                            message: 'Chain gas setting',
+                            default: 'auto'
+                        },
+                        {
+                            type: 'input',
+                            name: 'defaultRpcUrl',
+                            message: 'Chain default RPC Url'
+                        }
+                    ])
+                    .then(async (chainSelected) => {
+                        chainSelected.chainName = chainSelected.chainName.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function(match, index) {
+                            return index === 0 ? match.toLowerCase() : match.toUpperCase();
+                        })
+                        await addCustomChain(chainSelected)
+                    })
+                        
             }
         })
 }
@@ -452,12 +559,12 @@ const serveCli = async (env) => {
 `,
         chalk.blue('Welcome to'),
         chalk.green(`
-d88888b  .d8b.  .d8888. db    db     .o88b. db      d888888b 
-88'     d8' '8b 88'  YP '8b  d8'    d8P  Y8 88        '88'   
-88ooooo 88ooo88 '8bo.    '8bd8'     8P      88         88    
-88~~~~~ 88~~~88   'Y8b.    88       8b      88         88    
-88.     88   88 db   8D    88       Y8b  d8 88booo.   .88.   
-Y88888P YP   YP '8888Y'    YP        'Y88P' Y88888P Y888888P
+ .d8b.  db   d8b   db d88888b .d8888.  .d88b.  .88b  d88. d88888b      .o88b. db      d888888b 
+d8' '8b 88   I8I   88 88'     88'  YP .8P  Y8. 88'YbdP'88 88'         d8P  Y8 88        '88'   
+88ooo88 88   I8I   88 88ooooo '8bo.   88    88 88  88  88 88ooooo     8P      88         88    
+88~~~88 Y8   I8I   88 88~~~~~   'Y8b. 88    88 88  88  88 88~~~~~     8b      88         88    
+88   88 '8b d8'8b d8' 88.     db   8D '8b  d8' 88  88  88 88.         Y8b  d8 88booo.   .88.   
+YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y88888P Y888888P 
 `)
     )
 
@@ -496,7 +603,7 @@ Y88888P YP   YP '8888Y'    YP        'Y88P' Y88888P Y888888P
                 await serveScriptSelector(env)
             }
             if (answers.action === 'Setup chains, RPC and accounts') {
-                await serveSettingSelector()
+                await serveSettingSelector(env)
             }
             if (answers.action === 'More settings') {
                 await serveMoreSettingSelector()
