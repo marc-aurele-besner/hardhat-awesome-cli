@@ -1,7 +1,40 @@
 # hardhat-awesome-cli
  Hardhat made awesome with a flexible CLI to help run test, deploy and more.
 
-# This package is not yet published, simply git clone + npm link
+# This package is not yet published on npmjs, for now
+
+## 1. Clone repo
+```commandline
+$ git clone https://github.com/marc-aurele-besner/hardhat-awesome-cli.git
+```
+
+## 2. Move in directory
+```commandline
+$ cd hardhat-awesome-cli
+```
+
+## 3. Create a NPM symbolic link
+```commandline
+$ npm link
+```
+
+## 4. NPM Link in the Hardhat project of your choice
+
+Inside the root of the Hardhat project of your choice
+```commandline
+$ npm link hardhat-awesome-cli
+```
+
+## 5. Import/Require this package in your hardhat.config.js/.ts
+
+Inside inside hardhat.config.js
+```
+require("hardhat-awesome-cli");
+```
+or inside hardhat.config.ts
+```
+import hardhatAwesomeCli from 'hardhat-awesome-cli'
+```
 
 ## Done
 - Run test on all or sigle test file (from all your file in test/)
