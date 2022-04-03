@@ -25,8 +25,8 @@ import hardhatAwesomeCli from 'hardhat-awesome-cli'
 ```
 
 ## 💪 Done
-- Run test on all or sigle test file (from all your file in test/)
-- Run scripts  on all or sigle scripts file (from all your file in scripts/)
+- Run test on all or single test file (from all your file in test/)
+- Run scripts  on all or single scripts file (from all your file in scripts/)
 - Settings:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
