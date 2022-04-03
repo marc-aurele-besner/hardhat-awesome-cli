@@ -5,7 +5,6 @@
   "repository": "https://github.com/marc-aurele-besner/hardhat-easy-cli.git",
   "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
   "license": "MIT",
-  "private": true,
   "main": "dist/index.js",
   "bin": {
     "hardhat-easy-cli": "./src/index-cli.ts"
