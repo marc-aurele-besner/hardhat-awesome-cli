@@ -12,12 +12,15 @@
   "bugs": {
     "url": "https://github.com/marc-aurele-besner/hardhat-easy-cli/issues"
   },
+  "types": "dist/src/index.d.ts",
   "keywords": [
     "hardhat",
+    "hardhat-plugin",
     "cli",
     "test",
     "deploy",
-    "deployment"
+    "deployment",
+    "smart-contracts"
   ],
   "files": [
     "dist/src/",
@@ -26,7 +29,7 @@
     "README.md"
   ],
   "scripts": {
-    "lint:fix": "prettier --write src/index.ts && tslint --fix --config tslint.json --project tsconfig.json",
+    "lint:fix": "prettier --write src/**/*.{js,ts} && tslint --fix --config tslint.json --project tsconfig.json",
     "lint": "tslint --config tslint.json --project tsconfig.json",
     "test": "scripts/run-tests.sh",
     "prepublishOnly": "tsc --project tsconfig.prod.json",
@@ -35,6 +38,7 @@
     "watch": "tsc -w"
   },
   "devDependencies": {
+    "@types/inquirer": "^8.2.1",
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.23",
     "hardhat": "^2.9.2",
@@ -50,9 +54,6 @@
     "hardhat": "^2.0.2"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0",
-    "@openzeppelin/contracts-upgradeable": "^4.5.2",
-    "chalk": "^4.1.2",
     "dotenv": "^16.0.0",
     "fs": "^0.0.1-security",
     "inquirer": "^8.2.2"
