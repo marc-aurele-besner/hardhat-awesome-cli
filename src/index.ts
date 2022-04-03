@@ -8,6 +8,7 @@ import { subtask, task } from 'hardhat/config'
 import inquirer from 'inquirer'
 import path from 'path'
 import { exit } from 'process'
+
 import MockContractsList from './mockContracts'
 
 const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
@@ -19,21 +20,21 @@ let contractsAddressDeployedHistory = []
 
 let inquirerRunTests: any = {
     name: 'Run tests',
-    disabled: 'We can\'t run tests without a test/ directory'
+    disabled: "We can't run tests without a test/ directory"
 }
 if (fs.existsSync('test')) {
     inquirerRunTests = 'Run tests'
 }
 let inquirerRunScripts: any = {
     name: 'Run scripts',
-    disabled: 'We can\'t run scripts without a scripts/ directory'
+    disabled: "We can't run scripts without a scripts/ directory"
 }
 if (fs.existsSync('scripts')) {
     inquirerRunScripts = 'Run scripts'
 }
 let inquirerRunMockContractCreator: any = {
     name: 'Create Mock contracts',
-    disabled: 'We can\'t create Mock contracts without a contracts/ directory'
+    disabled: "We can't create Mock contracts without a contracts/ directory"
 }
 if (fs.existsSync('contracts')) {
     inquirerRunMockContractCreator = 'Create Mock contracts'
@@ -72,7 +73,7 @@ const runCommand = async (command: string, commandFlags: string) => {
     // });
     runSpawn.on('exit', (code) => {
         exit()
-    });
+    })
 }
 
 const buildFullChainList = async () => {
@@ -120,23 +121,23 @@ const buildFullChainList = async () => {
             chainId: 80001,
             gas: 'auto',
             defaultRpcUrl: 'https://rpc-mumbai.maticvigil.com'
-        },
+        }
     ]
     return chainList
 }
 
 const buildActivatedChainList = async () => {
     const FullChainList = await buildFullChainList()
-    let chainList = []
+    const chainList = []
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
     } else {
-        FullChainList.filter(chain => chain.chainName === 'hardhat')
+        FullChainList.filter((chain) => chain.chainName === 'hardhat')
     }
-    if(fileSetting && fileSetting.activatedChain) {
-        if(fileSetting.activatedChain.length > 0) {
+    if (fileSetting && fileSetting.activatedChain) {
+        if (fileSetting.activatedChain.length > 0) {
             fileSetting.activatedChain.forEach((chain: any) => {
                 chainList.push(chain)
             })
@@ -154,12 +155,12 @@ const buildTestsList = async () => {
         })
         const files = fs.readdirSync('test')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, "").replace(/\.test/, " - Test")
-            const words = fileName.split(" ");
+            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1);
+                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
             }
-            fileName = words.join(" ");
+            fileName = words.join(' ')
             testList.push({
                 name: fileName,
                 type: 'file',
@@ -175,12 +176,12 @@ const buildScriptsList = async () => {
     if (fs.existsSync('scripts')) {
         const files = fs.readdirSync('scripts')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, "").replace(/\.test/, " - Test")
-            const words = fileName.split(" ");
+            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1);
+                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
             }
-            fileName = words.join(" ");
+            fileName = words.join(' ')
             testList.push({
                 name: fileName,
                 type: 'file',
@@ -192,16 +193,16 @@ const buildScriptsList = async () => {
 }
 
 const buildMockContract = async (contractName) => {
-    let packageRootPath = path.join(path.dirname(require.main.filename), '../../../hardhat-easy-cli/src/mockContracts');
+    const packageRootPath = path.join(path.dirname(require.main.filename), '../../../hardhat-easy-cli/src/mockContracts')
     if (fs.existsSync('scripts')) {
         if (fs.existsSync('contracts')) {
-            if(MockContractsList) {
-                if(MockContractsList.find(contract => contract.name === contractName)) {
-                    if(fs.existsSync('contracts/' + contractName + '.sol')) {
+            if (MockContractsList) {
+                if (MockContractsList.find((contract) => contract.name === contractName)) {
+                    if (fs.existsSync('contracts/' + contractName + '.sol')) {
                         console.log(chalk.yellow('Mock contract already exists'))
                     } else {
-                        if(fs.existsSync('contracts/' + contractName + '.sol')) {
-                            console.log(chalk.yellow('Can\'t locate the mock contract'))
+                        if (fs.existsSync('contracts/' + contractName + '.sol')) {
+                            console.log(chalk.yellow("Can't locate the mock contract"))
                         } else {
                             console.log(chalk.green('Creating '), contractName, ' in contracts/')
                             fs.copyFileSync(packageRootPath + '/' + contractName + '.sol', 'contracts/' + contractName + '.sol')
@@ -218,7 +219,7 @@ const addChain = async (chainName, chainToAdd) => {
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
-        if(fileSetting && !fileSetting.activatedChain) {
+        if (fileSetting && !fileSetting.activatedChain) {
             fileSetting = {
                 activatedChain: []
             }
@@ -228,9 +229,9 @@ const addChain = async (chainName, chainToAdd) => {
             activatedChain: []
         }
     }
-    if(fileSetting && fileSetting.activatedChain) {
-        if(fileSetting.activatedChain.length > 0) {
-            if(!fileSetting.activatedChain.find(chain => chain.chainName === chainName)) {
+    if (fileSetting && fileSetting.activatedChain) {
+        if (fileSetting.activatedChain.length > 0) {
+            if (!fileSetting.activatedChain.find((chain) => chain.chainName === chainName)) {
                 fileSetting.activatedChain.push(chainToAdd)
             }
         } else {
@@ -243,31 +244,32 @@ const addChain = async (chainName, chainToAdd) => {
     }
     try {
         fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
-    } catch (error) {
+    } catch {
         console.log(chalk.red('Error adding chain: ' + chainName + ' to your settings!'))
-        console.log(chalk.red(error))
     }
 }
 
 const addActivatedChain = async (chainName) => {
     const FullChainList = await buildFullChainList()
-    const chainToAdd = FullChainList.find(chain => chain.chainName === chainName)
+    const chainToAdd = FullChainList.find((chain) => chain.chainName === chainName)
     await addChain(chainName, chainToAdd)
 }
 
 const removeActivatedChain = async (chainName) => {
     const FullChainList = await buildFullChainList()
-    const chainToRemove = FullChainList.find(chain => chain.chainName === chainName)
+    const chainToRemove = FullChainList.find((chain) => chain.chainName === chainName)
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
-        if(fileSetting && fileSetting.activatedChain) {
-            if(fileSetting.activatedChain.length > 0) {
-                fileSetting.activatedChain.filter(chain => chain.chainName === chainName).forEach((chain: any) => {
-                    fileSetting.activatedChain.pop(chainToRemove)
-                    fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
-                })
+        if (fileSetting && fileSetting.activatedChain) {
+            if (fileSetting.activatedChain.length > 0) {
+                fileSetting.activatedChain
+                    .filter((chain) => chain.chainName === chainName)
+                    .forEach((chain: any) => {
+                        fileSetting.activatedChain.pop(chainToRemove)
+                        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+                    })
             }
         }
     }
@@ -277,38 +279,115 @@ const addCustomChain = async (chainDetails) => {
     const FullChainList = await buildFullChainList()
     const ActivatedChainList = await buildActivatedChainList()
     // Verify if the chain already exists in regular full chain list
-    if(FullChainList.find(chain => chain.chainName === chainDetails.chainName)) {
+    if (FullChainList.find((chain) => chain.chainName === chainDetails.chainName)) {
         console.log(chalk.yellow('Chain with same Short-Name already exists in regular chain selection'))
-    } else if (FullChainList.find(chain => chain.chainId === chainDetails.chainId)) {
+    } else if (FullChainList.find((chain) => chain.chainId === chainDetails.chainId)) {
         console.log(chalk.yellow('Chain with same chainId already exists in regular chain selection'))
     }
     // Verify if the chain already exists in user setting activated chain list
-    else if(ActivatedChainList.find(chain => chain.chainName === chainDetails.chainName)) {
+    else if (ActivatedChainList.find((chain) => chain.chainName === chainDetails.chainName)) {
         console.log(chalk.yellow('Chain with same Short-Name already exists in your settings activated chain list'))
-    } else if (ActivatedChainList.find(chain => chain.chainId === chainDetails.chainId)) {
+    } else if (ActivatedChainList.find((chain) => chain.chainId === chainDetails.chainId)) {
         console.log(chalk.yellow('Chain with same chainId already exists in your settings activated chain list'))
     } else {
         await addChain(chainDetails.chainName, chainDetails)
     }
 }
 
-const writeToEnv = async (chainName, envToBuild) => {
-    console.log('chainName', chainName)
-    console.log('envToBuild', envToBuild)
-
+const getEnvValue = async (envName) => {
     if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
-        console.log('env file exists')
-    } else {
-        console.log('env file does not exist')
-        fs.writeFileSync(fileEnvHardhatAwesomeCLI, '')
+        const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
+        const oldEnv = Object.entries(allEnv.parsed)
+        for (const [key, value] of oldEnv) {
+            if (key && value && key === envName) {
+                return value
+            }
+        }
     }
+    return ''
 }
 
-const serveNetworkSelector = async (env: any, command: string, getAccountBalance?: any, serveEnvBuilder?: any) => {
+const writeToEnv = async (env, chainName, envToBuild) => {
+    let isRpcUrl = false
+    let isPrivateKey = false
+    let isMnemonic = false
+    const rpcUrlEnv = 'rpcUrl'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.rpcUrl + '"'
+    const privateKeyEnv = 'privateKey'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.privateKeyOrMnemonic + '"'
+    const mnemonicEnv = 'mnemonic'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.privateKeyOrMnemonic + '"'
+    if (envToBuild.rpcUrl) {
+        isRpcUrl = true
+    }
+    if (envToBuild.privateKeyOrMnemonic) {
+        try {
+            const owner = new env.ethers.Wallet(envToBuild.privateKeyOrMnemonic, env.ethers.provider)
+            isPrivateKey = true
+        } catch {
+            try {
+                const owner = await env.ethers.Wallet.fromMnemonic(envToBuild.privateKeyOrMnemonic)
+                isMnemonic = true
+            } catch {
+                console.log(chalk.red('Error: Private Key or Mnemonic is not valid'))
+            }
+            isPrivateKey = false
+        }
+    }
+    let envToWrite = ''
+    if (isRpcUrl) envToWrite = rpcUrlEnv + '\n'
+    if (isPrivateKey) envToWrite = privateKeyEnv + '\n'
+    if (isMnemonic) envToWrite = mnemonicEnv + '\n'
+
+    if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
+        const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
+        const oldEnv = Object.entries(allEnv.parsed)
+        let newEnv = ''
+        const wipEnv = []
+        let isRpcUrlEnvExist = false
+        let isPrivateKeyEnvExist = false
+        let isMnemoniclEnvExist = false
+        for (const [key, value] of oldEnv) {
+            if (!wipEnv.find((eachEnv) => eachEnv.key === key)) {
+                wipEnv.push({
+                    key
+                })
+                if (key && value && isRpcUrl && key === 'rpcUrl'.toUpperCase() + '_' + chainName.toUpperCase()) {
+                    newEnv += key + ' = "' + envToBuild.rpcUrl + '"\n'
+                    isRpcUrlEnvExist = true
+                } else if (key && value && isPrivateKey && key === 'privateKey'.toUpperCase() + '_' + chainName.toUpperCase()) {
+                    newEnv += key + ' = "' + envToBuild.privateKeyOrMnemonic + '"\n'
+                    isPrivateKeyEnvExist = true
+                } else if (key && value && isMnemonic && key === 'mnemonic'.toUpperCase() + '_' + chainName.toUpperCase()) {
+                    newEnv += key + ' = "' + envToBuild.privateKeyOrMnemonic + '"\n'
+                    isMnemoniclEnvExist = true
+                } else {
+                    newEnv += key + ' = "' + value + '"\n'
+                }
+            }
+        }
+        if (isRpcUrl && !isRpcUrlEnvExist) {
+            newEnv += rpcUrlEnv + '\n'
+        }
+        if (isPrivateKey && !isPrivateKeyEnvExist) {
+            newEnv += privateKeyEnv + '\n'
+        }
+        if (isMnemonic && !isMnemoniclEnvExist) {
+            newEnv += mnemonicEnv + '\n'
+        }
+        fs.writeFileSync(fileEnvHardhatAwesomeCLI, newEnv)
+    } else {
+        fs.writeFileSync(fileEnvHardhatAwesomeCLI, envToWrite)
+    }
+    console.log(chalk.green('Env file updated'))
+}
+
+const serveNetworkSelector = async (env: any, command: string, GetAccountBalance: any, ServeEnvBuilder: any, noLocalNetwork: boolean) => {
     const ActivatedChainList = await buildActivatedChainList()
     const activatedChainList: string[] = []
     ActivatedChainList.map((chain: any) => {
-        activatedChainList.push(chain.name)
+        if (noLocalNetwork && chain.chainName !== 'hardhat') {
+            activatedChainList.push(chain.name)
+        } else if (!noLocalNetwork) {
+            activatedChainList.push(chain.name)
+        }
     })
     let commandFlags = ''
     await inquirer
@@ -326,12 +405,12 @@ const serveNetworkSelector = async (env: any, command: string, getAccountBalance
                     commandFlags = ' --network ' + chain.chainName
                 }
             })
-            if(command) {
+            if (command) {
                 await runCommand(command, commandFlags)
-            } else if(getAccountBalance) {
-                await getAccountBalance(env)
-            } else if(serveEnvBuilder) {
-                await serveEnvBuilder(env, networkSelected.network)
+            } else if (GetAccountBalance) {
+                await GetAccountBalance(env)
+            } else if (ServeEnvBuilder) {
+                await ServeEnvBuilder(env, networkSelected.network)
             }
             await sleep(5000)
         })
@@ -359,7 +438,7 @@ const serveTestSelector = async (env, command: string) => {
                     }
                 }
             })
-            await serveNetworkSelector(env, command, '')
+            await serveNetworkSelector(env, command, '', '', false)
             await sleep(5000)
         })
 }
@@ -387,34 +466,36 @@ const serveScriptSelector = async (env) => {
                     }
                 }
             })
-            await serveNetworkSelector(env, command, '')
+            await serveNetworkSelector(env, command, '', '', false)
             await sleep(5000)
         })
 }
 
 const serveEnvBuilder = async (env, chainSelected) => {
-    console.log('chainSelected', chainSelected)
     const ActivatedChainList = await buildActivatedChainList()
-    console.log('ActivatedChainList', ActivatedChainList)
-    const selectedChain = ActivatedChainList.find(chain => chain.name === chainSelected)
-    console.log('selectedChain', selectedChain)
+    const selectedChain = ActivatedChainList.find((chain) => chain.name === chainSelected)
+    const defaultRpcUrl = await getEnvValue('rpcUrl'.toUpperCase() + '_' + selectedChain.chainName.toUpperCase())
+    const defaultPrivateKey = await getEnvValue('privateKey'.toUpperCase() + '_' + selectedChain.chainName.toUpperCase())
+    const defaultMnemonic = await getEnvValue('mnemonic'.toUpperCase() + '_' + selectedChain.chainName.toUpperCase())
     await inquirer
         .prompt([
             {
                 type: 'input',
-                name: 'rpcUrl' + selectedChain.chainName,
-                message: selectedChain.name + ' RPC Url'
+                name: 'rpcUrl',
+                message: selectedChain.name + ' RPC Url',
+                default: defaultRpcUrl
             },
             {
                 type: 'input',
-                name: 'privateKeyOrMnemonic' + selectedChain.chainName,
-                message: selectedChain.name + ' private key or mnemonic'
+                name: 'privateKeyOrMnemonic',
+                message: selectedChain.name + ' private key or mnemonic',
+                default: defaultPrivateKey || defaultMnemonic
             }
         ])
         .then(async (envToBuild) => {
-            await writeToEnv(selectedChain.chainName, envToBuild)
+            await writeToEnv(env, selectedChain.chainName, envToBuild)
         })
-        await sleep(5000)
+    await sleep(5000)
 }
 
 const serveSettingSelector = async (env) => {
@@ -442,8 +523,7 @@ const serveSettingSelector = async (env) => {
             FullChainList.map((chain: any) => {
                 fullChainList.push(chain.name)
             })
-            if(settingSelected.settings === 'Add/Remove chains from the chain selection') {
-                const fullChainList = await buildFullChainList()
+            if (settingSelected.settings === 'Add/Remove chains from the chain selection') {
                 await inquirer
                     .prompt([
                         {
@@ -454,9 +534,9 @@ const serveSettingSelector = async (env) => {
                             default: activatedChainList
                         }
                     ])
-                    .then(async (settingSelected) => {
-                        FullChainList.map(async (chain: any) => {
-                            if (settingSelected.chainList.includes(chain.name)) {
+                    .then(async (chainListSelected) => {
+                        chainListSelected.map(async (chain: any) => {
+                            if (chainListSelected.chainList.includes(chain.name)) {
                                 await addActivatedChain(chain.chainName)
                             } else {
                                 await removeActivatedChain(chain.chainName)
@@ -465,10 +545,10 @@ const serveSettingSelector = async (env) => {
                         console.log(chalk.green('Settings updated!'))
                     })
             }
-            if(settingSelected.settings === 'Set RPC Url and private key for all or one chain') {
-                await serveNetworkSelector(env, '', '',serveEnvBuilder)
+            if (settingSelected.settings === 'Set RPC Url and private key for all or one chain') {
+                await serveNetworkSelector(env, '', '', serveEnvBuilder, true)
             }
-            if(settingSelected.settings === 'Add a custom chain to the current chain selection') {
+            if (settingSelected.settings === 'Add a custom chain to the current chain selection') {
                 await inquirer
                     .prompt([
                         {
@@ -499,22 +579,19 @@ const serveSettingSelector = async (env) => {
                         }
                     ])
                     .then(async (chainSelected) => {
-                        chainSelected.chainName = chainSelected.chainName.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function(match, index) {
-                            return index === 0 ? match.toLowerCase() : match.toUpperCase();
+                        chainSelected.chainName = chainSelected.chainName.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
+                            return index === 0 ? match.toLowerCase() : match.toUpperCase()
                         })
                         await addCustomChain(chainSelected)
                     })
-                        
             }
         })
 }
 
-const serveMoreSettingSelector = async () => {
-
-}
+const serveMoreSettingSelector = async () => {}
 
 const serveMockContractCreatorSelector = async () => {
-    if(MockContractsList) {
+    if (MockContractsList) {
         const mockContractsList = MockContractsList.map((file) => {
             return file.name
         })
@@ -533,25 +610,22 @@ const serveMockContractCreatorSelector = async () => {
     }
 }
 
-const serveDeploymentContractCreatorSelector = async () => {
-
-}
+const serveDeploymentContractCreatorSelector = async () => {}
 
 const serveAccountBalance = async (env) => {
-    const getAccountBalance = async (env) => {
-        const [deployer] = await env.ethers.getSigners();
-        const network = await env.network;
-    
+    const getAccountBalance = async (Env: any) => {
+        const [deployer] = await Env.ethers.getSigners()
+        const network = await Env.network
+
         // Get account balance
-        const balance = await deployer.getBalance();
-        console.log('\x1b[32m%s\x1b[0m', 'Connected to network: ', network.name);
-        console.log('\x1b[32m%s\x1b[0m', 'Account address: ', deployer.address);
-        console.log('\x1b[32m%s\x1b[0m', 'Account balance: ', balance.toString());
+        const balance = await deployer.getBalance()
+        console.log(chalk.green('Connected to network: '), network.name)
+        console.log(chalk.green('Account address: '), deployer.address)
+        console.log(chalk.green('Account balance: '), balance.toString())
     }
 
-    await serveNetworkSelector(env, '', getAccountBalance)
+    await serveNetworkSelector(env, '', getAccountBalance, '', false)
 }
-
 
 const serveCli = async (env) => {
     console.log(
