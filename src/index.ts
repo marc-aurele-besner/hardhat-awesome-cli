@@ -146,7 +146,7 @@ const buildActivatedChainList = async () => {
     return chainList
 }
 
-const buildTestsList = async () => {
+const buildAllTestsList = async () => {
     const testList = []
     if (fs.existsSync('test')) {
         testList.push({
@@ -171,7 +171,7 @@ const buildTestsList = async () => {
     return testList
 }
 
-const buildScriptsList = async () => {
+const buildAllScriptsList = async () => {
     const testList = []
     if (fs.existsSync('scripts')) {
         const files = fs.readdirSync('scripts')
@@ -190,6 +190,44 @@ const buildScriptsList = async () => {
         })
     }
     return testList
+}
+
+const buildTestsList = async () => {
+    let allTestList = await buildAllTestsList()
+    let excludedFiles = await buildExcludedFile()
+    if (excludedFiles && excludedFiles.length > 0) {
+        excludedFiles = excludedFiles.filter((test) => test.directory === 'test')
+        if (excludedFiles && excludedFiles.length > 0) {
+            excludedFiles = excludedFiles.map((file) => {
+                return file.filePath
+            })
+            allTestList = allTestList.filter((script) => {
+                return !excludedFiles.includes(script.filePath)
+            })
+            return allTestList
+        }
+    } else {
+        return allTestList
+    }
+}
+
+const buildScriptsList = async () => {
+    let allScriptList = await buildAllScriptsList()
+    let excludedFiles = await buildExcludedFile()
+    if (excludedFiles && excludedFiles.length > 0) {
+        excludedFiles = excludedFiles.filter((test) => test.directory === 'scripts')
+        if (excludedFiles && excludedFiles.length > 0) {
+            excludedFiles = excludedFiles.map((file) => {
+                return file.filePath
+            })
+            allScriptList = allScriptList.filter((script) => {
+                return !excludedFiles.includes(script.filePath)
+            })
+            return allScriptList
+        }
+    } else {
+        return allScriptList
+    }
 }
 
 const buildMockContract = async (contractName) => {
@@ -214,6 +252,18 @@ const buildMockContract = async (contractName) => {
     }
 }
 
+const buildExcludedFile = async () => {
+    let fileSetting: any = []
+    if (fs.existsSync(fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+        fileSetting = JSON.parse(rawdata)
+        if (fileSetting && fileSetting.excludedFiles) {
+            return fileSetting.excludedFiles
+        }
+    }
+    return []
+}
+
 const addChain = async (chainName, chainToAdd) => {
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
@@ -221,6 +271,7 @@ const addChain = async (chainName, chainToAdd) => {
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && !fileSetting.activatedChain) {
             fileSetting = {
+                ...fileSetting,
                 activatedChain: []
             }
         }
@@ -291,6 +342,80 @@ const addCustomChain = async (chainDetails) => {
         console.log(chalk.yellow('Chain with same chainId already exists in your settings activated chain list'))
     } else {
         await addChain(chainDetails.chainName, chainDetails)
+    }
+}
+
+const addExcludedFiles = async (directory, filePath) => {
+    let fileSetting: any = []
+    const fileToAdd = {
+        directory,
+        filePath
+    }
+    if (fs.existsSync(fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+        fileSetting = JSON.parse(rawdata)
+        if (fileSetting && !fileSetting.excludedFiles) {
+            fileSetting = {
+                ...fileSetting,
+                excludedFiles: []
+            }
+        }
+    } else {
+        fileSetting = {
+            excludedFiles: []
+        }
+    }
+    if (fileSetting && fileSetting.excludedFiles) {
+        if (fileSetting.excludedFiles.length > 0) {
+            if (!fileSetting.excludedFiles.find((file) => file.directory === directory && file.filePath === filePath)) {
+                fileSetting.excludedFiles.push(fileToAdd)
+            }
+        } else {
+            fileSetting.excludedFiles.push(fileToAdd)
+        }
+    } else {
+        fileSetting.push({
+            excludedFiles: [fileToAdd]
+        })
+    }
+    try {
+        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+    } catch {
+        console.log(chalk.red('Error adding file: ' + directory + '/' + filePath + ' to your excluded files settings!'))
+    }
+}
+
+const removeExcludedFiles = async (directory, filePath) => {
+    let allFiles: any = []
+    const excludedFiles: any = []
+    if (directory === 'test') {
+        allFiles = (await buildAllTestsList())
+            .filter((test) => test.type === 'file')
+            .map((file) => {
+                return file.filePath
+            })
+    } else if (directory === 'script') {
+        allFiles = (await buildAllScriptsList())
+            .filter((script) => script.type === 'file')
+            .map((file) => {
+                return file.filePath
+            })
+    }
+    const fileToRemove = allFiles.find((file) => file.directory === directory && file.filePath === filePath)
+    let fileSetting: any = []
+    if (fs.existsSync(fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+        fileSetting = JSON.parse(rawdata)
+        if (fileSetting && fileSetting.excludedFiles) {
+            if (fileSetting.excludedFiles.length > 0) {
+                fileSetting.excludedFiles
+                    .filter((file) => file.directory === directory && file.filePath === filePath)
+                    .forEach(() => {
+                        fileSetting.excludedFiles.pop(fileToRemove)
+                        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+                    })
+            }
+        }
     }
 }
 
@@ -588,7 +713,70 @@ const serveSettingSelector = async (env) => {
         })
 }
 
-const serveMoreSettingSelector = async () => {}
+const serveExcludeFileSelector = async (option) => {
+    let allFiles: any = []
+    let excludedFiles: any = await buildExcludedFile()
+    if (option === 'test') {
+        allFiles = await buildAllTestsList()
+    } else if (option === 'scripts') {
+        allFiles = await buildAllScriptsList()
+    }
+    if (allFiles && allFiles.length > 0) {
+        allFiles = allFiles
+            .filter((test) => test.type === 'file')
+            .map((file) => {
+                return file.filePath
+            })
+    }
+    if (excludedFiles && excludedFiles.length > 0) {
+        excludedFiles = excludedFiles.filter((test) => test.directory === option)
+        if (excludedFiles && excludedFiles.length > 0) {
+            excludedFiles = excludedFiles.map((file) => {
+                return file.filePath
+            })
+        }
+    }
+    await inquirer
+        .prompt([
+            {
+                type: 'checkbox',
+                name: 'allFiles',
+                message: 'Select the files you want to exclude',
+                choices: allFiles,
+                default: excludedFiles
+            }
+        ])
+        .then(async (activateFilesSelected) => {
+            allFiles.map(async (file: any) => {
+                if (activateFilesSelected.allFiles.includes(file)) {
+                    await addExcludedFiles(option, file)
+                } else {
+                    await removeExcludedFiles(option, file)
+                }
+            })
+            console.log(chalk.green('Settings updated!'))
+        })
+}
+
+const serveMoreSettingSelector = async () => {
+    await inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'moreSettings',
+                message: 'Select a mock contract',
+                choices: ['Exclude test file from the tests selection list', 'Exclude script file from the scripts selection list']
+            }
+        ])
+        .then(async (moreSettingsSelected) => {
+            if (moreSettingsSelected.moreSettings === 'Exclude test file from the tests selection list') {
+                await serveExcludeFileSelector('test')
+            }
+            if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list') {
+                await serveExcludeFileSelector('scripts')
+            }
+        })
+}
 
 const serveMockContractCreatorSelector = async () => {
     if (MockContractsList) {
