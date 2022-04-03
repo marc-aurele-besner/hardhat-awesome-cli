@@ -1,0 +1,22 @@
+name: TSLint
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tslint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v2with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: NPM Clean Install
+        run: npm ci
+      - name: TSLint
+        uses: mooyoul/tslint-actions@v1.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: 'src/*.ts'
