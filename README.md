@@ -27,19 +27,24 @@ import hardhatAwesomeCli from 'hardhat-awesome-cli'
 ## 💪 Done
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
-- Settings:
+- Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
 - More settings
     - Exclude files from, tests and scripts selection (useful for config and share helper file)
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version)
+    - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
 
 ## 🏗️ To do:
 - Inject chain settings, rpc and accounts in hardhat.config
 - Offer to generate deployment script and test script for Mock contract created
 - Deployment contract generator
+- Run coverage test (if solidity-coverage is installed)
+- Setup chains, RPC and accounts:
+    - Disabling chains seams to be broken
 - More Settings:
     - Create github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
+    - Add other hardhat plugins
 - Add tool to log all contracts deploy on each chain (1 unique contractName/chain + full log)
 - Add option to create Admin Proxy and Transparent proxy w/ appropriate deployment scripts

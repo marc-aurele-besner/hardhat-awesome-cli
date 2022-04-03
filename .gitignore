@@ -32,5 +32,8 @@ typings/
 # next.js build output
 .next
 
+# Work in progress
+.wip
+
 # hardhat-project
 dist/
