@@ -520,6 +520,24 @@ const removeExcludedFiles = async (directory: string, filePath: any) => {
     }
 }
 
+const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, createIfNotExist: boolean) => {
+    if (fs.existsSync(ignoreFile)) {
+        const rawdata: any = fs.readFileSync(ignoreFile)
+        const gitignore = rawdata.toString()
+        if (!gitignore.includes(envFile)) {
+            console.log('\x1b[33m%s\x1b[0m', 'Adding ' + envFile + ' to your ' + ignoreFile + ' file')
+            const newGitignore = rawdata + '\n\n#Hardhat-Awesome-CLI\n' + envFile
+            fs.writeFileSync(ignoreFile, newGitignore)
+        }
+    } else {
+        if (createIfNotExist) {
+            const newGitignore = '\n\n#Hardhat-Awesome-CLI\n' + envFile
+            fs.writeFileSync(ignoreFile, newGitignore)
+            console.log('\x1b[33m%s\x1b[0m', 'Adding ' + envFile + ' to your ' + ignoreFile + ' file')
+        }
+    }
+}
+
 const getEnvValue = async (envName: string) => {
     if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
         const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
@@ -603,6 +621,8 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
         fs.writeFileSync(fileEnvHardhatAwesomeCLI, envToWrite)
     }
     console.log('\x1b[32m%s\x1b[0m', 'Env file updated')
+    await addEnvFileInGitiignore('.gitignore', fileEnvHardhatAwesomeCLI, true)
+    await addEnvFileInGitiignore('.npmignore', fileEnvHardhatAwesomeCLI, false)
 }
 
 const detectPackage = async (packageName: string, install: boolean) => {
@@ -635,7 +655,7 @@ const detectPackage = async (packageName: string, install: boolean) => {
                         exit()
                     })
                 }
-                await sleep(5000)
+                await sleep(4000)
             }
             return false
         }
@@ -768,7 +788,7 @@ const serveEnvBuilder = async (env: any, chainSelected: string) => {
         .then(async (envToBuild: { rpcUrl: string; privateKeyOrMnemonic: string }) => {
             await writeToEnv(env, selectedChain.chainName, envToBuild)
         })
-    await sleep(5000)
+    await sleep(2000)
 }
 
 const serveSettingSelector = async (env: any) => {
@@ -913,7 +933,12 @@ const serveMoreSettingSelector = async () => {
                 type: 'list',
                 name: 'moreSettings',
                 message: 'Select a mock contract',
-                choices: ['Exclude test file from the tests selection list', 'Exclude script file from the scripts selection list']
+                choices: [
+                    'Exclude test file from the tests selection list',
+                    'Exclude script file from the scripts selection list',
+                    new inquirer.Separator(),
+                    'Add/Remove other Hardhat plugins'
+                ]
             }
         ])
         .then(async (moreSettingsSelected: { moreSettings: string }) => {
@@ -923,6 +948,81 @@ const serveMoreSettingSelector = async () => {
             if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list') {
                 await serveExcludeFileSelector('scripts')
             }
+            if (moreSettingsSelected.moreSettings === 'Add/Remove other Hardhat plugins') {
+                await servePackageInstaller()
+            }
+        })
+}
+
+const servePackageInstaller = async () => {
+    interface IHardhatPluginAvailableList {
+        title: string
+        name: string
+    }
+    const HardhatPluginAvailableList: IHardhatPluginAvailableList[] = [
+        {
+            title: 'Hardhat ethers',
+            name: '@nomiclabs/hardhat-ethers'
+        },
+        {
+            title: 'Hardhat waffle',
+            name: '@nomiclabs/hardhat-waffle'
+        },
+        {
+            title: 'Solidity coverage',
+            name: 'solidity-coverage'
+        },
+        {
+            title: 'Hardhat etherscan',
+            name: '@nomiclabs/hardhat-etherscan '
+        },
+        {
+            title: 'Hardhat web3',
+            name: '@nomiclabs/hardhat-web3'
+        },
+        {
+            title: 'Hardhat solhint',
+            name: '@nomiclabs/hardhat-solhint'
+        },
+        {
+            title: 'Hardhat gas reporter',
+            name: 'hardhat-gas-reporter'
+        },
+        {
+            title: 'Hardhat contract sizer',
+            name: 'hardhat-contract-sizer'
+        }
+    ]
+    const hardhatPluginAvailableList: string[] = HardhatPluginAvailableList.map((plugin: IHardhatPluginAvailableList) => {
+        return plugin.title
+    })
+    const hardhatPluginInstalled: string[] = []
+    await inquirer
+        .prompt([
+            {
+                type: 'checkbox',
+                name: 'plugins',
+                message: 'Select a plugin to install',
+                choices: hardhatPluginAvailableList,
+                default: hardhatPluginInstalled
+            }
+        ])
+        .then(async (pluginssSelected: { plugins: string[] }) => {
+            hardhatPluginAvailableList.map(async (plugin: string) => {
+                if (pluginssSelected.plugins.includes(plugin)) {
+                    let pluginName
+                    if (HardhatPluginAvailableList.length > 0) {
+                        if (HardhatPluginAvailableList.find((p: IHardhatPluginAvailableList) => p.title === plugin)) {
+                            pluginName = HardhatPluginAvailableList.find((p: IHardhatPluginAvailableList) => p.title === plugin)?.name
+                            if (pluginName) {
+                                await detectPackage(pluginName, true)
+                            }
+                        }
+                    }
+                } else {
+                    await removeActivatedChain(plugin)
+                }
+            })
         })
 }
 
@@ -1054,61 +1154,10 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
             cli = path.normalize(path.join(config.paths.root, userPath))
         }
     }
-    const getNetworkConfig = await buildActivatedChainNetworkConfig()
-    await sleep(150)
-    let buildNetworkConfig: any = {
-        hardhat: {}
-    }
-    if (getNetworkConfig) {
-        buildNetworkConfig = `{
-                    "networks": [
-                        {${getNetworkConfig}}
-                    ]
-                }`
-        // console.log('-->', buildNetworkConfig, '<--')
-        buildNetworkConfig = JSON.parse(buildNetworkConfig)
-    }
-    // config.networks = buildNetworkConfig.networks[0]
-    // const testCLInetwork: HttpNetworkConfig = {
-    //     chainId: 11,
-    //     // from?: string;
-    //     gas: "auto",
-    //     gasPrice: "auto",
-    //     gasMultiplier: 1,
-    //     url: 'http://localhost:8545',
-    //     timeout: 40000,
-    //     httpHeaders: {},
-    //     accounts: "remote"
-    // }
-    // config.networks.cli = testCLInetwork
-    // console.log('networks', config.networks)
+    config.paths.cli = cli
 })
 
 extendEnvironment(async (hre: any) => {
-    // console.log('hre', hre.config)
-    // fs.writeFileSync('hre.json', JSON.stringify(hre, null, 2))
-    // const getNetworkConfig = await buildActivatedChainNetworkConfig()
-    // await sleep(150)
-    // let buildNetworkConfig: any = {
-    //     hardhat: {}
-    // }
-    // if (getNetworkConfig) {
-    //     buildNetworkConfig = `{
-    //             "networks": [
-    //                 {${getNetworkConfig}}
-    //             ]
-    //         }`
-    //     buildNetworkConfig = JSON.parse(buildNetworkConfig)
-    // }
-    // // console.log('buildNetworkConfig.networks[0]', buildNetworkConfig.networks[0])
-    // hre.config = {
-    //     ...hre.config,
-    //     networks: buildNetworkConfig.networks[0]
-    // }
-    // hre.network = {
-    //     ...hre.network,
-    //     ...buildNetworkConfig.networks[0],
-    // }
     hre.addressBook = lazyObject(() => new AwesomeAddressBook())
 })
 

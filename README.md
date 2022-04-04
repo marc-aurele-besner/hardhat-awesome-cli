@@ -109,8 +109,10 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
+    - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
 - More settings
     - Exclude files from, tests and scripts selection (useful for config and share helper file)
+    - Add other hardhat plugins
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version)
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
@@ -130,6 +132,9 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - More Settings:
     - Create github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
-    - Add other hardhat plugins
+    - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
+        - Need to import plugin added in hardhat.config
+        - Need to list plugin installed to mark them as "check" in the plugin list
+        - Need to allow to remove plugin, uninstall package via npm/yarn and remove them in hardhat config
     - Create custom command
 - Add option to create Admin Proxy and Transparent proxy w/ appropriate deployment scripts
