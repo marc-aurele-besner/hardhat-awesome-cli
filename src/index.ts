@@ -664,6 +664,7 @@ const detectPackage = async (packageName: string, install: boolean) => {
 
 const serveNetworkSelector = async (env: any, command: string, GetAccountBalance: any, ServeEnvBuilder: any, noLocalNetwork: boolean) => {
     const ActivatedChainList = await buildActivatedChainList()
+    const BuildFullChainList = await buildFullChainList()
     const activatedChainList: string[] = []
     ActivatedChainList.map((chain: any) => {
         if (noLocalNetwork && chain.chainName !== 'hardhat') {
@@ -672,6 +673,12 @@ const serveNetworkSelector = async (env: any, command: string, GetAccountBalance
             activatedChainList.push(chain.name)
         }
     })
+    if(activatedChainList.length === 0) {
+        const addHardhat = BuildFullChainList.find((basicChain: any) => basicChain.chainName === 'hardhat')
+        if(addHardhat) {
+            activatedChainList.push(addHardhat.name)
+        }
+    }
     let commandFlags = ''
     await inquirer
         .prompt([
