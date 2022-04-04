@@ -5,12 +5,12 @@ import fs from 'fs'
 import { TASK_TEST_RUN_MOCHA_TESTS } from 'hardhat/builtin-tasks/task-names'
 import { extendConfig, extendEnvironment, subtask, task } from 'hardhat/config'
 import { lazyObject } from 'hardhat/plugins'
-import { HardhatConfig, HardhatUserConfig } from 'hardhat/types'
+import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from 'hardhat/types'
 import inquirer from 'inquirer'
 import path from 'path'
 import { exit, hrtime } from 'process'
 
-import { AwesomeCliEnvironmentField } from './AwesomeCliEnvironmentField'
+import { AwesomeAddressBook } from './AwesomeAddressBook'
 import MockContractsList from './mockContracts'
 import './type-extensions'
 
@@ -141,11 +141,11 @@ const buildActivatedChainNetworkConfig = async () => {
                 const defaultMnemonic = await getEnvValue('mnemonic'.toUpperCase() + '_' + chain.chainName.toUpperCase())
                 let buildAccounts = ''
                 if (defaultPrivateKey) {
-                    buildAccounts = `"accounts": ["${defaultPrivateKey}"],`
+                    buildAccounts = `"accounts": ["${defaultPrivateKey}"]`
                 } else if (defaultMnemonic) {
                     buildAccounts = `"accounts": {
                         "mnemonic": "${defaultMnemonic}"
-                    },`
+                    }`
                 }
                 if (buildAccounts) {
                     if (defaultRpcUrl || chain.defaultRpcUrl) {
@@ -153,10 +153,14 @@ const buildActivatedChainNetworkConfig = async () => {
                             chainConfig +
                             `
                             "${chain.chainName}": {
-                                "url": "${defaultRpcUrl || chain.defaultRpcUrl || ''}",
                                 "chainId": ${chain.chainId},
-                                ${buildAccounts}
-                                "gas": "${chain.gas}"
+                                "gas": "${chain.gas || 'auto'}",
+                                "gasPrice": "auto",
+                                "gasMultiplier": 1,
+                                "url": "${defaultRpcUrl || chain.defaultRpcUrl || 'http://localhost:8545'}",
+                                "timeout": 40000,
+                                "httpHeaders": {},
+                                ${buildAccounts || '"accounts": "remote"'}
                             },`
                     } else {
                         chainConfig =
@@ -164,8 +168,13 @@ const buildActivatedChainNetworkConfig = async () => {
                             `
                             "${chain.chainName}": {
                                 "chainId": ${chain.chainId},
-                                ${buildAccounts}
-                                "gas": "${chain.gas}"
+                                "gas": "${chain.gas || 'auto'}",
+                                "gasPrice": "auto",
+                                "gasMultiplier": 1,
+                                "url": "http://localhost:8545",
+                                "timeout": 40000,
+                                "httpHeaders": {},
+                                ${buildAccounts || '"accounts": "remote"'}
                             },`
                     }
                 } else {
@@ -174,9 +183,14 @@ const buildActivatedChainNetworkConfig = async () => {
                             chainConfig +
                             `
                             "${chain.chainName}": {
-                                "url": "${defaultRpcUrl || chain.defaultRpcUrl || ''}",
                                 "chainId": ${chain.chainId},
-                                "gas": "${chain.gas}"
+                                "gas": "${chain.gas || 'auto'}",
+                                "gasPrice": "auto",
+                                "gasMultiplier": 1,
+                                "url": "${defaultRpcUrl || chain.defaultRpcUrl || ''}",
+                                "timeout": 40000,
+                                "httpHeaders": {},
+                                ${buildAccounts || '"accounts": "remote"'}
                             },`
                     } else {
                         chainConfig =
@@ -184,7 +198,13 @@ const buildActivatedChainNetworkConfig = async () => {
                             `
                             "${chain.chainName}": {
                                 "chainId": ${chain.chainId},
-                                "gas": "${chain.gas}"
+                                "gas": "${chain.gas || 'auto'}",
+                                "gasPrice": "auto",
+                                "gasMultiplier": 1,
+                                "url": "http://localhost:8545",
+                                "timeout": 40000,
+                                "httpHeaders": {},
+                                "accounts": "remote"
                             },`
                     }
                 }
@@ -760,7 +780,7 @@ const serveSettingSelector = async (env: any) => {
                 message: 'Select a setting',
                 choices: [
                     'Add/Remove chains from the chain selection',
-                    'Set RPC Url and private key for all or one chain',
+                    'Set RPC Url, private key or mnemonic for all or one chain',
                     'Add a custom chain to the current chain selection'
                 ]
             }
@@ -798,7 +818,7 @@ const serveSettingSelector = async (env: any) => {
                         console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
                     })
             }
-            if (settingSelected.settings === 'Set RPC Url and private key for all or one chain') {
+            if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain') {
                 await serveNetworkSelector(env, '', '', serveEnvBuilder, true)
             }
             if (settingSelected.settings === 'Add a custom chain to the current chain selection') {
@@ -960,6 +980,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
 `
     )
     const buildMainOptions = [inquirerRunTests, inquirerRunScripts]
+    if (inquirerRunTests === 'Run tests' && inquirerRunScripts === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
     const solidityCoverageDetected = await detectPackage('solidity-coverage', false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
     buildMainOptions.push(
@@ -970,7 +991,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         // 'Upgrade all contracts and run tests',
         // new inquirer.Separator(),
         inquirerRunMockContractCreator,
-        'Create deployment scripts',
+        // 'Create deployment scripts',
         'Get account balance',
         new inquirer.Separator(),
         inquirerFileContractsAddressDeployed,
@@ -995,6 +1016,9 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             if (answers.action === 'Run scripts') {
                 await serveScriptSelector(env)
             }
+            if (answers.action === 'Select scripts and tests to run') {
+                await serveScriptSelector(env)
+            }
             if (answers.action === 'Run coverage tests') {
                 command = 'npx hardhat coverage'
                 await serveTestSelector(env, command)
@@ -1017,6 +1041,76 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             }
         })
 }
+
+extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
+    const userPath = userConfig.paths?.cli
+    let cli: string
+    if (userPath === undefined) {
+        cli = path.join(config.paths.root, 'cli')
+    } else {
+        if (path.isAbsolute(userPath)) {
+            cli = userPath
+        } else {
+            cli = path.normalize(path.join(config.paths.root, userPath))
+        }
+    }
+    const getNetworkConfig = await buildActivatedChainNetworkConfig()
+    await sleep(150)
+    let buildNetworkConfig: any = {
+        hardhat: {}
+    }
+    if (getNetworkConfig) {
+        buildNetworkConfig = `{
+                    "networks": [
+                        {${getNetworkConfig}}
+                    ]
+                }`
+        // console.log('-->', buildNetworkConfig, '<--')
+        buildNetworkConfig = JSON.parse(buildNetworkConfig)
+    }
+    // config.networks = buildNetworkConfig.networks[0]
+    // const testCLInetwork: HttpNetworkConfig = {
+    //     chainId: 11,
+    //     // from?: string;
+    //     gas: "auto",
+    //     gasPrice: "auto",
+    //     gasMultiplier: 1,
+    //     url: 'http://localhost:8545',
+    //     timeout: 40000,
+    //     httpHeaders: {},
+    //     accounts: "remote"
+    // }
+    // config.networks.cli = testCLInetwork
+    // console.log('networks', config.networks)
+})
+
+extendEnvironment(async (hre: any) => {
+    // console.log('hre', hre.config)
+    // fs.writeFileSync('hre.json', JSON.stringify(hre, null, 2))
+    // const getNetworkConfig = await buildActivatedChainNetworkConfig()
+    // await sleep(150)
+    // let buildNetworkConfig: any = {
+    //     hardhat: {}
+    // }
+    // if (getNetworkConfig) {
+    //     buildNetworkConfig = `{
+    //             "networks": [
+    //                 {${getNetworkConfig}}
+    //             ]
+    //         }`
+    //     buildNetworkConfig = JSON.parse(buildNetworkConfig)
+    // }
+    // // console.log('buildNetworkConfig.networks[0]', buildNetworkConfig.networks[0])
+    // hre.config = {
+    //     ...hre.config,
+    //     networks: buildNetworkConfig.networks[0]
+    // }
+    // hre.network = {
+    //     ...hre.network,
+    //     ...buildNetworkConfig.networks[0],
+    // }
+    hre.addressBook = lazyObject(() => new AwesomeAddressBook())
+})
 
 /**
  * CLI task implementation
