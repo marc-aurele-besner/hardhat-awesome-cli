@@ -16,7 +16,7 @@ declare module 'hardhat/types/config' {
     // Normally, you don't want things to be optional here. As you can apply
     // default values using the extendConfig function.
     export interface ProjectPathsConfig {
-        newPath: string
+        cli: string
     }
 }
 
