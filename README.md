@@ -56,7 +56,8 @@ npm link hardhat-awesome-cli
 - More settings
     - Exclude test file from the tests selection list
     - Exclude script file from the scripts selection list
-- Create Mock contracts
+    - Install/Uninstall other Hardhat plugins (Still not very stable)
+- Create Mock contracts + (Deployment scripts and tests scripts (currently only for MockERC20))
     - MockERC20
     - MockERC721
     - MockERC1155
@@ -113,7 +114,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - More settings
     - Exclude files from, tests and scripts selection (useful for config and share helper file)
     - Add other hardhat plugins
-- Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version)
+- Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version) + (Deployment scripts and tests scripts (currently only for MockERC20))
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
@@ -122,12 +123,10 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 ## 🏗️ To do:
 - Start working on documentation
 - Inject chain settings, rpc and accounts in hardhat.config
-- Offer to generate deployment script and test script for Mock contract created
+- Create deployment and test scripts for all Mock contracts
 - Deployment contract generator
 - Make 'Run coverage tests' available only if task is exported by hardhat
-- Run coverage test (if solidity-coverage is installed)
 - Setup chains, RPC and accounts:
-    - Disabling chains seams to be broken
     - See list of .env config and chains setup in a table
 - More Settings:
     - Create github workflows file to run test and coverage test
