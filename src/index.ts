@@ -314,6 +314,51 @@ const buildMockContract = async (contractName: string) => {
     }
 }
 
+const buildMockDeploymentScriptOrTest = async (contractName: string, type: string) => {
+    if (require && require.main) {
+        const packageRootPath = path.join(path.dirname(require.main.filename), '../../../hardhat-awesome-cli/src/mockContracts')
+        if (fs.existsSync(packageRootPath)) {
+            if (fs.existsSync('contracts')) {
+                if (MockContractsList) {
+                    let deploymentScriptOrTestPath: string = ''
+                    const contractToMock: IMockContractsList[] = MockContractsList.filter((contract) => contract.name === contractName)
+                    if (contractToMock && type === 'deployment') {
+                        if (fs.existsSync('hardhat.config.js')) {
+                            if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
+                        } else if (fs.existsSync('hardhat.config.ts')) {
+                            if (contractToMock[0].deploymentScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptTs
+                            else if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
+                        }
+                    }
+                    if (contractToMock && type === 'test') {
+                        if (fs.existsSync('hardhat.config.js')) {
+                            if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
+                        } else if (fs.existsSync('hardhat.config.ts')) {
+                            if (contractToMock[0].testScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptTs
+                            else if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
+                        }
+                    }
+                    if (contractToMock && deploymentScriptOrTestPath) {
+                        if (fs.existsSync(deploymentScriptOrTestPath)) {
+                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' scripts already exists')
+                        } else {
+                            if (fs.existsSync(deploymentScriptOrTestPath)) {
+                                console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' script')
+                            } else {
+                                console.log('\x1b[32m%s\x1b[0m', 'Creating ' + type + ' for ', contractName, ' in scripts/')
+                                const rawdata: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
+                                const scriptsTestRawdataModify = rawdata.toString().slice(2).replace(/\*\//g, '').trim()
+                                await sleep(500)
+                                fs.writeFileSync(deploymentScriptOrTestPath, `${scriptsTestRawdataModify}`)
+                            }
+                        }
+                    }
+                }
+            } else console.log('\x1b[33m%s\x1b[0m', 'Error creating ' + type + ' script')
+        }
+    }
+}
+
 const buildExcludedFile = async () => {
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
@@ -1147,7 +1192,7 @@ const servePackageUninstaller = async () => {
                 }
             })
         })
-        await sleep(1000)
+    await sleep(1000)
 }
 
 const serveMockContractCreatorSelector = async () => {
@@ -1162,10 +1207,28 @@ const serveMockContractCreatorSelector = async () => {
                     name: 'mockContract',
                     message: 'Select a mock contract',
                     choices: mockContractsList
+                },
+                {
+                    type: 'list',
+                    name: 'mockDeploymentScript',
+                    message: 'Create a deployment script for this mock contract',
+                    choices: ['yes', 'no']
+                },
+                {
+                    type: 'list',
+                    name: 'mockTestScript',
+                    message: 'Create a test script for this mock contract',
+                    choices: ['yes', 'no']
                 }
             ])
-            .then(async (mockContractSelected: { mockContract: string }) => {
+            .then(async (mockContractSelected: { mockContract: string; mockDeploymentScript: string; mockTestScript: string }) => {
                 await buildMockContract(mockContractSelected.mockContract)
+                if (mockContractSelected.mockDeploymentScript === 'yes') {
+                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'deployment')
+                }
+                if (mockContractSelected.mockTestScript === 'yes') {
+                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'test')
+                }
             })
     }
 }

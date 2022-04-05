@@ -4,7 +4,11 @@ const MockContractsList: IMockContractsList[] = [
     {
         name: 'MockERC20',
         desc: 'Basic ERC20 Token contract',
-        dependencies: ['@openzeppelin/contracts']
+        dependencies: ['@openzeppelin/contracts'],
+        deploymentScriptJs: 'scripts/deploy-mock-erc20.js',
+        deploymentScriptTs: 'scripts/deploy-mock-erc20.ts',
+        testScriptJs: 'test/test-mock-erc20.js',
+        testScriptTs: 'test/test-mock-erc20.ts'
     },
     {
         name: 'MockERC721',

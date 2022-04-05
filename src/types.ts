@@ -21,6 +21,10 @@ export interface IMockContractsList {
     name: string
     desc: string
     dependencies: string[]
+    deploymentScriptJs?: string
+    deploymentScriptTs?: string
+    testScriptJs?: string
+    testScriptTs?: string
     upgradeable?: boolean
 }
 
