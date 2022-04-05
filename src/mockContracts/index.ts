@@ -1,9 +1,4 @@
-interface IMockContractsList {
-    name: string
-    desc: string
-    dependencies: string[]
-    upgradeable?: boolean
-}
+import { IMockContractsList } from '../types'
 
 const MockContractsList: IMockContractsList[] = [
     {
