@@ -2,13 +2,12 @@
 
 import { spawn } from 'child_process'
 import fs from 'fs'
-import { TASK_TEST_RUN_MOCHA_TESTS } from 'hardhat/builtin-tasks/task-names'
-import { extendConfig, extendEnvironment, subtask, task } from 'hardhat/config'
+import { extendConfig, extendEnvironment, task } from 'hardhat/config'
 import { lazyObject } from 'hardhat/plugins'
-import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from 'hardhat/types'
+import { HardhatConfig, HardhatUserConfig, NetworksUserConfig } from 'hardhat/types'
 import inquirer from 'inquirer'
 import path from 'path'
-import { exit, hrtime } from 'process'
+import { exit } from 'process'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
@@ -87,7 +86,7 @@ const buildFullChainList = async () => {
     return chainList
 }
 
-const buildActivatedChainNetworkConfig = async () => {
+const buildActivatedChainNetworkConfig = () => {
     let chainConfig: string = ''
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
@@ -96,10 +95,10 @@ const buildActivatedChainNetworkConfig = async () => {
     }
     if (fileSetting && fileSetting.activatedChain) {
         if (fileSetting.activatedChain.length > 0) {
-            await fileSetting.activatedChain.forEach(async (chain: IChain) => {
-                const defaultRpcUrl = await getEnvValue('rpcUrl'.toUpperCase() + '_' + chain.chainName.toUpperCase())
-                const defaultPrivateKey = await getEnvValue('privateKey'.toUpperCase() + '_' + chain.chainName.toUpperCase())
-                const defaultMnemonic = await getEnvValue('mnemonic'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+            fileSetting.activatedChain.forEach((chain: IChain) => {
+                const defaultRpcUrl = getEnvValue('rpcUrl'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+                const defaultPrivateKey = getEnvValue('privateKey'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+                const defaultMnemonic = getEnvValue('mnemonic'.toUpperCase() + '_' + chain.chainName.toUpperCase())
                 let buildAccounts = ''
                 if (defaultPrivateKey) {
                     buildAccounts = `"accounts": ["${defaultPrivateKey}"]`
@@ -171,7 +170,7 @@ const buildActivatedChainNetworkConfig = async () => {
                 }
                 return chainConfig
             })
-            await sleep(100)
+            // await sleep(100)
             const fihainConfig = `${chainConfig.slice(0, -1)}`
             return fihainConfig
         }
@@ -663,7 +662,7 @@ import '${packageName}'`
     }
 }
 
-const getEnvValue = async (envName: string) => {
+const getEnvValue = (envName: string) => {
     if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
         const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
         const oldEnv = Object.entries(allEnv.parsed)
@@ -1342,6 +1341,30 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
         }
     }
     config.paths.cli = cli
+
+    const getNetworkConfig = buildActivatedChainNetworkConfig()
+    let buildNetworkConfig: any = {}
+    if (getNetworkConfig) {
+        buildNetworkConfig = `{
+                "networks": [
+                    {${getNetworkConfig}}
+                ]
+            }`
+        buildNetworkConfig = JSON.parse(buildNetworkConfig)
+    }
+    if (buildNetworkConfig.networks !== undefined) {
+        if (buildNetworkConfig.networks[0] !== undefined) {
+            if (buildNetworkConfig.networks[0].ethereum !== undefined) config.networks.ethereum = buildNetworkConfig.networks[0].ethereum
+            if (buildNetworkConfig.networks[0].ropsten !== undefined) config.networks.ropsten = buildNetworkConfig.networks[0].ropsten
+            if (buildNetworkConfig.networks[0].rinkeby !== undefined) config.networks.rinkeby = buildNetworkConfig.networks[0].rinkeby
+            if (buildNetworkConfig.networks[0].kovan !== undefined) config.networks.kovan = buildNetworkConfig.networks[0].kovan
+            if (buildNetworkConfig.networks[0].polygon !== undefined) config.networks.polygon = buildNetworkConfig.networks[0].polygon
+            if (buildNetworkConfig.networks[0].mumbai !== undefined) config.networks.mumbai = buildNetworkConfig.networks[0].mumbai
+            if (buildNetworkConfig.networks[0].optimism !== undefined) config.networks.optimism = buildNetworkConfig.networks[0].optimism
+            if (buildNetworkConfig.networks[0].optimismTestnetKovan !== undefined)
+                config.networks.optimismTestnetKovan = buildNetworkConfig.networks[0].optimismTestnetKovan
+        }
+    }
 })
 
 extendEnvironment(async (hre: any) => {

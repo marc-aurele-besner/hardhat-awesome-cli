@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
 /**
  * @title MockERC1155
@@ -8,8 +8,19 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
 contract MockERC1155 is ERC1155 {
+    
+    string internal _name = "MockERC1155";
+    string internal _symbol = "MOCK";
     constructor () ERC1155("https://google.com") {
 
+    }
+
+    function name() public view returns (string memory) {
+        return _name;
+    }
+
+    function symbol() public view returns (string memory) {
+        return _symbol;
     }
     
     function mint(address _to, uint256 _tokenId, uint256 _amount) public {
@@ -22,6 +33,4 @@ contract MockERC1155 is ERC1155 {
     function burn(uint256 _tokenId, uint256 _amount) public {
         _burn(_msgSender(), _tokenId, _amount);
     }
-    
-    uint256[50] private __gap;
 }
