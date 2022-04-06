@@ -3,7 +3,9 @@ export interface IChain {
     chainName: string
     chainId: number
     gas: string
+    currency?: string
     defaultRpcUrl?: string
+    defaultBlockExplorer?: string
 }
 
 export interface IHardhatPluginAvailableList {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
 /**
  * @title MockERC721
@@ -22,6 +22,4 @@ contract MockERC721 is ERC721 {
         require(_exists(_tokenId));
         _burn(_tokenId);
     }
-    
-    uint256[50] private __gap;
 }

@@ -1,7 +1,7 @@
 [![license](https://img.shields.io/github/license/jamesisaac/react-native-background-task.svg)](https://opensource.org/licenses/MIT)
 
 # 👷 hardhat-awesome-cli
- Hardhat made awesome with a flexible CLI to help run test, deploy and more.
+ Hardhat made awesome with a flexible CLI to help run tests, deploy and more.
 
 ## How to install this package
 ### 1. Install this package
@@ -37,7 +37,7 @@ cd hardhat-awesome-cli
 npm link
 ```
 
-in the hardhat project you want to use this plugin
+in the hardhat project, you want to use this plugin
 
 ```
 npm link hardhat-awesome-cli
@@ -45,25 +45,27 @@ npm link hardhat-awesome-cli
 </details>
 
 ## CLI features
-- Run tests (Allow you yo run test on all files or specific files in test/)
-- Run scripts (Allow you yo run script on specific files in scripts/)
-- Select scripts and tests to run (Allow you to select a script to execure and all or one test to perform afterward)
+- Run tests (Allow you you to run tests on all files or specific files in test/)
+- Run scripts (Allow you you to run scripts on specific files in scripts/)
+- Select scripts and tests to run (Allow you to select a script to execute and all or one test to perform afterward)
 - Run coverage tests (Available only if solidity-coverage is installed and available as a task)
 - Setup chains, RPC and accounts 
     - Add/Remove chains from the chain selection
     - Set RPC Url, private key or mnemonic for all or one chain
-    - Add a custom chain to the current chain selection)
+    - Add a custom chain to the current chain selection (currently these custom chains are not getting injected into hardhat networks)
 - More settings
-    - Exclude test file from the tests selection list
-    - Exclude script file from the scripts selection list
+    - Exclude the test file from the tests selection list
+    - Exclude the script file from the scripts selection list
     - Install/Uninstall other Hardhat plugins (Still not very stable)
-- Create Mock contracts + (Deployment scripts and tests scripts (currently only for MockERC20))
+- Create Mock contracts + (Deployment scripts and tests scripts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     - MockERC20
     - MockERC721
     - MockERC1155
     - MockERC20Upgradeable
     - MockERC721Upgradeable
     - MockERC1155Upgradeable
+    - MockProxyAdmin
+    - MockTransparentUpgradeableProxy
 - Get account balance
 
 ### Current chain support
@@ -75,18 +77,24 @@ npm link hardhat-awesome-cli
 - Polygon - Mainnet (chainId 137)
 - Polygon - Mumbai (chainId 80001)
 
-In 'More settings' you can also add custom chain, or create a issue or pull request to add other chains.
+In 'More settings' you can also add a custom chain, create an issue or pull request to add other chains.
 
 ## Helper tools
 Tools that you can use in your scripts and tests to make your life easier
 
 ### Address Book
 
+Create (if it does not exist) contractsAddressDeployed.json and contractsAddressDeployedHistory.json to store all the contracts you deployed, with the name of the contract, the contract address, the network name, the deployer address and the deployment date. The first file (contractsAddressDeployed.json) stores only the last contract for a given contract name and network name, while the second file (contractsAddressDeployedHistory.json) keeps a log of all the contracts deployed.
+
+You can then retrieve your contract address in your tests scripts to run test on deployed contracts on live chains for example.
+
 Import:
-js```
+javascript
+```
 const { addressBook } = require('hardhat')
 ```
-typescript```
+typescript
+```
 import { addressBook } from 'hardhat'
 ```
 
@@ -99,7 +107,7 @@ addressBook.retrieveContract(contractName: string, deployedNetwork: string)
 
 Example:
 ```
-await addressBook.saveContract('MockERC20', MockERC20.address, 'ethereum', deployer.address)
+await addressBook.saveContract('MockERC20', mockERC20.address, 'ethereum', deployer.address)
 
 await addressBook.retrieveContract('MockERC20', 'ethereum')
 ```
@@ -107,6 +115,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 ## 💪 Done
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
+- Inject chain activated in settings, rpc and accounts in hardhat.config
 - Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
@@ -114,26 +123,33 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - More settings
     - Exclude files from, tests and scripts selection (useful for config and share helper file)
     - Add other hardhat plugins
-- Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version) + (Deployment scripts and tests scripts (currently only for MockERC20))
+- Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version, AdminProxy and TransparentUpgradeableProxy) 
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
+    - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
+    - Offer to create test scripts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
 
 
 ## 🏗️ To do:
 - Start working on documentation
-- Inject chain settings, rpc and accounts in hardhat.config
-- Create deployment and test scripts for all Mock contracts
 - Deployment contract generator
-- Make 'Run coverage tests' available only if task is exported by hardhat
+- Make 'Run coverage tests' available only if the task is exported by hardhat
+- Inject custom chain in hardhat networks
 - Setup chains, RPC and accounts:
-    - See list of .env config and chains setup in a table
+    - See the list of .env config and chains setup in a table
 - More Settings:
-    - Create github workflows file to run test and coverage test
+    - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
-        - Need to import plugin added in hardhat.config
-        - Need to list plugin installed to mark them as "check" in the plugin list
-        - Need to allow to remove plugin, uninstall package via npm/yarn and remove them in hardhat config
-    - Create custom command
-- Add option to create Admin Proxy and Transparent proxy w/ appropriate deployment scripts
+        - Need to import the plugin added in hardhat.config
+        - Need to list plugins installed to mark them as "check" in the plugin list
+        - Need to allow to remove a plugin, uninstall package via npm/yarn and remove them in hardhat config
+    - Create a custom command
+- Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
+- Add test for AdminProxy and TransparentUpgradeableProxy
+- Offer to rename the Mock contract and set all constructor input (or initialize input) via cli
+    - Verify that the input name does not conflict with inheritance
+    - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
+- Add a flatten options (All contracts, or specific contracts) save in contractsFlatten/
+- Write some test on the package using mocha

@@ -5,45 +5,110 @@ export const DefaultChainList: IChain[] = [
         name: 'Hardhat local',
         chainName: 'hardhat',
         chainId: 31337,
-        gas: 'auto'
+        gas: 'auto',
+        currency: 'ETH'
     },
     {
         name: 'Ethereum - Mainnet',
         chainName: 'ethereum',
         chainId: 1,
-        gas: 'auto'
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://etherscan.io/'
     },
     {
         name: 'Ethereum - Ropstein',
         chainName: 'ropsten',
         chainId: 3,
-        gas: 'auto'
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://ropsten.etherscan.io/'
     },
     {
         name: 'Ethereum - Rinkeby',
         chainName: 'rinkeby',
         chainId: 4,
-        gas: 'auto'
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://rinkeby.etherscan.io/'
     },
     {
         name: 'Ethereum - Kovan',
         chainName: 'kovan',
         chainId: 42,
-        gas: 'auto'
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://kovan.etherscan.io/'
+    },
+    {
+        name: 'Ethereum - Goerli',
+        chainName: 'goerli',
+        chainId: 5,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://goerli.etherscan.io/'
     },
     {
         name: 'Polygon - Mainnet',
         chainName: 'polygon',
         chainId: 137,
         gas: 'auto',
-        defaultRpcUrl: 'https://polygon-rpc.com'
+        currency: 'MATIC',
+        defaultRpcUrl: 'https://polygon-rpc.com',
+        defaultBlockExplorer: 'https://polygonscan.com/'
     },
     {
         name: 'Polygon - Mumbai',
         chainName: 'mumbai',
         chainId: 80001,
         gas: 'auto',
-        defaultRpcUrl: 'https://rpc-mumbai.maticvigil.com'
+        currency: 'MATIC',
+        defaultRpcUrl: 'https://rpc-mumbai.maticvigil.com',
+        defaultBlockExplorer: 'https://mumbai.polygonscan.com/'
+    },
+    {
+        name: 'Binance Smart Chain - Mainnet',
+        chainName: 'binance',
+        chainId: 56,
+        gas: 'auto',
+        currency: 'BNB',
+        defaultRpcUrl: 'https://bsc-dataseed.binance.org',
+        defaultBlockExplorer: 'https://bscscan.com'
+    },
+    {
+        name: 'Binance Smart Chain - Tesnet',
+        chainName: 'binanceTestnet',
+        chainId: 97,
+        gas: 'auto',
+        currency: 'BNB',
+        defaultRpcUrl: 'https://rpc-mainnet.matic.network',
+        defaultBlockExplorer: 'https://explorer.binance.org/smart-testnet'
+    },
+    {
+        name: 'Optimism - Mainnet',
+        chainName: 'optimism',
+        chainId: 10,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultRpcUrl: 'https://mainnet.optimism.io',
+        defaultBlockExplorer: 'https://optimistic.etherscan.io/'
+    },
+    {
+        name: 'Optimism - Testnet Kovan',
+        chainName: 'optimismTestnetKovan',
+        chainId: 56,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultRpcUrl: 'https://bsc-dataseed1.binance.org'
+    },
+    {
+        name: 'Avalanche - Mainnet',
+        chainName: 'optimismTestnetKovan',
+        chainId: 43114,
+        gas: 'auto',
+        currency: 'AVAX',
+        defaultRpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
+        defaultBlockExplorer: 'https://snowtrace.io/'
     }
 ]
 
