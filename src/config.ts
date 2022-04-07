@@ -33,20 +33,20 @@ export const DefaultChainList: IChain[] = [
         defaultBlockExplorer: 'https://rinkeby.etherscan.io/'
     },
     {
-        name: 'Ethereum - Kovan',
-        chainName: 'kovan',
-        chainId: 42,
-        gas: 'auto',
-        currency: 'ETH',
-        defaultBlockExplorer: 'https://kovan.etherscan.io/'
-    },
-    {
         name: 'Ethereum - Goerli',
         chainName: 'goerli',
         chainId: 5,
         gas: 'auto',
         currency: 'ETH',
         defaultBlockExplorer: 'https://goerli.etherscan.io/'
+    },
+    {
+        name: 'Ethereum - Kovan',
+        chainName: 'kovan',
+        chainId: 42,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://kovan.etherscan.io/'
     },
     {
         name: 'Polygon - Mainnet',
@@ -96,10 +96,10 @@ export const DefaultChainList: IChain[] = [
     {
         name: 'Optimism - Testnet Kovan',
         chainName: 'optimismTestnetKovan',
-        chainId: 56,
+        chainId: 69,
         gas: 'auto',
         currency: 'ETH',
-        defaultRpcUrl: 'https://bsc-dataseed1.binance.org'
+        defaultRpcUrl: 'https://kovan.optimism.io'
     },
     {
         name: 'Avalanche - Mainnet',

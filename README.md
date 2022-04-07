@@ -48,6 +48,7 @@ npm link hardhat-awesome-cli
 - Run tests (Allow you you to run tests on all files or specific files in test/)
 - Run scripts (Allow you you to run scripts on specific files in scripts/)
 - Select scripts and tests to run (Allow you to select a script to execute and all or one test to perform afterward)
+- Flatten all your contract or a specific contract
 - Run coverage tests (Available only if solidity-coverage is installed and available as a task)
 - Setup chains, RPC and accounts 
     - Add/Remove chains from the chain selection
@@ -73,9 +74,16 @@ npm link hardhat-awesome-cli
 - Ethereum - Mainnet (chainId: 1)
 - Ethereum - Ropstein (chainId 3)
 - Ethereum - Rinkeby (chainId 4)
+- Ethereum - Goerli (chainId 5)
 - Ethereum - Kovan (chainId 42)
 - Polygon - Mainnet (chainId 137)
 - Polygon - Mumbai (chainId 80001)
+- Binance Smart Chain - Mainnet (chainId 56)
+- Binance Smart Chain - Tesnet (chainId 97)
+- Optimism - Mainnet (chainId 10)
+- Optimism - Testnet Kovan (chainId 69)
+- Avalanche - Mainnet (chainId 43114)
+
 
 In 'More settings' you can also add a custom chain, create an issue or pull request to add other chains.
 
@@ -129,6 +137,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Offer to create test scripts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
+- Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
 
 
 ## 🏗️ To do:
@@ -151,5 +160,4 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Offer to rename the Mock contract and set all constructor input (or initialize input) via cli
     - Verify that the input name does not conflict with inheritance
     - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
-- Add a flatten options (All contracts, or specific contracts) save in contractsFlatten/
 - Write some test on the package using mocha

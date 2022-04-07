@@ -13,7 +13,7 @@ import { AwesomeAddressBook } from './AwesomeAddressBook'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
 import MockContractsList from './mockContracts'
 import './type-extensions'
-import { IChain, IExcludedFiles, IFileSetting, IHardhatPluginAvailableList, IMockContractsList, ITestAndScript } from './types'
+import { IChain, IExcludedFiles, IFileList, IFileSetting, IHardhatPluginAvailableList, IInquirerListField, IMockContractsList } from './types'
 
 const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
@@ -22,28 +22,35 @@ const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.jso
 let contractsAddressDeployed = []
 let contractsAddressDeployedHistory = []
 
-let inquirerRunTests: any = {
+let inquirerRunTests: IInquirerListField | string = {
     name: 'Run tests',
     disabled: "We can't run tests without a test/ directory"
 }
 if (fs.existsSync('test')) {
     inquirerRunTests = 'Run tests'
 }
-let inquirerRunScripts: any = {
+let inquirerRunScripts: IInquirerListField | string = {
     name: 'Run scripts',
     disabled: "We can't run scripts without a scripts/ directory"
 }
 if (fs.existsSync('scripts')) {
     inquirerRunScripts = 'Run scripts'
 }
-let inquirerRunMockContractCreator: any = {
+let inquirerFlattenContracts: IInquirerListField | string = {
+    name: 'Flatten contracts',
+    disabled: "We can't flatten contracts without a contracts/ directory"
+}
+if (fs.existsSync('contracts')) {
+    inquirerFlattenContracts = 'Flatten contracts'
+}
+let inquirerRunMockContractCreator: IInquirerListField | string = {
     name: 'Create Mock contracts',
     disabled: "We can't create Mock contracts without a contracts/ directory"
 }
 if (fs.existsSync('contracts')) {
     inquirerRunMockContractCreator = 'Create Mock contracts'
 }
-let inquirerFileContractsAddressDeployed: any = {
+let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
     name: 'Get the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
@@ -52,7 +59,7 @@ if (fs.existsSync(fileContractsAddressDeployed)) {
     contractsAddressDeployed = JSON.parse(rawdata)
     inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
 }
-let inquirerFileContractsAddressDeployedHistory: any = {
+let inquirerFileContractsAddressDeployedHistory: IInquirerListField | string = {
     name: 'Get all the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
@@ -196,7 +203,7 @@ const buildActivatedChainList = async () => {
 }
 
 const buildAllTestsList = async () => {
-    const testList: ITestAndScript[] = []
+    const testList: IFileList[] = []
     if (fs.existsSync('test')) {
         testList.push({
             name: 'All tests',
@@ -222,7 +229,7 @@ const buildAllTestsList = async () => {
 }
 
 const buildAllScriptsList = async () => {
-    const scriptsList: ITestAndScript[] = []
+    const scriptsList: IFileList[] = []
     if (fs.existsSync('scripts')) {
         const files = fs.readdirSync('scripts')
         files.map((file) => {
@@ -242,8 +249,29 @@ const buildAllScriptsList = async () => {
     return scriptsList
 }
 
+const buildAllContractsList = async () => {
+    const scontractsList: IFileList[] = []
+    if (fs.existsSync('contracts')) {
+        const files = fs.readdirSync('contracts')
+        files.map((file) => {
+            let fileName = file.replace(/\.[^/.]+$/, '')
+            const words = fileName.split(' ')
+            for (let i = 0; i < words.length; i++) {
+                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
+            }
+            fileName = words.join(' ')
+            scontractsList.push({
+                name: fileName,
+                type: 'file',
+                filePath: file
+            })
+        })
+    }
+    return scontractsList
+}
+
 const buildTestsList = async () => {
-    let allTestList: ITestAndScript[] = await buildAllTestsList()
+    let allTestList: IFileList[] = await buildAllTestsList()
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const buildFilePath: string[] = []
     if (excludedFiles && excludedFiles.length > 0) {
@@ -252,7 +280,7 @@ const buildTestsList = async () => {
             excludedFiles.map((file: IExcludedFiles) => {
                 buildFilePath.push(file.filePath)
             })
-            allTestList = allTestList.filter((script: ITestAndScript) => {
+            allTestList = allTestList.filter((script: IFileList) => {
                 return !buildFilePath.includes(script.filePath)
             })
             return allTestList
@@ -263,7 +291,7 @@ const buildTestsList = async () => {
 }
 
 const buildScriptsList = async () => {
-    let allScriptList: ITestAndScript[] = await buildAllScriptsList()
+    let allScriptList: IFileList[] = await buildAllScriptsList()
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const buildFilePath: string[] = []
     if (excludedFiles && excludedFiles.length > 0) {
@@ -272,13 +300,33 @@ const buildScriptsList = async () => {
             excludedFiles.map((file: any) => {
                 buildFilePath.push(file.filePath)
             })
-            allScriptList = allScriptList.filter((script: ITestAndScript) => {
+            allScriptList = allScriptList.filter((script: IFileList) => {
                 return !buildFilePath.includes(script.filePath)
             })
             return allScriptList
         }
     } else {
         return allScriptList
+    }
+}
+
+const buildContractsList = async () => {
+    let allContractsList: IFileList[] = await buildAllContractsList()
+    let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
+    const buildFilePath: string[] = []
+    if (excludedFiles && excludedFiles.length > 0) {
+        excludedFiles = excludedFiles.filter((test: any) => test.directory === 'contracts')
+        if (excludedFiles && excludedFiles.length > 0) {
+            excludedFiles.map((file: any) => {
+                buildFilePath.push(file.filePath)
+            })
+            allContractsList = allContractsList.filter((script: IFileList) => {
+                return !buildFilePath.includes(script.filePath)
+            })
+            return allContractsList
+        }
+    } else {
+        return allContractsList
     }
 }
 
@@ -505,8 +553,8 @@ const removeExcludedFiles = async (directory: string, filePath: string) => {
             })
     } else if (directory === 'script') {
         allFiles = (await buildAllScriptsList())
-            .filter((script: ITestAndScript) => script.type === 'file')
-            .map((file: ITestAndScript) => {
+            .filter((script: IFileList) => script.type === 'file')
+            .map((file: IFileList) => {
                 return file.filePath
             })
     }
@@ -850,7 +898,7 @@ const serveTestSelector = async (env: any, command: string, firstCommand: string
     const testFilesObject = await buildTestsList()
     let testFilesList: string[] = []
     if (testFilesObject) {
-        testFilesList = testFilesObject.map((file: ITestAndScript) => {
+        testFilesList = testFilesObject.map((file: IFileList) => {
             return file.name
         })
         if (testFilesList.length > 0) {
@@ -864,7 +912,7 @@ const serveTestSelector = async (env: any, command: string, firstCommand: string
                     }
                 ])
                 .then(async (testSelected: { test: string }) => {
-                    testFilesObject.forEach((file: ITestAndScript) => {
+                    testFilesObject.forEach((file: IFileList) => {
                         if (file.name === testSelected.test) {
                             if (file.type === 'file') {
                                 command = command + ' test/' + file.filePath
@@ -885,7 +933,7 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
     const scriptFilesObject = await buildScriptsList()
     const scriptFilesList: string[] = []
     if (scriptFilesObject) {
-        scriptFilesObject.map((file: ITestAndScript) => {
+        scriptFilesObject.map((file: IFileList) => {
             scriptFilesList.push(file.name)
         })
         if (scriptFilesObject.length > 0) {
@@ -900,7 +948,7 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
                 ])
                 .then(async (scriptSelected: { script: string }) => {
                     let command = 'npx hardhat run'
-                    scriptFilesObject.forEach((file: ITestAndScript) => {
+                    scriptFilesObject.forEach((file: IFileList) => {
                         if (file.name === scriptSelected.script) {
                             if (file.type === 'file') {
                                 command = command + ' scripts/' + file.filePath
@@ -913,6 +961,47 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
                         await serveNetworkSelector(env, command, '', '', '', false)
                         await sleep(5000)
                     }
+                })
+        }
+    }
+}
+
+const serveFlattenContractsSelector = async (env: any, command: string) => {
+    const contractsFilesObject = await buildContractsList()
+    const contractsFilesList: string[] = ['Flatten all contracts']
+    if (contractsFilesObject) {
+        contractsFilesObject.map((file: IFileList) => {
+            contractsFilesList.push(file.name)
+        })
+        if (contractsFilesList.length > 0) {
+            await inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'flatten',
+                        message: 'Select a contract to flatten',
+                        choices: contractsFilesList
+                    }
+                ])
+                .then(async (contractsSelected: { flatten: string }) => {
+                    if (!fs.existsSync('contractsFlatten')) {
+                        fs.mkdirSync('contractsFlatten')
+                    }
+                    let contractFlattenName: string = ''
+                    if (contractsSelected.flatten !== 'Flatten all contracts') {
+                        contractsFilesObject.forEach((file: IFileList) => {
+                            if (file.name === contractsSelected.flatten) {
+                                if (file.type === 'file') {
+                                    command = command + ' contracts/' + file.filePath
+                                    contractFlattenName = file.filePath.replace('.sol', 'Flatten.sol')
+                                }
+                            }
+                        })
+                    } else {
+                        contractFlattenName = 'AllContractsFlatten.sol'
+                    }
+                    await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
+                    await sleep(3000)
                 })
         }
     }
@@ -1038,7 +1127,7 @@ const serveSettingSelector = async (env: any) => {
 }
 
 const serveExcludeFileSelector = async (option: string) => {
-    let allFiles: ITestAndScript[] = []
+    let allFiles: IFileList[] = []
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const allFilesSelection: string[] = []
     let allExcludedSelection: string[] = []
@@ -1048,10 +1137,10 @@ const serveExcludeFileSelector = async (option: string) => {
         allFiles = await buildAllScriptsList()
     }
     if (allFiles && allFiles.length > 0) {
-        if (allFiles.filter((test: ITestAndScript) => test.type === 'file').length > 0) {
+        if (allFiles.filter((test: IFileList) => test.type === 'file').length > 0) {
             allFiles
-                .filter((test: ITestAndScript) => test.type === 'file')
-                .map((file: ITestAndScript) => {
+                .filter((test: IFileList) => test.type === 'file')
+                .map((file: IFileList) => {
                     allFilesSelection.push(file.filePath)
                 })
         }
@@ -1075,7 +1164,7 @@ const serveExcludeFileSelector = async (option: string) => {
             }
         ])
         .then(async (activateFilesSelected: { allFiles: string[] }) => {
-            allFiles.map(async (file: ITestAndScript) => {
+            allFiles.map(async (file: IFileList) => {
                 if (activateFilesSelected.allFiles.includes(file.name)) {
                     await addExcludedFiles(option, file.name)
                 } else {
@@ -1265,7 +1354,7 @@ d8' '8b 88   I8I   88 88'     88'  YP .8P  Y8. 88'YbdP'88 88'         d8P  Y8 88
 YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y88888P Y888888P 
 `
     )
-    const buildMainOptions = [inquirerRunTests, inquirerRunScripts]
+    const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
     if (inquirerRunTests === 'Run tests' && inquirerRunScripts === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
     const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
@@ -1301,6 +1390,10 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             }
             if (answers.action === 'Run scripts') {
                 await serveScriptSelector(env, '')
+            }
+            if (answers.action === 'Flatten contracts') {
+                command = 'npx hardhat flatten'
+                await serveFlattenContractsSelector(env, command)
             }
             if (answers.action === 'Select scripts and tests to run') {
                 await serveScriptSelector(env, serveTestSelector)
