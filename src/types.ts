@@ -13,7 +13,7 @@ export interface IHardhatPluginAvailableList {
     name: string
 }
 
-export interface ITestAndScript {
+export interface IFileList {
     name: string
     type: string
     filePath: string
@@ -38,4 +38,9 @@ export interface IExcludedFiles {
 export interface IFileSetting {
     activatedChain?: IChain[]
     excludedFiles?: IExcludedFiles[]
+}
+
+export interface IInquirerListField {
+    name: string
+    disabled?: string
 }
