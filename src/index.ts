@@ -1239,9 +1239,6 @@ const servePackageInstaller = async () => {
 }
 
 const servePackageUninstaller = async () => {
-    const hardhatPluginAvailableList: string[] = DefaultHardhatPluginsList.map((plugin: IHardhatPluginAvailableList) => {
-        return plugin.title
-    })
     const hardhatPluginInstalled: string[] = []
     DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
         if (await detectPackage(plugin.name, false, false)) {
@@ -1255,12 +1252,11 @@ const servePackageUninstaller = async () => {
                 type: 'checkbox',
                 name: 'plugins',
                 message: 'Select a plugin to install',
-                choices: hardhatPluginAvailableList,
-                default: hardhatPluginInstalled
+                choices: hardhatPluginInstalled
             }
         ])
         .then(async (pluginssSelected: { plugins: string[] }) => {
-            hardhatPluginAvailableList.map(async (plugin: string) => {
+            hardhatPluginInstalled.map(async (plugin: string) => {
                 if (pluginssSelected.plugins.includes(plugin)) {
                     let pluginName
                     if (DefaultHardhatPluginsList.length > 0) {

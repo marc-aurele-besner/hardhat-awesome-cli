@@ -57,9 +57,10 @@ npm link hardhat-awesome-cli
     - Set RPC Url, private key or mnemonic for all or one chain
     - Add a custom chain to the current chain selection (currently these custom chains are not getting injected into hardhat networks)
 - More settings
-    - Exclude the test file from the tests selection list
-    - Exclude the script file from the scripts selection list
-    - Install/Uninstall other Hardhat plugins (Still not very stable)
+    - Exclude test file from the tests selection list
+    - Exclude script file from the scripts selection list
+    - Exclude script or contract file from the contract selection list
+    - Install/Uninstall other Hardhat plugins
 - Create Mock contracts + (Deployment scripts and tests scripts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     - MockERC20
     - MockERC721
@@ -131,8 +132,8 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Build .env file with rpc url and private key (or mnemonic)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
 - More settings
-    - Exclude files from, tests and scripts selection (useful for config and share helper file)
-    - Add other hardhat plugins
+    - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
+    - Add/remove other hardhat plugins
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version, AdminProxy and TransparentUpgradeableProxy) 
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
     - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
@@ -155,9 +156,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
-        - Need to import the plugin added in hardhat.config
-        - Need to list plugins installed to mark them as "check" in the plugin list
-        - Need to allow to remove a plugin, uninstall package via npm/yarn and remove them in hardhat config
+        - Need to import the plugin added in hardhat.config and remove them in hardhat config
     - Create a custom command
 - Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
 - Add test for AdminProxy and TransparentUpgradeableProxy
