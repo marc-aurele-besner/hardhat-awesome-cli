@@ -24,7 +24,7 @@ require("hardhat-awesome-cli");
 ```
 or inside hardhat.config.ts (Typescript)
 ```
-import hardhatAwesomeCli from 'hardhat-awesome-cli'
+import 'hardhat-awesome-cli'
 ```
 
 ### Other option
@@ -57,9 +57,10 @@ npm link hardhat-awesome-cli
     - Set RPC Url, private key or mnemonic for all or one chain
     - Add a custom chain to the current chain selection (currently these custom chains are not getting injected into hardhat networks)
 - More settings
-    - Exclude the test file from the tests selection list
-    - Exclude the script file from the scripts selection list
-    - Install/Uninstall other Hardhat plugins (Still not very stable)
+    - Exclude test file from the tests selection list
+    - Exclude script file from the scripts selection list
+    - Exclude script or contract file from the contract selection list
+    - Install/Uninstall other Hardhat plugins
 - Create Mock contracts + (Deployment scripts and tests scripts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     - MockERC20
     - MockERC721
@@ -131,8 +132,8 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Build .env file with rpc url and private key (or mnemonic)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
 - More settings
-    - Exclude files from, tests and scripts selection (useful for config and share helper file)
-    - Add other hardhat plugins
+    - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
+    - Add/remove other hardhat plugins
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version, AdminProxy and TransparentUpgradeableProxy) 
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
     - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
@@ -140,26 +141,27 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
-
+- Write some test on the package using mocha
 
 ## 🏗️ To do:
 - Start working on documentation
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - Inject custom chain in hardhat networks
+- Handle directory for contracts, test and scripts selection
 - Setup chains, RPC and accounts:
     - See the list of .env config and chains setup in a table
 - More Settings:
+    - Handle directory for file exeption
     - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
-        - Need to import the plugin added in hardhat.config
-        - Need to list plugins installed to mark them as "check" in the plugin list
-        - Need to allow to remove a plugin, uninstall package via npm/yarn and remove them in hardhat config
+        - Need to import the plugin added in hardhat.config and remove them in hardhat config
     - Create a custom command
 - Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
 - Add test for AdminProxy and TransparentUpgradeableProxy
 - Offer to rename the Mock contract and set all constructor input (or initialize input) via cli
     - Verify that the input name does not conflict with inheritance
     - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
-- Write some test on the package using mocha
+- Write more test with mocha to test the package functionality
+- Use commander to create command to access some functionality (and use them in the package test)
