@@ -144,5 +144,17 @@ export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
     {
         title: 'Hardhat contract sizer',
         name: 'hardhat-contract-sizer'
+    },
+    {
+        title: 'Hardhat Ganache',
+        name: '@nomiclabs/hardhat-ganache'
+    },
+    {
+        title: 'Hardhat solpp',
+        name: '@nomiclabs/hardhat-solpp'
+    },
+    {
+        title: 'Hardhat Vyper',
+        name: '@nomiclabs/hardhat-vyper'
     }
 ]
