@@ -5,8 +5,8 @@
   "repository": "https://github.com/marc-aurele-besner/hardhat-awesome-cli.git",
   "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
   "license": "MIT",
-  "main": "dist/index",
-  "typings": "dist/index",
+  "main": "dist/src/index",
+  "typings": "dist/src/index",
   "bin": {
     "hardhat-awesome-cli": "./src/index-cli.ts"
   },

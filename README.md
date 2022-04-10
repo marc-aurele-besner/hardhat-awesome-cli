@@ -24,7 +24,7 @@ require("hardhat-awesome-cli");
 ```
 or inside hardhat.config.ts (Typescript)
 ```
-import hardhatAwesomeCli from 'hardhat-awesome-cli'
+import 'hardhat-awesome-cli'
 ```
 
 ### Other option

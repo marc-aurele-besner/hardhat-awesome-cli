@@ -22,33 +22,15 @@ const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.jso
 let contractsAddressDeployed = []
 let contractsAddressDeployedHistory = []
 
-let inquirerRunTests: IInquirerListField | string = {
-    name: 'Run tests',
-    disabled: "We can't run tests without a test/ directory"
-}
-if (fs.existsSync('test')) {
-    inquirerRunTests = 'Run tests'
-}
-let inquirerRunScripts: IInquirerListField | string = {
-    name: 'Run scripts',
-    disabled: "We can't run scripts without a scripts/ directory"
-}
-if (fs.existsSync('scripts')) {
-    inquirerRunScripts = 'Run scripts'
-}
-let inquirerFlattenContracts: IInquirerListField | string = {
-    name: 'Flatten contracts',
-    disabled: "We can't flatten contracts without a contracts/ directory"
-}
-if (fs.existsSync('contracts')) {
-    inquirerFlattenContracts = 'Flatten contracts'
-}
-let inquirerRunMockContractCreator: IInquirerListField | string = {
-    name: 'Create Mock contracts',
-    disabled: "We can't create Mock contracts without a contracts/ directory"
-}
-if (fs.existsSync('contracts')) {
-    inquirerRunMockContractCreator = 'Create Mock contracts'
+const inquirerRunTests: IInquirerListField = { name: 'Run tests' }
+if (!fs.existsSync('test')) inquirerRunTests.disabled = "We can't run tests without a test/ directory"
+const inquirerRunScripts: IInquirerListField = { name: 'Run scripts' }
+if (!fs.existsSync('scripts')) inquirerRunScripts.disabled = "We can't run scripts without a scripts/ directory"
+const inquirerFlattenContracts: IInquirerListField = { name: 'Flatten contract' }
+const inquirerRunMockContractCreator: IInquirerListField = { name: 'Create Mock contracts' }
+if (!fs.existsSync('contracts')) {
+    inquirerFlattenContracts.disabled = "We can't flatten contracts without a contracts/ directory"
+    inquirerRunMockContractCreator.disabled = "We can't create Mock contracts without a contracts/ directory"
 }
 let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
     name: 'Get the previously deployed contracts address',
@@ -86,11 +68,6 @@ const runCommand = async (command: string, firstCommand: string, commandFlags: s
     runSpawn.on('exit', (code) => {
         exit()
     })
-}
-
-const buildFullChainList = async () => {
-    const chainList: IChain[] = DefaultChainList
-    return chainList
 }
 
 const buildActivatedChainNetworkConfig = () => {
@@ -423,9 +400,17 @@ const addChain = async (chainName: string, chainToAdd: IChain) => {
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
-        if (fileSetting && !fileSetting.activatedChain) {
-            fileSetting = {
-                ...fileSetting
+        if (fileSetting) {
+            if (!fileSetting.activatedChain) {
+                fileSetting = {
+                    ...fileSetting,
+                    activatedChain: []
+                }
+            } else {
+                fileSetting = {
+                    ...fileSetting,
+                    activatedChain: [...fileSetting.activatedChain]
+                }
             }
         }
     } else {
@@ -454,7 +439,7 @@ const addChain = async (chainName: string, chainToAdd: IChain) => {
 }
 
 const addActivatedChain = async (chainName: string) => {
-    const FullChainList: IChain[] = await buildFullChainList()
+    const FullChainList: IChain[] = DefaultChainList
     const chainToAdd: IChain | undefined = FullChainList.find((chain: IChain) => chain.name === chainName)
     if (chainToAdd !== undefined) {
         await addChain(chainName, chainToAdd)
@@ -462,7 +447,7 @@ const addActivatedChain = async (chainName: string) => {
 }
 
 const removeActivatedChain = async (chainName: string) => {
-    const FullChainList: IChain[] = await buildFullChainList()
+    const FullChainList: IChain[] = DefaultChainList
     const chainToRemove: IChain | undefined = FullChainList.find((chain: IChain) => chain.name === chainName)
     let fileSetting: any = []
     if (fs.existsSync(fileHardhatAwesomeCLI) && chainToRemove) {
@@ -482,7 +467,7 @@ const removeActivatedChain = async (chainName: string) => {
 }
 
 const addCustomChain = async (chainDetails: IChain) => {
-    const FullChainList = await buildFullChainList()
+    const FullChainList = DefaultChainList
     const ActivatedChainList = await buildActivatedChainList()
     // Verify if the chain already exists in regular full chain list
     if (FullChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName)) {
@@ -852,7 +837,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
 
 const serveNetworkSelector = async (env: any, command: string, firstCommand: string, GetAccountBalance: any, ServeEnvBuilder: any, noLocalNetwork: boolean) => {
     const ActivatedChainList: IChain[] = await buildActivatedChainList()
-    const BuildFullChainList: IChain[] = await buildFullChainList()
+    const BuildFullChainList: IChain[] = DefaultChainList
     const activatedChainList: string[] = []
     ActivatedChainList.map((chain: IChain) => {
         if (noLocalNetwork && chain.chainName !== 'hardhat') {
@@ -1056,7 +1041,7 @@ const serveSettingSelector = async (env: any) => {
             ActivatedChainList.map((chain: IChain) => {
                 activatedChainList.push(chain.name)
             })
-            const FullChainList = await buildFullChainList()
+            const FullChainList = DefaultChainList
             const fullChainList: string[] = []
             FullChainList.map((chain: IChain) => {
                 fullChainList.push(chain.name)
@@ -1081,6 +1066,7 @@ const serveSettingSelector = async (env: any) => {
                             }
                         })
                         console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
+                        await sleep(1000)
                     })
             }
             if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain') {
@@ -1135,6 +1121,8 @@ const serveExcludeFileSelector = async (option: string) => {
         allFiles = await buildAllTestsList()
     } else if (option === 'scripts') {
         allFiles = await buildAllScriptsList()
+    } else if (option === 'contracts') {
+        allFiles = await buildAllContractsList()
     }
     if (allFiles && allFiles.length > 0) {
         if (allFiles.filter((test: IFileList) => test.type === 'file').length > 0) {
@@ -1165,7 +1153,7 @@ const serveExcludeFileSelector = async (option: string) => {
         ])
         .then(async (activateFilesSelected: { allFiles: string[] }) => {
             allFiles.map(async (file: IFileList) => {
-                if (activateFilesSelected.allFiles.includes(file.name)) {
+                if (activateFilesSelected.allFiles.includes(file.filePath)) {
                     await addExcludedFiles(option, file.name)
                 } else {
                     await removeExcludedFiles(option, file.name)
@@ -1185,6 +1173,7 @@ const serveMoreSettingSelector = async () => {
                 choices: [
                     'Exclude test file from the tests selection list',
                     'Exclude script file from the scripts selection list',
+                    'Exclude contract file from the contract selection list',
                     new inquirer.Separator(),
                     'Add other Hardhat plugins',
                     'Remove other Hardhat plugins'
@@ -1197,6 +1186,9 @@ const serveMoreSettingSelector = async () => {
             }
             if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list') {
                 await serveExcludeFileSelector('scripts')
+            }
+            if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list') {
+                await serveExcludeFileSelector('contracts')
             }
             if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') {
                 await servePackageInstaller()
@@ -1217,6 +1209,7 @@ const servePackageInstaller = async () => {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
+    await sleep(500)
     await inquirer
         .prompt([
             {
@@ -1235,13 +1228,13 @@ const servePackageInstaller = async () => {
                         if (DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)) {
                             pluginName = DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)?.name
                             if (pluginName) {
-                                await detectPackage(pluginName, true, false)
-                                await sleep(1000)
+                                // await detectPackage(pluginName, true, false)
                             }
                         }
                     }
                 }
             })
+            await sleep(1000)
         })
 }
 
@@ -1255,6 +1248,7 @@ const servePackageUninstaller = async () => {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
+    await sleep(500)
     await inquirer
         .prompt([
             {
@@ -1355,7 +1349,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
 `
     )
     const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
-    if (inquirerRunTests === 'Run tests' && inquirerRunScripts === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
+    if (inquirerRunTests.name === 'Run tests' && inquirerRunScripts.name === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
     const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
     buildMainOptions.push(
@@ -1363,8 +1357,6 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         'More settings',
         new inquirer.Separator(),
         // 'Deploy all contracts and run tests',
-        // 'Upgrade all contracts and run tests',
-        // new inquirer.Separator(),
         inquirerRunMockContractCreator,
         // 'Create deployment scripts',
         'Get account balance',
