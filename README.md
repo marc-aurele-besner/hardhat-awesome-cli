@@ -140,16 +140,18 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
-
+- Write some test on the package using mocha
 
 ## 🏗️ To do:
 - Start working on documentation
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - Inject custom chain in hardhat networks
+- Handle directory for contracts, test and scripts selection
 - Setup chains, RPC and accounts:
     - See the list of .env config and chains setup in a table
 - More Settings:
+    - Handle directory for file exeption
     - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
@@ -162,4 +164,5 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Offer to rename the Mock contract and set all constructor input (or initialize input) via cli
     - Verify that the input name does not conflict with inheritance
     - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
-- Write some test on the package using mocha
+- Write more test with mocha to test the package functionality
+- Use commander to create command to access some functionality (and use them in the package test)
