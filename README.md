@@ -56,6 +56,7 @@ npm link hardhat-awesome-cli
     - Add/Remove chains from the chain selection
     - Set RPC Url, private key or mnemonic for all or one chain
     - Add a custom chain to the current chain selection (currently these custom chains are not getting injected into hardhat networks)
+    - See all config for activated chain
 - More settings
     - Exclude test file from the tests selection list
     - Exclude script file from the scripts selection list
@@ -127,10 +128,12 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
 - Inject chain activated in settings, rpc and accounts in hardhat.config
+- Inject custom chain in hardhat networks
 - Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
+    - See all config for activated chain
 - More settings
     - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
     - Add/remove other hardhat plugins (In npm/yarn and in hardhat.config)
@@ -148,10 +151,6 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Remove child_process from inquirer loop
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
-- Inject custom chain in hardhat networks
-- Handle directory for contracts, test and scripts selection
-- Setup chains, RPC and accounts:
-    - See the list of .env config and chains setup in a table
 - More Settings:
     - Handle directory for file exeption
     - Create Github workflows file to run test and coverage test

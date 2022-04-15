@@ -1063,7 +1063,9 @@ const serveSettingSelector = async (env: any) => {
                 choices: [
                     'Add/Remove chains from the chain selection',
                     'Set RPC Url, private key or mnemonic for all or one chain',
-                    'Add a custom chain to the current chain selection'
+                    'Add a custom chain to the current chain selection',
+                    new inquirer.Separator(),
+                    'See all config for activated chain'
                 ]
             }
         ])
@@ -1160,6 +1162,19 @@ const serveSettingSelector = async (env: any) => {
                             await addCustomChain(chainToAdd)
                         }
                     })
+            }
+            if (settingSelected.settings === 'See all config for activated chain') {
+                const getNetworkConfig = buildActivatedChainNetworkConfig()
+                let buildNetworkConfig: any = {}
+                if (getNetworkConfig) {
+                    buildNetworkConfig = `{
+                            "networks": [
+                                {${getNetworkConfig}}
+                            ]
+                        }`
+                    buildNetworkConfig = JSON.parse(buildNetworkConfig)
+                }
+                console.table(buildNetworkConfig.networks[0])
             }
         })
 }
