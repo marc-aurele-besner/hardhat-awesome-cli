@@ -145,6 +145,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 
 ## 🏗️ To do:
 - Start working on documentation
+- Remove child_process from inquirer loop
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - Inject custom chain in hardhat networks

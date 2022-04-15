@@ -13,14 +13,23 @@ import { AwesomeAddressBook } from './AwesomeAddressBook'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
 import MockContractsList from './mockContracts'
 import './type-extensions'
-import { IChain, IExcludedFiles, IFileList, IFileSetting, IHardhatPluginAvailableList, IInquirerListField, IMockContractsList } from './types'
+import {
+    IChain,
+    IContractAddressDeployed,
+    IExcludedFiles,
+    IFileList,
+    IFileSetting,
+    IHardhatPluginAvailableList,
+    IInquirerListField,
+    IMockContractsList
+} from './types'
 
 const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
 const fileContractsAddressDeployed = 'contractsAddressDeployed.json'
 const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.json'
-let contractsAddressDeployed = []
-let contractsAddressDeployedHistory = []
+let contractsAddressDeployed: IContractAddressDeployed[] = []
+let contractsAddressDeployedHistory: IContractAddressDeployed[] = []
 
 const inquirerRunTests: IInquirerListField = { name: 'Run tests' }
 if (!fs.existsSync('test')) inquirerRunTests.disabled = "We can't run tests without a test/ directory"
@@ -38,17 +47,21 @@ let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
 }
 if (fs.existsSync(fileContractsAddressDeployed)) {
     const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
-    contractsAddressDeployed = JSON.parse(rawdata)
-    inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
+    try {
+        contractsAddressDeployed = JSON.parse(rawdata)
+        inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
+    } catch {}
 }
 let inquirerFileContractsAddressDeployedHistory: IInquirerListField | string = {
     name: 'Get all the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
 if (fs.existsSync(fileContractsAddressDeployedHistory)) {
-    const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
-    contractsAddressDeployedHistory = JSON.parse(rawdata)
-    inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
+    try {
+        const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+        contractsAddressDeployedHistory = JSON.parse(rawdata)
+        inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
+    } catch {}
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -327,7 +340,7 @@ const buildMockContract = async (contractName: string) => {
                         }
                         if (contractToMock[0].dependencies && contractToMock[0].dependencies.length > 0) {
                             contractToMock[0].dependencies.forEach(async (dependency: string) => {
-                                await detectPackage(dependency, true, false)
+                                await detectPackage(dependency, true, false, false)
                             })
                             await sleep(5000)
                         }
@@ -785,7 +798,7 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
     await addEnvFileInGitiignore('.npmignore', fileEnvHardhatAwesomeCLI, false)
 }
 
-const detectPackage = async (packageName: string, install: boolean, unistall: boolean) => {
+const detectPackage = async (packageName: string, install: boolean, unistall: boolean, addRemoveInHardhatConfig: boolean) => {
     if (require && require.main) {
         const nodeModulesPath = path.join(path.dirname(require.main.filename), '../../../')
         if (fs.existsSync(nodeModulesPath + packageName)) {
@@ -793,7 +806,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                 console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
                 if (fs.existsSync('package-lock.json')) {
                     const command = 'npm remove ' + packageName
-                    await importPackageHardhatConfigFile(packageName, false, true)
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
                         shell: true
@@ -805,7 +818,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                     await sleep(5000)
                 } else if (fs.existsSync('yarn-lock.json')) {
                     const command = 'yarn remove ' + packageName
-                    await importPackageHardhatConfigFile(packageName, false, true)
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
                         shell: true
@@ -824,7 +837,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                 if (fs.existsSync('package-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
                     const command = 'npm install ' + packageName + ' --save-dev'
-                    await importPackageHardhatConfigFile(packageName, true, false)
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
                         shell: true
@@ -836,7 +849,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                     await sleep(5000)
                 } else if (fs.existsSync('yarn-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
-                    await importPackageHardhatConfigFile(packageName, true, false)
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                     const command = 'yarn add ' + packageName + ' -D'
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
@@ -1224,7 +1237,7 @@ const servePackageInstaller = async () => {
     })
     const hardhatPluginInstalled: string[] = []
     DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false)) {
+        if (await detectPackage(plugin.name, false, false, false)) {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
@@ -1241,7 +1254,7 @@ const servePackageInstaller = async () => {
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, true, false)
+                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, true, false, plugin.addInHardhatConfig)
             })
             await sleep(1500)
         })
@@ -1250,7 +1263,7 @@ const servePackageInstaller = async () => {
 const servePackageUninstaller = async () => {
     const hardhatPluginInstalled: string[] = []
     DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false)) {
+        if (await detectPackage(plugin.name, false, false, false)) {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
@@ -1266,7 +1279,7 @@ const servePackageUninstaller = async () => {
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, false, true)
+                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, false, true, plugin.addInHardhatConfig)
             })
             await sleep(1500)
         })
@@ -1345,7 +1358,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
     )
     const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
     if (inquirerRunTests.name === 'Run tests' && inquirerRunScripts.name === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
-    const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false)
+    const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
     buildMainOptions.push(
         'Setup chains, RPC and accounts',

@@ -115,46 +115,57 @@ export const DefaultChainList: IChain[] = [
 export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
     {
         title: 'Hardhat ethers',
-        name: '@nomiclabs/hardhat-ethers'
+        name: '@nomiclabs/hardhat-ethers',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat waffle',
-        name: '@nomiclabs/hardhat-waffle'
+        name: '@nomiclabs/hardhat-waffle',
+        addInHardhatConfig: true
     },
     {
         title: 'Solidity coverage',
-        name: 'solidity-coverage'
+        name: 'solidity-coverage',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat etherscan',
-        name: '@nomiclabs/hardhat-etherscan '
+        name: '@nomiclabs/hardhat-etherscan ',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat web3',
-        name: '@nomiclabs/hardhat-web3'
+        name: '@nomiclabs/hardhat-web3',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat solhint',
-        name: '@nomiclabs/hardhat-solhint'
+        name: '@nomiclabs/hardhat-solhint',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat gas reporter',
-        name: 'hardhat-gas-reporter'
+        name: 'hardhat-gas-reporter',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat contract sizer',
-        name: 'hardhat-contract-sizer'
+        name: 'hardhat-contract-sizer',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat Ganache',
-        name: '@nomiclabs/hardhat-ganache'
+        name: '@nomiclabs/hardhat-ganache',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat solpp',
-        name: '@nomiclabs/hardhat-solpp'
+        name: '@nomiclabs/hardhat-solpp',
+        addInHardhatConfig: true
     },
     {
         title: 'Hardhat Vyper',
-        name: '@nomiclabs/hardhat-vyper'
+        name: '@nomiclabs/hardhat-vyper',
+        addInHardhatConfig: true
     }
 ]
