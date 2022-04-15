@@ -8,7 +8,7 @@ async function main() {
     const mockERC20 = await MockERC20.deploy();
 
     await mockERC20.deployed();
-    await addressBook.saveContract('MockERC20', mockERC20.address, hre.network.name, deployer.address);
+    await hre.addressBook.saveContract('MockERC20', mockERC20.address, hre.network.name, deployer.address);
 
     console.log('MockERC20 deployed to:', mockERC20.address);
 }

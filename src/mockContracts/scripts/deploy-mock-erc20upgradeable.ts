@@ -1,6 +1,5 @@
 /*
-import { ethers } from 'hardhat'
-import { addressBook } from 'hardhat'
+import { ethers, addressBook, network } from 'hardhat'
 
 async function main() {
     const [deployer] = await hre.ethers.getSigners()
