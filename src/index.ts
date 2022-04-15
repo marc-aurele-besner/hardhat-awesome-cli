@@ -1114,11 +1114,6 @@ const serveSettingSelector = async (env: any) => {
                         },
                         {
                             type: 'input',
-                            name: 'chainName',
-                            message: 'Chain Short-Name (used in the settings file)'
-                        },
-                        {
-                            type: 'input',
                             name: 'chainId',
                             message: 'Chain Id'
                         },
@@ -1134,11 +1129,36 @@ const serveSettingSelector = async (env: any) => {
                             message: 'Chain default RPC Url'
                         }
                     ])
-                    .then(async (chainSelected: IChain) => {
-                        chainSelected.chainName = chainSelected.chainName.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
-                            return index === 0 ? match.toLowerCase() : match.toUpperCase()
-                        })
-                        await addCustomChain(chainSelected)
+                    .then(async (chainSelected: { name: string; chainId: number; gas: string; defaultRpcUrl?: string }) => {
+                        const getNetworkConfig = buildActivatedChainNetworkConfig()
+                        let buildNetworkConfig: any = {}
+                        if (getNetworkConfig) {
+                            buildNetworkConfig = `{
+                                    "networks": [
+                                        {${getNetworkConfig}}
+                                    ]
+                                }`
+                            buildNetworkConfig = JSON.parse(buildNetworkConfig)
+                        }
+                        let chainName: string = ''
+                        if (buildNetworkConfig.networks[0].customChain1 !== undefined && !chainName) chainName = 'customChain1'
+                        if (buildNetworkConfig.networks[0].customChain2 !== undefined && !chainName) chainName = 'customChain2'
+                        if (buildNetworkConfig.networks[0].customChain3 !== undefined && !chainName) chainName = 'customChain3'
+                        if (buildNetworkConfig.networks[0].customChain4 !== undefined && !chainName) chainName = 'customChain4'
+                        if (buildNetworkConfig.networks[0].customChain5 !== undefined && !chainName) chainName = 'customChain5'
+                        if (buildNetworkConfig.networks[0].customChain6 !== undefined && !chainName) chainName = 'customChain6'
+                        if (buildNetworkConfig.networks[0].customChain7 !== undefined && !chainName) chainName = 'customChain7'
+                        if (buildNetworkConfig.networks[0].customChain8 !== undefined && !chainName) chainName = 'customChain8'
+                        if (chainName) {
+                            const chainToAdd: IChain = {
+                                name: chainSelected.name,
+                                chainName,
+                                chainId: chainSelected.chainId,
+                                gas: chainSelected.gas,
+                                defaultRpcUrl: chainSelected.defaultRpcUrl
+                            }
+                            await addCustomChain(chainToAdd)
+                        }
                     })
             }
         })
@@ -1370,7 +1390,8 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         'Get account balance',
         new inquirer.Separator(),
         inquirerFileContractsAddressDeployed,
-        inquirerFileContractsAddressDeployedHistory
+        inquirerFileContractsAddressDeployedHistory,
+        new inquirer.Separator()
     )
     await inquirer
         .prompt([
@@ -1456,6 +1477,15 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
             if (buildNetworkConfig.networks[0].optimism !== undefined) config.networks.optimism = buildNetworkConfig.networks[0].optimism
             if (buildNetworkConfig.networks[0].optimismTestnetKovan !== undefined)
                 config.networks.optimismTestnetKovan = buildNetworkConfig.networks[0].optimismTestnetKovan
+            // Custom networks
+            if (buildNetworkConfig.networks[0].customChain1 !== undefined) config.networks.customChain1 = buildNetworkConfig.networks[0].customChain1
+            if (buildNetworkConfig.networks[0].customChain2 !== undefined) config.networks.customChain2 = buildNetworkConfig.networks[0].customChain2
+            if (buildNetworkConfig.networks[0].customChain3 !== undefined) config.networks.customChain3 = buildNetworkConfig.networks[0].customChain3
+            if (buildNetworkConfig.networks[0].customChain4 !== undefined) config.networks.customChain4 = buildNetworkConfig.networks[0].customChain4
+            if (buildNetworkConfig.networks[0].customChain5 !== undefined) config.networks.customChain5 = buildNetworkConfig.networks[0].customChain5
+            if (buildNetworkConfig.networks[0].customChain6 !== undefined) config.networks.customChain6 = buildNetworkConfig.networks[0].customChain6
+            if (buildNetworkConfig.networks[0].customChain7 !== undefined) config.networks.customChain7 = buildNetworkConfig.networks[0].customChain7
+            if (buildNetworkConfig.networks[0].customChain8 !== undefined) config.networks.customChain8 = buildNetworkConfig.networks[0].customChain8
         }
     }
 })
