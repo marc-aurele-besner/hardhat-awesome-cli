@@ -62,7 +62,9 @@ npm link hardhat-awesome-cli
     - Exclude script file from the scripts selection list
     - Exclude script or contract file from the contract selection list
     - Install/Uninstall other Hardhat plugins
-- Create Mock contracts + (Deployment scripts and tests scripts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
+    - Create Github test workflows (for NPM and/or Yarn and for Hardhat test&coverage and/or Foundry test)
+    - Create Foundry settings, remmapping and test utilities
+- Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     - MockERC20
     - MockERC721
     - MockERC1155
@@ -134,6 +136,8 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Build .env file with rpc url and private key (or mnemonic)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
     - See all config for activated chain
+    - Create Github test workflows
+    - Create Foundry settings, remmapping and test utilities
 - More settings
     - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
     - Add/remove other hardhat plugins (In npm/yarn and in hardhat.config)
@@ -142,6 +146,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
     - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
     - Offer to create test scripts
+    - Offer to create Foundry/Forge test contracts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
@@ -150,6 +155,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 ## 🏗️ To do:
 - Start working on documentation
 - Deployment contract generator
+- Offer to run Forge test on all or single test contracts if forge setting is detected
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - More Settings:
     - Handle directory for file exeption
