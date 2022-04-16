@@ -51,6 +51,7 @@ npm link hardhat-awesome-cli
 - Run scripts (Allow you you to run scripts on specific files in scripts/)
 - Select scripts and tests to run (Allow you to select a script to execute and all or one test to perform afterward)
 - Flatten all your contract or a specific contract
+- Run Forge test on all or single test contracts if forge setting is detected
 - Run coverage tests (Available only if solidity-coverage is installed and available as a task)
 - Setup chains, RPC and accounts 
     - Add/Remove chains from the chain selection
@@ -129,6 +130,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 ## 💪 Done
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
+- Run Forge test on all or single test contracts if forge setting is detected
 - Inject chain activated in settings, rpc and accounts in hardhat.config
 - Inject custom chain in hardhat networks
 - Setup chains, RPC and accounts:
@@ -155,7 +157,6 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 ## 🏗️ To do:
 - Start working on documentation
 - Deployment contract generator
-- Offer to run Forge test on all or single test contracts if forge setting is detected
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - More Settings:
     - Handle directory for file exeption
