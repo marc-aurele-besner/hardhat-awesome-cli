@@ -17,7 +17,6 @@ libraries = []                                                # a list of deploy
 cache = true                                                  # whether to cache builds or not
 force = true                                                  # whether to ignore the cache (clean build)
 evm_version = 'london'                                        # the evm version (by hardfork name)
-#solc_version = '0.8.3'                                       # override for the solc version (setting this ignores auto_detect_solc)
 auto_detect_solc = true                                       # enable auto-detection of the appropriate solc version to use
 optimizer = true                                              # enable or disable the solc optimizer
 optimizer_runs = 200                                          # the number of optimizer runs
