@@ -56,6 +56,7 @@ npm link hardhat-awesome-cli
     - Add/Remove chains from the chain selection
     - Set RPC Url, private key or mnemonic for all or one chain
     - Add a custom chain to the current chain selection (currently these custom chains are not getting injected into hardhat networks)
+    - See all config for activated chain
 - More settings
     - Exclude test file from the tests selection list
     - Exclude script file from the scripts selection list
@@ -127,13 +128,16 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
 - Inject chain activated in settings, rpc and accounts in hardhat.config
+- Inject custom chain in hardhat networks
 - Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
+    - See all config for activated chain
 - More settings
     - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
-    - Add/remove other hardhat plugins
+    - Add/remove other hardhat plugins (In npm/yarn and in hardhat.config)
+    - Create Github workflows file to run test, coverage test and forge test
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version, AdminProxy and TransparentUpgradeableProxy) 
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
     - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
@@ -147,16 +151,9 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - Start working on documentation
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
-- Inject custom chain in hardhat networks
-- Handle directory for contracts, test and scripts selection
-- Setup chains, RPC and accounts:
-    - See the list of .env config and chains setup in a table
 - More Settings:
     - Handle directory for file exeption
-    - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
-    - Add/Remove other hardhat plugins (need to add/remove in hardhat.config)
-        - Need to import the plugin added in hardhat.config and remove them in hardhat config
     - Create a custom command
 - Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
 - Add test for AdminProxy and TransparentUpgradeableProxy

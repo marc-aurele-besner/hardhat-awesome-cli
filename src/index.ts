@@ -10,17 +10,27 @@ import path from 'path'
 import { exit } from 'process'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
+import buildWorkflows from './buildWorkflows'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
 import MockContractsList from './mockContracts'
 import './type-extensions'
-import { IChain, IExcludedFiles, IFileList, IFileSetting, IHardhatPluginAvailableList, IInquirerListField, IMockContractsList } from './types'
+import {
+    IChain,
+    IContractAddressDeployed,
+    IExcludedFiles,
+    IFileList,
+    IFileSetting,
+    IHardhatPluginAvailableList,
+    IInquirerListField,
+    IMockContractsList
+} from './types'
 
 const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
 const fileContractsAddressDeployed = 'contractsAddressDeployed.json'
 const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.json'
-let contractsAddressDeployed = []
-let contractsAddressDeployedHistory = []
+let contractsAddressDeployed: IContractAddressDeployed[] = []
+let contractsAddressDeployedHistory: IContractAddressDeployed[] = []
 
 const inquirerRunTests: IInquirerListField = { name: 'Run tests' }
 if (!fs.existsSync('test')) inquirerRunTests.disabled = "We can't run tests without a test/ directory"
@@ -38,17 +48,21 @@ let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
 }
 if (fs.existsSync(fileContractsAddressDeployed)) {
     const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
-    contractsAddressDeployed = JSON.parse(rawdata)
-    inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
+    try {
+        contractsAddressDeployed = JSON.parse(rawdata)
+        inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
+    } catch {}
 }
 let inquirerFileContractsAddressDeployedHistory: IInquirerListField | string = {
     name: 'Get all the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
 if (fs.existsSync(fileContractsAddressDeployedHistory)) {
-    const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
-    contractsAddressDeployedHistory = JSON.parse(rawdata)
-    inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
+    try {
+        const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+        contractsAddressDeployedHistory = JSON.parse(rawdata)
+        inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
+    } catch {}
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -327,7 +341,7 @@ const buildMockContract = async (contractName: string) => {
                         }
                         if (contractToMock[0].dependencies && contractToMock[0].dependencies.length > 0) {
                             contractToMock[0].dependencies.forEach(async (dependency: string) => {
-                                await detectPackage(dependency, true, false)
+                                await detectPackage(dependency, true, false, false)
                             })
                             await sleep(5000)
                         }
@@ -593,104 +607,109 @@ const importPackageHardhatConfigFile = async (packageName: string, addToConfig: 
         const rawdata: any = fs.readFileSync(hardhatConfigFilePath)
         const hardhatConfigFile = rawdata.toString()
         if (
-            !hardhatConfigFile.includes(`require("${packageName}");`) ||
-            !hardhatConfigFile.includes(`require('${packageName}');`) ||
-            !hardhatConfigFile.includes(`require("${packageName}")`) ||
-            !hardhatConfigFile.includes(`require('${packageName}')`) ||
-            !hardhatConfigFile.includes(`import "${packageName}";`) ||
-            !hardhatConfigFile.includes(`import '${packageName}';`) ||
-            !hardhatConfigFile.includes(`import "${packageName}"`) ||
-            !hardhatConfigFile.includes(`import '${packageName}'`)
+            addToConfig &&
+            hardhatConfigFile.search(`require("${packageName}");`) === -1 &&
+            hardhatConfigFile.search(`require('${packageName}');`) === -1 &&
+            hardhatConfigFile.search(`require("${packageName}")`) === -1 &&
+            hardhatConfigFile.search(`require('${packageName}')`) === -1 &&
+            hardhatConfigFile.search(`import "${packageName}";`) === -1 &&
+            hardhatConfigFile.search(`import '${packageName}';`) === -1 &&
+            hardhatConfigFile.search(`import "${packageName}"`) === -1 &&
+            hardhatConfigFile.search(`import '${packageName}'`) === -1
         ) {
-            if (addToConfig) {
-                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' to your ' + hardhatConfigFilePath + ' file')
-                let newHardHatConfig: string = ''
-                if (hardhatConfigFile.includes(`require("hardhat-awesome-cli");`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `require("hardhat-awesome-cli");`,
-                        `require("hardhat-awesome-cli");
+            let newHardHatConfig: string = ''
+            if (hardhatConfigFile.includes(`require("hardhat-awesome-cli");`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `require("hardhat-awesome-cli");`,
+                    `require("hardhat-awesome-cli");
 require("${packageName}");`
-                    )
-                }
-                if (hardhatConfigFile.includes(`require('hardhat-awesome-cli');`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `require('hardhat-awesome-cli');`,
-                        `require('hardhat-awesome-cli');
+                )
+            } else if (hardhatConfigFile.includes(`require('hardhat-awesome-cli');`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `require('hardhat-awesome-cli');`,
+                    `require('hardhat-awesome-cli');
 require('${packageName}');`
-                    )
-                }
-                if (hardhatConfigFile.includes(`require("hardhat-awesome-cli")`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `require("hardhat-awesome-cli")`,
-                        `require("hardhat-awesome-cli")
+                )
+            } else if (hardhatConfigFile.includes(`require("hardhat-awesome-cli")`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `require("hardhat-awesome-cli")`,
+                    `require("hardhat-awesome-cli")
 require("${packageName}")`
-                    )
-                }
-                if (hardhatConfigFile.includes(`require('hardhat-awesome-cli')`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `require('hardhat-awesome-cli')`,
-                        `require('hardhat-awesome-cli')
+                )
+            } else if (hardhatConfigFile.includes(`require('hardhat-awesome-cli')`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `require('hardhat-awesome-cli')`,
+                    `require('hardhat-awesome-cli')
 require('${packageName}')`
-                    )
-                }
-                if (hardhatConfigFile.includes(`import "hardhat-awesome-cli";`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `import "hardhat-awesome-cli";`,
-                        `import "hardhat-awesome-cli";
+                )
+            } else if (hardhatConfigFile.includes(`import "hardhat-awesome-cli";`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `import "hardhat-awesome-cli";`,
+                    `import "hardhat-awesome-cli";
 import "${packageName}";`
-                    )
-                }
-                if (hardhatConfigFile.includes(`import 'hardhat-awesome-cli';`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `import 'hardhat-awesome-cli';')`,
-                        `import 'hardhat-awesome-cli';
+                )
+            } else if (hardhatConfigFile.includes(`import 'hardhat-awesome-cli';`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `import 'hardhat-awesome-cli';')`,
+                    `import 'hardhat-awesome-cli';
 import '${packageName}';`
-                    )
-                }
-                if (hardhatConfigFile.includes(`import "hardhat-awesome-cli"`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `import "hardhat-awesome-cli"`,
-                        `import "hardhat-awesome-cli"
+                )
+            } else if (hardhatConfigFile.includes(`import "hardhat-awesome-cli"`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `import "hardhat-awesome-cli"`,
+                    `import "hardhat-awesome-cli"
 import "${packageName}"`
-                    )
-                }
-                if (hardhatConfigFile.includes(`import 'hardhat-awesome-cli'`)) {
-                    newHardHatConfig = rawdata.replace(
-                        `import 'hardhat-awesome-cli'`,
-                        `import 'hardhat-awesome-cli'
+                )
+            } else if (hardhatConfigFile.includes(`import 'hardhat-awesome-cli'`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(
+                    `import 'hardhat-awesome-cli'`,
+                    `import 'hardhat-awesome-cli'
 import '${packageName}'`
-                    )
-                }
-                fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
-            } else if (removeFromConfig) {
-                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' to your ' + hardhatConfigFilePath + ' file')
-                let newHardHatConfig: string = ''
-                if (hardhatConfigFile.includes(`require("${packageName}");`)) {
-                    newHardHatConfig = rawdata.replace(`require("${packageName}");`, '')
-                }
-                if (hardhatConfigFile.includes(`require('${packageName}');`)) {
-                    newHardHatConfig = rawdata.replace(`require('${packageName}');`, '')
-                }
-                if (hardhatConfigFile.includes(`require("${packageName}")`)) {
-                    newHardHatConfig = rawdata.replace(`require("${packageName}")`, '')
-                }
-                if (hardhatConfigFile.includes(`require('${packageName}')`)) {
-                    newHardHatConfig = rawdata.replace(`require('${packageName}')`, '')
-                }
-                if (hardhatConfigFile.includes(`import "${packageName}";`)) {
-                    newHardHatConfig = rawdata.replace(`import "${packageName}";`, '')
-                }
-                if (hardhatConfigFile.includes(`import '${packageName}';`)) {
-                    newHardHatConfig = rawdata.replace(`import '${packageName}';`, '')
-                }
-                if (hardhatConfigFile.includes(`import "${packageName}"`)) {
-                    newHardHatConfig = rawdata.replace(`import "${packageName}"`, '')
-                }
-                if (hardhatConfigFile.includes(`import '${packageName}'`)) {
-                    newHardHatConfig = rawdata.replace(`import '${packageName}'`, '')
-                }
-                fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
+                )
+            } else {
+                newHardHatConfig = hardhatConfigFile
+                console.log('\x1b[34m%s\x1b[0m', 'Package ' + packageName + ' not imported in ' + hardhatConfigFilePath + ' file')
             }
+            fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
+        } else if (removeFromConfig) {
+            let newHardHatConfig: string = ''
+            if (hardhatConfigFile.search(`require("${packageName}");`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`require("${packageName}");`, '')
+            } else if (hardhatConfigFile.search(`require('${packageName}');`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`require('${packageName}');`, '')
+            } else if (hardhatConfigFile.search(`require("${packageName}")`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`require("${packageName}")`, '')
+            } else if (hardhatConfigFile.search(`require('${packageName}')`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`require('${packageName}')`, '')
+            } else if (hardhatConfigFile.search(`import "${packageName}";`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`import "${packageName}";`, '')
+            } else if (hardhatConfigFile.search(`import '${packageName}';`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`import '${packageName}';`, '')
+            } else if (hardhatConfigFile.search(`import "${packageName}"`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`import "${packageName}"`, '')
+            } else if (hardhatConfigFile.search(`import '${packageName}'`)) {
+                console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile.replace(`import '${packageName}'`, '')
+            } else {
+                console.log('\x1b[34m%s\x1b[0m', 'Package ' + packageName + ' not found in ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile
+            }
+            fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
         }
     }
 }
@@ -782,21 +801,37 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
     await addEnvFileInGitiignore('.npmignore', fileEnvHardhatAwesomeCLI, false)
 }
 
-const detectPackage = async (packageName: string, install: boolean, unistall: boolean) => {
+const detectPackage = async (packageName: string, install: boolean, unistall: boolean, addRemoveInHardhatConfig: boolean) => {
     if (require && require.main) {
         const nodeModulesPath = path.join(path.dirname(require.main.filename), '../../../')
         if (fs.existsSync(nodeModulesPath + packageName)) {
             if (unistall) {
                 console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
-                const command = 'npm remove ' + packageName
-                const runSpawn = spawn(command, {
-                    stdio: 'inherit',
-                    shell: true
-                })
-                runSpawn.on('exit', (code) => {
-                    console.log('\x1b[32m%s\x1b[0m', 'Package uninstalled!')
-                    exit()
-                })
+                if (fs.existsSync('package-lock.json')) {
+                    const command = 'npm remove ' + packageName
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+                    const runSpawn = spawn(command, {
+                        stdio: 'inherit',
+                        shell: true
+                    })
+                    runSpawn.on('exit', (code) => {
+                        console.log('\x1b[32m%s\x1b[0m', 'Package uninstalled!')
+                        exit()
+                    })
+                    await sleep(5000)
+                } else if (fs.existsSync('yarn-lock.json')) {
+                    const command = 'yarn remove ' + packageName
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+                    const runSpawn = spawn(command, {
+                        stdio: 'inherit',
+                        shell: true
+                    })
+                    runSpawn.on('exit', (code) => {
+                        console.log('\x1b[32m%s\x1b[0m', 'Package uninstalled!')
+                        exit()
+                    })
+                    await sleep(5000)
+                }
             }
             return true
         } else {
@@ -805,6 +840,7 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                 if (fs.existsSync('package-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
                     const command = 'npm install ' + packageName + ' --save-dev'
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
                         shell: true
@@ -814,10 +850,9 @@ const detectPackage = async (packageName: string, install: boolean, unistall: bo
                         exit()
                     })
                     await sleep(5000)
-                    await importPackageHardhatConfigFile(packageName, true, false)
                 } else if (fs.existsSync('yarn-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
-                    await importPackageHardhatConfigFile(packageName, false, true)
+                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                     const command = 'yarn add ' + packageName + ' -D'
                     const runSpawn = spawn(command, {
                         stdio: 'inherit',
@@ -868,15 +903,16 @@ const serveNetworkSelector = async (env: any, command: string, firstCommand: str
                     commandFlags = ' --network ' + chain.chainName
                 }
             })
-            if (command) {
-                await runCommand(command, firstCommand, commandFlags)
-            } else if (GetAccountBalance) {
+            if (GetAccountBalance) {
                 await GetAccountBalance(env)
             } else if (ServeEnvBuilder) {
                 await ServeEnvBuilder(env, networkSelected.network)
             }
             await sleep(5000)
         })
+    if (command) {
+        await runCommand(command, firstCommand, commandFlags)
+    }
 }
 
 const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
@@ -959,6 +995,7 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
             contractsFilesList.push(file.name)
         })
         if (contractsFilesList.length > 0) {
+            let contractFlattenName: string = ''
             await inquirer
                 .prompt([
                     {
@@ -972,7 +1009,6 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                     if (!fs.existsSync('contractsFlatten')) {
                         fs.mkdirSync('contractsFlatten')
                     }
-                    let contractFlattenName: string = ''
                     if (contractsSelected.flatten !== 'Flatten all contracts') {
                         contractsFilesObject.forEach((file: IFileList) => {
                             if (file.name === contractsSelected.flatten) {
@@ -985,9 +1021,11 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                     } else {
                         contractFlattenName = 'AllContractsFlatten.sol'
                     }
-                    await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
-                    await sleep(3000)
                 })
+            if (command) {
+                await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
+                await sleep(3000)
+            }
         }
     }
 }
@@ -1031,7 +1069,9 @@ const serveSettingSelector = async (env: any) => {
                 choices: [
                     'Add/Remove chains from the chain selection',
                     'Set RPC Url, private key or mnemonic for all or one chain',
-                    'Add a custom chain to the current chain selection'
+                    'Add a custom chain to the current chain selection',
+                    new inquirer.Separator(),
+                    'See all config for activated chain'
                 ]
             }
         ])
@@ -1082,11 +1122,6 @@ const serveSettingSelector = async (env: any) => {
                         },
                         {
                             type: 'input',
-                            name: 'chainName',
-                            message: 'Chain Short-Name (used in the settings file)'
-                        },
-                        {
-                            type: 'input',
                             name: 'chainId',
                             message: 'Chain Id'
                         },
@@ -1102,12 +1137,50 @@ const serveSettingSelector = async (env: any) => {
                             message: 'Chain default RPC Url'
                         }
                     ])
-                    .then(async (chainSelected: IChain) => {
-                        chainSelected.chainName = chainSelected.chainName.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
-                            return index === 0 ? match.toLowerCase() : match.toUpperCase()
-                        })
-                        await addCustomChain(chainSelected)
+                    .then(async (chainSelected: { name: string; chainId: number; gas: string; defaultRpcUrl?: string }) => {
+                        const getNetworkConfig = buildActivatedChainNetworkConfig()
+                        let buildNetworkConfig: any = {}
+                        if (getNetworkConfig) {
+                            buildNetworkConfig = `{
+                                    "networks": [
+                                        {${getNetworkConfig}}
+                                    ]
+                                }`
+                            buildNetworkConfig = JSON.parse(buildNetworkConfig)
+                        }
+                        let chainName: string = ''
+                        if (buildNetworkConfig.networks[0].customChain1 !== undefined && !chainName) chainName = 'customChain1'
+                        if (buildNetworkConfig.networks[0].customChain2 !== undefined && !chainName) chainName = 'customChain2'
+                        if (buildNetworkConfig.networks[0].customChain3 !== undefined && !chainName) chainName = 'customChain3'
+                        if (buildNetworkConfig.networks[0].customChain4 !== undefined && !chainName) chainName = 'customChain4'
+                        if (buildNetworkConfig.networks[0].customChain5 !== undefined && !chainName) chainName = 'customChain5'
+                        if (buildNetworkConfig.networks[0].customChain6 !== undefined && !chainName) chainName = 'customChain6'
+                        if (buildNetworkConfig.networks[0].customChain7 !== undefined && !chainName) chainName = 'customChain7'
+                        if (buildNetworkConfig.networks[0].customChain8 !== undefined && !chainName) chainName = 'customChain8'
+                        if (chainName) {
+                            const chainToAdd: IChain = {
+                                name: chainSelected.name,
+                                chainName,
+                                chainId: chainSelected.chainId,
+                                gas: chainSelected.gas,
+                                defaultRpcUrl: chainSelected.defaultRpcUrl
+                            }
+                            await addCustomChain(chainToAdd)
+                        }
                     })
+            }
+            if (settingSelected.settings === 'See all config for activated chain') {
+                const getNetworkConfig = buildActivatedChainNetworkConfig()
+                let buildNetworkConfig: any = {}
+                if (getNetworkConfig) {
+                    buildNetworkConfig = `{
+                            "networks": [
+                                {${getNetworkConfig}}
+                            ]
+                        }`
+                    buildNetworkConfig = JSON.parse(buildNetworkConfig)
+                }
+                console.table(buildNetworkConfig.networks[0])
             }
         })
 }
@@ -1163,6 +1236,29 @@ const serveExcludeFileSelector = async (option: string) => {
         })
 }
 
+const serveWorkflowBuilder = async () => {
+    let workflowToAdd: string = ''
+    await inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'workflowType',
+                message: 'Select a workflow to create',
+                choices: [
+                    'NPM - Hardhat - Test & Coverage',
+                    'NPM - Foundry - Forge Test',
+                    new inquirer.Separator(),
+                    'Yarn - Hardhat - Test & Coverage',
+                    'Yarn - Foundry - Forge Test'
+                ]
+            }
+        ])
+        .then(async (workflowSelected: { workflowType: string }) => {
+            workflowToAdd = workflowSelected.workflowType
+        })
+    if (workflowToAdd) await buildWorkflows(workflowToAdd)
+}
+
 const serveMoreSettingSelector = async () => {
     await inquirer
         .prompt([
@@ -1176,7 +1272,10 @@ const serveMoreSettingSelector = async () => {
                     'Exclude contract file from the contract selection list',
                     new inquirer.Separator(),
                     'Add other Hardhat plugins',
-                    'Remove other Hardhat plugins'
+                    'Remove other Hardhat plugins',
+                    new inquirer.Separator(),
+                    'Create Github test workflows',
+                    new inquirer.Separator()
                 ]
             }
         ])
@@ -1196,6 +1295,9 @@ const serveMoreSettingSelector = async () => {
             if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') {
                 await servePackageUninstaller()
             }
+            if (moreSettingsSelected.moreSettings === 'Create Github test workflows') {
+                await serveWorkflowBuilder()
+            }
         })
 }
 
@@ -1205,72 +1307,61 @@ const servePackageInstaller = async () => {
     })
     const hardhatPluginInstalled: string[] = []
     DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false)) {
+        if (await detectPackage(plugin.name, false, false, false)) {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
     await sleep(500)
+    const hardhatPluginToNotInclude = new Set(hardhatPluginInstalled)
+    const hardhatPluginToInstall: string[] = hardhatPluginAvailableList.filter((plugin: string) => !hardhatPluginToNotInclude.has(plugin))
+    let packageToInstall: IHardhatPluginAvailableList | undefined
     await inquirer
         .prompt([
             {
-                type: 'checkbox',
+                type: 'list',
                 name: 'plugins',
                 message: 'Select a plugin to install',
-                choices: hardhatPluginAvailableList,
-                default: hardhatPluginInstalled
+                choices: hardhatPluginToInstall
             }
         ])
-        .then(async (pluginssSelected: { plugins: string[] }) => {
-            hardhatPluginAvailableList.map(async (plugin: string) => {
-                if (pluginssSelected.plugins.includes(plugin)) {
-                    let pluginName
-                    if (DefaultHardhatPluginsList.length > 0) {
-                        if (DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)) {
-                            pluginName = DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)?.name
-                            if (pluginName) {
-                                // await detectPackage(pluginName, true, false)
-                            }
-                        }
-                    }
-                }
+        .then(async (pluginssSelected: { plugins: string }) => {
+            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
+                if (plugin.title === pluginssSelected.plugins) packageToInstall = plugin
             })
-            await sleep(1000)
+            await sleep(1500)
         })
+    if (packageToInstall !== undefined) {
+        await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
+        await sleep(5000)
+    }
 }
 
 const servePackageUninstaller = async () => {
     const hardhatPluginInstalled: string[] = []
     DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false)) {
+        if (await detectPackage(plugin.name, false, false, false)) {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
-    await sleep(500)
+    await sleep(1000)
+    let packageToUninstall: IHardhatPluginAvailableList | undefined
     await inquirer
         .prompt([
             {
-                type: 'checkbox',
+                type: 'list',
                 name: 'plugins',
                 message: 'Select a plugin to install',
                 choices: hardhatPluginInstalled
             }
         ])
-        .then(async (pluginssSelected: { plugins: string[] }) => {
-            hardhatPluginInstalled.map(async (plugin: string) => {
-                if (pluginssSelected.plugins.includes(plugin)) {
-                    let pluginName
-                    if (DefaultHardhatPluginsList.length > 0) {
-                        if (DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)) {
-                            pluginName = DefaultHardhatPluginsList.find((p: IHardhatPluginAvailableList) => p.title === plugin)?.name
-                            if (pluginName) {
-                                await detectPackage(pluginName, false, true)
-                            }
-                        }
-                    }
-                }
+        .then(async (pluginssSelected: { plugins: string }) => {
+            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
+                if (plugin.title === pluginssSelected.plugins) packageToUninstall = plugin
             })
+            await sleep(1500)
         })
-    await sleep(1000)
+    if (packageToUninstall !== undefined) await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)
+    await sleep(5000)
 }
 
 const serveMockContractCreatorSelector = async () => {
@@ -1278,6 +1369,7 @@ const serveMockContractCreatorSelector = async () => {
         const mockContractsList: string[] = MockContractsList.map((file: IMockContractsList) => {
             return file.name
         })
+        let mockContractToAdd: { mockContract: string; mockDeploymentScript: string; mockTestScript: string } | undefined
         await inquirer
             .prompt([
                 {
@@ -1300,14 +1392,17 @@ const serveMockContractCreatorSelector = async () => {
                 }
             ])
             .then(async (mockContractSelected: { mockContract: string; mockDeploymentScript: string; mockTestScript: string }) => {
-                await buildMockContract(mockContractSelected.mockContract)
-                if (mockContractSelected.mockDeploymentScript === 'yes') {
-                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'deployment')
-                }
-                if (mockContractSelected.mockTestScript === 'yes') {
-                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'test')
-                }
+                mockContractToAdd = mockContractSelected
             })
+        if (mockContractToAdd !== undefined) {
+            await buildMockContract(mockContractToAdd.mockContract)
+            if (mockContractToAdd.mockDeploymentScript === 'yes') {
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'deployment')
+            }
+            if (mockContractToAdd.mockTestScript === 'yes') {
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
+            }
+        }
     }
 }
 
@@ -1346,7 +1441,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
     )
     const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
     if (inquirerRunTests.name === 'Run tests' && inquirerRunScripts.name === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
-    const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false)
+    const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
     buildMainOptions.push(
         'Setup chains, RPC and accounts',
@@ -1358,7 +1453,8 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         'Get account balance',
         new inquirer.Separator(),
         inquirerFileContractsAddressDeployed,
-        inquirerFileContractsAddressDeployedHistory
+        inquirerFileContractsAddressDeployedHistory,
+        new inquirer.Separator()
     )
     await inquirer
         .prompt([
@@ -1444,6 +1540,15 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
             if (buildNetworkConfig.networks[0].optimism !== undefined) config.networks.optimism = buildNetworkConfig.networks[0].optimism
             if (buildNetworkConfig.networks[0].optimismTestnetKovan !== undefined)
                 config.networks.optimismTestnetKovan = buildNetworkConfig.networks[0].optimismTestnetKovan
+            // Custom networks
+            if (buildNetworkConfig.networks[0].customChain1 !== undefined) config.networks.customChain1 = buildNetworkConfig.networks[0].customChain1
+            if (buildNetworkConfig.networks[0].customChain2 !== undefined) config.networks.customChain2 = buildNetworkConfig.networks[0].customChain2
+            if (buildNetworkConfig.networks[0].customChain3 !== undefined) config.networks.customChain3 = buildNetworkConfig.networks[0].customChain3
+            if (buildNetworkConfig.networks[0].customChain4 !== undefined) config.networks.customChain4 = buildNetworkConfig.networks[0].customChain4
+            if (buildNetworkConfig.networks[0].customChain5 !== undefined) config.networks.customChain5 = buildNetworkConfig.networks[0].customChain5
+            if (buildNetworkConfig.networks[0].customChain6 !== undefined) config.networks.customChain6 = buildNetworkConfig.networks[0].customChain6
+            if (buildNetworkConfig.networks[0].customChain7 !== undefined) config.networks.customChain7 = buildNetworkConfig.networks[0].customChain7
+            if (buildNetworkConfig.networks[0].customChain8 !== undefined) config.networks.customChain8 = buildNetworkConfig.networks[0].customChain8
         }
     }
 })

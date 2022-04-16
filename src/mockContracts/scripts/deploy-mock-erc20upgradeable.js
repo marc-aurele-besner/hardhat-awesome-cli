@@ -1,6 +1,5 @@
 /*
-const hre = require('hardhat')
-const { addressBook } = require('hardhat')
+const hre = require('hardhat');
 
 async function main() {
     const [deployer] = await hre.ethers.getSigners();
@@ -9,7 +8,7 @@ async function main() {
     const mockERC20Upgradeable = await MockERC20Upgradeable.deploy();
 
     await mockERC20Upgradeable.deployed();
-    await addressBook.saveContract('MockERC20Upgradeable', mockERC20Upgradeable.address, hre.network.name, deployer.address);
+    await hre.addressBook.saveContract('MockERC20Upgradeable', mockERC20Upgradeable.address, hre.network.name, deployer.address);
     await mockERC20Upgradeable.initialize('MockERC20Upgradeable', 'MOCK');
 
     console.log('MockERC20Upgradeable deployed to:', mockERC20Upgradeable.address);

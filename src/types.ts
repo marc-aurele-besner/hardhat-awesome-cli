@@ -11,6 +11,7 @@ export interface IChain {
 export interface IHardhatPluginAvailableList {
     title: string
     name: string
+    addInHardhatConfig: boolean
 }
 
 export interface IFileList {
@@ -43,4 +44,12 @@ export interface IFileSetting {
 export interface IInquirerListField {
     name: string
     disabled?: string
+}
+
+export interface IContractAddressDeployed {
+    name: string
+    address: string
+    network: string
+    deployer: string
+    deploymentDate: Date
 }
