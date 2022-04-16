@@ -38,6 +38,7 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptTs: 'scripts/deploy-mock-erc20upgradeable.ts',
         testScriptJs: 'test/test-mock-erc20upgradeable.js',
         testScriptTs: 'test/test-mock-erc20upgradeable.ts',
+        testContractFoundry: 'testForge/MockERC20Upgradeable.t.sol',
         upgradeable: true
     },
     {

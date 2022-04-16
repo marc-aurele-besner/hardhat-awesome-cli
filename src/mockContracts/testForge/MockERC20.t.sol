@@ -41,12 +41,12 @@ contract MockERC20Test is DSTest {
         vm.assume(to_ != address(0));
         vm.assume(amount_ > 0);
 
-        assertEq(mockERC20.balanceOf(address(this)), 0);
+        assertEq(mockERC20.balanceOf(to_), 0);
         assertEq(mockERC20.totalSupply(), 0);
 
         mockERC20.mint(to_, amount_);
 
-        assertEq(mockERC20.balanceOf(address(this)), amount_);
+        assertEq(mockERC20.balanceOf(to_), amount_);
         assertEq(mockERC20.totalSupply(), amount_);
     }
 
@@ -57,17 +57,18 @@ contract MockERC20Test is DSTest {
         vm.assume(to_ != address(0));
         vm.assume(amount_ > 0);
 
-        assertEq(mockERC20.balanceOf(address(this)), 0);
+        assertEq(mockERC20.balanceOf(to_), 0);
         assertEq(mockERC20.totalSupply(), 0);
 
         mockERC20.mint(to_, amount_);
 
+        assertEq(mockERC20.balanceOf(to_), amount_);
+
         vm.prank(to_);
-        vm.roll(block.number + 1);
 
         mockERC20.burn(amount_);
 
-        assertEq(mockERC20.balanceOf(address(this)), amount_);
-        assertEq(mockERC20.totalSupply(), amount_);
+        assertEq(mockERC20.balanceOf(to_), 0);
+        assertEq(mockERC20.totalSupply(), 0);
     }
 }
