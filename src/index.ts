@@ -39,9 +39,13 @@ const inquirerRunScripts: IInquirerListField = { name: 'Run scripts' }
 if (!fs.existsSync('scripts')) inquirerRunScripts.disabled = "We can't run scripts without a scripts/ directory"
 const inquirerFlattenContracts: IInquirerListField = { name: 'Flatten contract' }
 const inquirerRunMockContractCreator: IInquirerListField = { name: 'Create Mock contracts' }
+let inquirerRunFoundryTest: string = ''
 if (!fs.existsSync('contracts')) {
     inquirerFlattenContracts.disabled = "We can't flatten contracts without a contracts/ directory"
     inquirerRunMockContractCreator.disabled = "We can't create Mock contracts without a contracts/ directory"
+}
+if (fs.existsSync('contracts/test') && fs.existsSync('foundry.toml')) {
+    inquirerRunFoundryTest = 'Run Foundry Forge tests'
 }
 let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
     name: 'Get the previously deployed contracts address',
@@ -260,6 +264,32 @@ const buildAllContractsList = async () => {
         })
     }
     return scontractsList
+}
+
+const buildAllForgeTestsList = async () => {
+    const testList: IFileList[] = []
+    if (fs.existsSync('test')) {
+        testList.push({
+            name: 'All tests',
+            type: 'all',
+            filePath: ''
+        })
+        const files = fs.readdirSync('contracts/test')
+        files.map((file) => {
+            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            const words = fileName.split(' ')
+            for (let i = 0; i < words.length; i++) {
+                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
+            }
+            fileName = words.join(' ')
+            testList.push({
+                name: fileName,
+                type: 'file',
+                filePath: file
+            })
+        })
+    }
+    return testList
 }
 
 const buildTestsList = async () => {
@@ -1043,6 +1073,38 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
     }
 }
 
+const serveFoundryTestSelector = async (env: any, command: string) => {
+    const testFilesObject = await buildAllForgeTestsList()
+    let testFilesList: string[] = []
+    if (testFilesObject) {
+        testFilesList = testFilesObject.map((file: IFileList) => {
+            return file.name
+        })
+        if (testFilesList.length > 0) {
+            await inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'test',
+                        message: 'Select a forge test',
+                        choices: testFilesList
+                    }
+                ])
+                .then(async (testSelected: { test: string }) => {
+                    testFilesObject.forEach((file: IFileList) => {
+                        if (file.name === testSelected.test) {
+                            if (file.type === 'file') {
+                                command = command + ' --match-path contracts/test/' + file.filePath
+                            }
+                        }
+                    })
+                    await runCommand(command, '', '')
+                    await sleep(5000)
+                })
+        }
+    }
+}
+
 const serveEnvBuilder = async (env: any, chainSelected: string) => {
     const ActivatedChainList = await buildActivatedChainList()
     if (ActivatedChainList.find((chain: IChain) => chain.name === chainSelected)) {
@@ -1484,6 +1546,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
 `
     )
     const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
+    if (inquirerRunFoundryTest) buildMainOptions.push(inquirerRunFoundryTest)
     if (inquirerRunTests.name === 'Run tests' && inquirerRunScripts.name === 'Run scripts') buildMainOptions.push('Select scripts and tests to run')
     const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
@@ -1522,6 +1585,10 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             if (answers.action === 'Flatten contracts') {
                 command = 'npx hardhat flatten'
                 await serveFlattenContractsSelector(env, command)
+            }
+            if (answers.action === 'Run Foundry Forge tests') {
+                command = 'forge test'
+                await serveFoundryTestSelector(env, command)
             }
             if (answers.action === 'Select scripts and tests to run') {
                 await serveScriptSelector(env, serveTestSelector)
