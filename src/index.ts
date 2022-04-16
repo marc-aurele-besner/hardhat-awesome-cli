@@ -10,6 +10,7 @@ import path from 'path'
 import { exit } from 'process'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
+import buildFoundrySetting from './buildFoundrySetting'
 import buildWorkflows from './buildWorkflows'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
 import MockContractsList from './mockContracts'
@@ -359,8 +360,10 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
             if (fs.existsSync('contracts')) {
                 if (MockContractsList) {
                     let deploymentScriptOrTestPath: string = ''
+                    let scriptOrTestDir: string = ''
                     const contractToMock: IMockContractsList[] = MockContractsList.filter((contract) => contract.name === contractName)
                     if (contractToMock && type === 'deployment') {
+                        scriptOrTestDir = 'scripts'
                         if (fs.existsSync('hardhat.config.js')) {
                             if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
                         } else if (fs.existsSync('hardhat.config.ts')) {
@@ -369,6 +372,7 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                         }
                     }
                     if (contractToMock && type === 'test') {
+                        scriptOrTestDir = 'test'
                         if (fs.existsSync('hardhat.config.js')) {
                             if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
                         } else if (fs.existsSync('hardhat.config.ts')) {
@@ -376,16 +380,21 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                             else if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
                         }
                     }
+                    if (contractToMock && type === 'testForge') {
+                        scriptOrTestDir = 'contracts/test'
+                        if (contractToMock[0].testContractFoundry !== undefined) deploymentScriptOrTestPath = contractToMock[0].testContractFoundry
+                    }
                     if (contractToMock && deploymentScriptOrTestPath) {
                         if (fs.existsSync(deploymentScriptOrTestPath)) {
-                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' scripts already exists')
+                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' ' + scriptOrTestDir + ' already exists')
                         } else {
                             if (fs.existsSync(deploymentScriptOrTestPath)) {
-                                console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' script')
+                                console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' ' + scriptOrTestDir)
                             } else {
-                                console.log('\x1b[32m%s\x1b[0m', 'Creating ' + type + ' for ', contractName, ' in scripts/')
+                                console.log('\x1b[32m%s\x1b[0m', 'Creating ' + type + ' for ', contractName, ' in ' + scriptOrTestDir + '/')
                                 const rawdata: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
-                                const scriptsTestRawdataModify = rawdata.toString().slice(2).replace(/\*\//g, '').trim()
+                                let scriptsTestRawdataModify = rawdata
+                                if (type !== 'testForge') scriptsTestRawdataModify = rawdata.toString().slice(2).replace(/\*\//g, '').trim()
                                 await sleep(500)
                                 fs.writeFileSync(deploymentScriptOrTestPath, `${scriptsTestRawdataModify}`)
                             }
@@ -1275,6 +1284,7 @@ const serveMoreSettingSelector = async () => {
                     'Remove other Hardhat plugins',
                     new inquirer.Separator(),
                     'Create Github test workflows',
+                    'Create Foundry settings, remmapping and test utilities',
                     new inquirer.Separator()
                 ]
             }
@@ -1297,6 +1307,9 @@ const serveMoreSettingSelector = async () => {
             }
             if (moreSettingsSelected.moreSettings === 'Create Github test workflows') {
                 await serveWorkflowBuilder()
+            }
+            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remmapping and test utilities') {
+                await buildFoundrySetting()
             }
         })
 }
@@ -1369,7 +1382,8 @@ const serveMockContractCreatorSelector = async () => {
         const mockContractsList: string[] = MockContractsList.map((file: IMockContractsList) => {
             return file.name
         })
-        let mockContractToAdd: { mockContract: string; mockDeploymentScript: string; mockTestScript: string } | undefined
+        let mockContractFirstSelected: string = ''
+        let mockContractToAdd: { mockContract: string; mockDeploymentScript: string; mockTestScript: string; mockTestContractFoundry: string } | undefined
         await inquirer
             .prompt([
                 {
@@ -1377,23 +1391,46 @@ const serveMockContractCreatorSelector = async () => {
                     name: 'mockContract',
                     message: 'Select a mock contract',
                     choices: mockContractsList
-                },
-                {
+                }
+            ])
+            .then(async (mockContractSelected: { mockContract: string }) => {
+                mockContractFirstSelected = mockContractSelected.mockContract
+            })
+        if (mockContractFirstSelected) {
+            const mockContractFirstSelectedDetail = MockContractsList.filter((file: IMockContractsList) => file.name === mockContractFirstSelected)[0]
+            const mockContractDetailSelector = []
+            if (mockContractFirstSelectedDetail.deploymentScriptJs !== undefined || mockContractFirstSelectedDetail.deploymentScriptTs !== undefined)
+                mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockDeploymentScript',
                     message: 'Create a deployment script for this mock contract',
                     choices: ['yes', 'no']
-                },
-                {
+                })
+            if (mockContractFirstSelectedDetail.testScriptJs !== undefined || mockContractFirstSelectedDetail.testScriptTs !== undefined)
+                mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockTestScript',
                     message: 'Create a test script for this mock contract',
                     choices: ['yes', 'no']
-                }
-            ])
-            .then(async (mockContractSelected: { mockContract: string; mockDeploymentScript: string; mockTestScript: string }) => {
-                mockContractToAdd = mockContractSelected
-            })
+                })
+            if (mockContractFirstSelectedDetail.testContractFoundry !== undefined)
+                mockContractDetailSelector.push({
+                    type: 'list',
+                    name: 'mockTestContractFoundry',
+                    message: 'Create a Foundry test contract for this mock contract',
+                    choices: ['yes', 'no']
+                })
+            await inquirer
+                .prompt(mockContractDetailSelector)
+                .then(async (mockContractSelected: { mockDeploymentScript: string; mockTestScript: string; mockTestContractFoundry: string }) => {
+                    mockContractToAdd = {
+                        mockContract: mockContractFirstSelected,
+                        mockDeploymentScript: mockContractSelected.mockDeploymentScript || 'no',
+                        mockTestScript: mockContractSelected.mockTestScript || 'no',
+                        mockTestContractFoundry: mockContractSelected.mockTestContractFoundry || 'no'
+                    }
+                })
+        }
         if (mockContractToAdd !== undefined) {
             await buildMockContract(mockContractToAdd.mockContract)
             if (mockContractToAdd.mockDeploymentScript === 'yes') {
@@ -1401,6 +1438,9 @@ const serveMockContractCreatorSelector = async () => {
             }
             if (mockContractToAdd.mockTestScript === 'yes') {
                 await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
+            }
+            if (mockContractToAdd.mockTestContractFoundry === 'yes') {
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockTestContractFoundry, 'testForge')
             }
         }
     }

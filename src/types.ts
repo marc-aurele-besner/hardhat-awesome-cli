@@ -28,6 +28,7 @@ export interface IMockContractsList {
     deploymentScriptTs?: string
     testScriptJs?: string
     testScriptTs?: string
+    testContractFoundry?: string
     upgradeable?: boolean
 }
 

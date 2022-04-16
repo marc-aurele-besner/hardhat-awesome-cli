@@ -8,7 +8,8 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptJs: 'scripts/deploy-mock-erc20.js',
         deploymentScriptTs: 'scripts/deploy-mock-erc20.ts',
         testScriptJs: 'test/test-mock-erc20.js',
-        testScriptTs: 'test/test-mock-erc20.ts'
+        testScriptTs: 'test/test-mock-erc20.ts',
+        testContractFoundry: 'testForge/MockERC20.t.sol'
     },
     {
         name: 'MockERC721',
