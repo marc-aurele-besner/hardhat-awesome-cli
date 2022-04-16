@@ -137,6 +137,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 - More settings
     - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
     - Add/remove other hardhat plugins (In npm/yarn and in hardhat.config)
+    - Create Github workflows file to run test, coverage test and forge test
 - Create Mock contracts (ERC20, ERC721, ERC1155 + Upgradeable version, AdminProxy and TransparentUpgradeableProxy) 
     - Add @openzeppelin/contracts || @openzeppelin/contracts-upgradeable if not already installed
     - Offer to create deployment scripts (use addressBook.saveContract() to save the deployed contract in contractsAddressDeployed.json and contractsAddressDeployedHistory.json)
@@ -148,12 +149,10 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
 
 ## 🏗️ To do:
 - Start working on documentation
-- Remove child_process from inquirer loop
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - More Settings:
     - Handle directory for file exeption
-    - Create Github workflows file to run test and coverage test
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Create a custom command
 - Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
