@@ -18,7 +18,8 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptJs: 'scripts/deploy-mock-erc721.js',
         deploymentScriptTs: 'scripts/deploy-mock-erc721.ts',
         testScriptJs: 'test/test-mock-erc721.js',
-        testScriptTs: 'test/test-mock-erc721.ts'
+        testScriptTs: 'test/test-mock-erc721.ts',
+        testContractFoundry: 'testForge/MockERC721.t.sol'
     },
     {
         name: 'MockERC1155',
@@ -27,7 +28,8 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptJs: 'scripts/deploy-mock-erc1155.js',
         deploymentScriptTs: 'scripts/deploy-mock-erc1155.ts',
         testScriptJs: 'test/test-mock-erc1155.js',
-        testScriptTs: 'test/test-mock-erc1155.ts'
+        testScriptTs: 'test/test-mock-erc1155.ts',
+        testContractFoundry: 'testForge/MockERC1155.t.sol'
     },
     // Upgradeable contracts
     {
@@ -49,6 +51,7 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptTs: 'scripts/deploy-mock-erc721upgradeable.ts',
         testScriptJs: 'test/test-mock-erc721upgradeable.js',
         testScriptTs: 'test/test-mock-erc721upgradeable.ts',
+        testContractFoundry: 'testForge/MockERC721Upgradeable.t.sol',
         upgradeable: true
     },
     {
@@ -59,6 +62,7 @@ const MockContractsList: IMockContractsList[] = [
         deploymentScriptTs: 'scripts/deploy-mock-erc1155upgradeable.ts',
         testScriptJs: 'test/test-mock-erc1155upgradeable.js',
         testScriptTs: 'test/test-mock-erc1155upgradeable.ts',
+        testContractFoundry: 'testForge/MockERC1155Upgradeable.t.sol',
         upgradeable: true
     },
     {
