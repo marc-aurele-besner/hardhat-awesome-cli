@@ -37,7 +37,7 @@ const inquirerRunTests: IInquirerListField = { name: 'Run tests' }
 if (!fs.existsSync('test')) inquirerRunTests.disabled = "We can't run tests without a test/ directory"
 const inquirerRunScripts: IInquirerListField = { name: 'Run scripts' }
 if (!fs.existsSync('scripts')) inquirerRunScripts.disabled = "We can't run scripts without a scripts/ directory"
-const inquirerFlattenContracts: IInquirerListField = { name: 'Flatten contract' }
+const inquirerFlattenContracts: IInquirerListField = { name: 'Flatten contracts' }
 const inquirerRunMockContractCreator: IInquirerListField = { name: 'Create Mock contracts' }
 let inquirerRunFoundryTest: string = ''
 if (!fs.existsSync('contracts')) {
