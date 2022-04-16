@@ -10,6 +10,7 @@ import path from 'path'
 import { exit } from 'process'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
+import buildWorkflows from './buildWorkflows'
 import { DefaultChainList, DefaultHardhatPluginsList } from './config'
 import MockContractsList from './mockContracts'
 import './type-extensions'
@@ -674,6 +675,7 @@ import "${packageName}"`
 import '${packageName}'`
                 )
             } else {
+                newHardHatConfig = hardhatConfigFile
                 console.log('\x1b[34m%s\x1b[0m', 'Package ' + packageName + ' not imported in ' + hardhatConfigFilePath + ' file')
             }
             fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
@@ -705,6 +707,7 @@ import '${packageName}'`
                 newHardHatConfig = hardhatConfigFile.replace(`import '${packageName}'`, '')
             } else {
                 console.log('\x1b[34m%s\x1b[0m', 'Package ' + packageName + ' not found in ' + hardhatConfigFilePath + ' file')
+                newHardHatConfig = hardhatConfigFile
             }
             fs.writeFileSync(hardhatConfigFilePath, newHardHatConfig)
         }
@@ -900,15 +903,16 @@ const serveNetworkSelector = async (env: any, command: string, firstCommand: str
                     commandFlags = ' --network ' + chain.chainName
                 }
             })
-            if (command) {
-                await runCommand(command, firstCommand, commandFlags)
-            } else if (GetAccountBalance) {
+            if (GetAccountBalance) {
                 await GetAccountBalance(env)
             } else if (ServeEnvBuilder) {
                 await ServeEnvBuilder(env, networkSelected.network)
             }
             await sleep(5000)
         })
+    if (command) {
+        await runCommand(command, firstCommand, commandFlags)
+    }
 }
 
 const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
@@ -991,6 +995,7 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
             contractsFilesList.push(file.name)
         })
         if (contractsFilesList.length > 0) {
+            let contractFlattenName: string = ''
             await inquirer
                 .prompt([
                     {
@@ -1004,7 +1009,6 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                     if (!fs.existsSync('contractsFlatten')) {
                         fs.mkdirSync('contractsFlatten')
                     }
-                    let contractFlattenName: string = ''
                     if (contractsSelected.flatten !== 'Flatten all contracts') {
                         contractsFilesObject.forEach((file: IFileList) => {
                             if (file.name === contractsSelected.flatten) {
@@ -1017,9 +1021,11 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                     } else {
                         contractFlattenName = 'AllContractsFlatten.sol'
                     }
-                    await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
-                    await sleep(3000)
                 })
+            if (command) {
+                await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
+                await sleep(3000)
+            }
         }
     }
 }
@@ -1230,6 +1236,29 @@ const serveExcludeFileSelector = async (option: string) => {
         })
 }
 
+const serveWorkflowBuilder = async () => {
+    let workflowToAdd: string = ''
+    await inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'workflowType',
+                message: 'Select a workflow to create',
+                choices: [
+                    'NPM - Hardhat - Test & Coverage',
+                    'NPM - Foundry - Forge Test',
+                    new inquirer.Separator(),
+                    'Yarn - Hardhat - Test & Coverage',
+                    'Yarn - Foundry - Forge Test'
+                ]
+            }
+        ])
+        .then(async (workflowSelected: { workflowType: string }) => {
+            workflowToAdd = workflowSelected.workflowType
+        })
+    if (workflowToAdd) await buildWorkflows(workflowToAdd)
+}
+
 const serveMoreSettingSelector = async () => {
     await inquirer
         .prompt([
@@ -1243,7 +1272,10 @@ const serveMoreSettingSelector = async () => {
                     'Exclude contract file from the contract selection list',
                     new inquirer.Separator(),
                     'Add other Hardhat plugins',
-                    'Remove other Hardhat plugins'
+                    'Remove other Hardhat plugins',
+                    new inquirer.Separator(),
+                    'Create Github test workflows',
+                    new inquirer.Separator()
                 ]
             }
         ])
@@ -1263,6 +1295,9 @@ const serveMoreSettingSelector = async () => {
             if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') {
                 await servePackageUninstaller()
             }
+            if (moreSettingsSelected.moreSettings === 'Create Github test workflows') {
+                await serveWorkflowBuilder()
+            }
         })
 }
 
@@ -1277,22 +1312,28 @@ const servePackageInstaller = async () => {
         }
     })
     await sleep(500)
+    const hardhatPluginToNotInclude = new Set(hardhatPluginInstalled)
+    const hardhatPluginToInstall: string[] = hardhatPluginAvailableList.filter((plugin: string) => !hardhatPluginToNotInclude.has(plugin))
+    let packageToInstall: IHardhatPluginAvailableList | undefined
     await inquirer
         .prompt([
             {
                 type: 'list',
                 name: 'plugins',
                 message: 'Select a plugin to install',
-                choices: hardhatPluginAvailableList,
-                default: hardhatPluginInstalled
+                choices: hardhatPluginToInstall
             }
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, true, false, plugin.addInHardhatConfig)
+                if (plugin.title === pluginssSelected.plugins) packageToInstall = plugin
             })
             await sleep(1500)
         })
+    if (packageToInstall !== undefined) {
+        await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
+        await sleep(5000)
+    }
 }
 
 const servePackageUninstaller = async () => {
@@ -1302,7 +1343,8 @@ const servePackageUninstaller = async () => {
             hardhatPluginInstalled.push(plugin.title)
         }
     })
-    await sleep(500)
+    await sleep(1000)
+    let packageToUninstall: IHardhatPluginAvailableList | undefined
     await inquirer
         .prompt([
             {
@@ -1314,10 +1356,12 @@ const servePackageUninstaller = async () => {
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) await detectPackage(plugin.name, false, true, plugin.addInHardhatConfig)
+                if (plugin.title === pluginssSelected.plugins) packageToUninstall = plugin
             })
             await sleep(1500)
         })
+    if (packageToUninstall !== undefined) await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)
+    await sleep(5000)
 }
 
 const serveMockContractCreatorSelector = async () => {
@@ -1325,6 +1369,7 @@ const serveMockContractCreatorSelector = async () => {
         const mockContractsList: string[] = MockContractsList.map((file: IMockContractsList) => {
             return file.name
         })
+        let mockContractToAdd: { mockContract: string; mockDeploymentScript: string; mockTestScript: string } | undefined
         await inquirer
             .prompt([
                 {
@@ -1347,14 +1392,17 @@ const serveMockContractCreatorSelector = async () => {
                 }
             ])
             .then(async (mockContractSelected: { mockContract: string; mockDeploymentScript: string; mockTestScript: string }) => {
-                await buildMockContract(mockContractSelected.mockContract)
-                if (mockContractSelected.mockDeploymentScript === 'yes') {
-                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'deployment')
-                }
-                if (mockContractSelected.mockTestScript === 'yes') {
-                    await buildMockDeploymentScriptOrTest(mockContractSelected.mockContract, 'test')
-                }
+                mockContractToAdd = mockContractSelected
             })
+        if (mockContractToAdd !== undefined) {
+            await buildMockContract(mockContractToAdd.mockContract)
+            if (mockContractToAdd.mockDeploymentScript === 'yes') {
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'deployment')
+            }
+            if (mockContractToAdd.mockTestScript === 'yes') {
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
+            }
+        }
     }
 }
 
