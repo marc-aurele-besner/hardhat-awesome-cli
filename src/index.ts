@@ -344,7 +344,7 @@ const buildMockContract = async (contractName: string) => {
                             contractToMock[0].dependencies.forEach(async (dependency: string) => {
                                 await detectPackage(dependency, true, false, false)
                             })
-                            await sleep(5000)
+                            await sleep(3000)
                         }
                     }
                 }
@@ -360,6 +360,7 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
             if (fs.existsSync('contracts')) {
                 if (MockContractsList) {
                     let deploymentScriptOrTestPath: string = ''
+                    let finalPath: string = ''
                     let scriptOrTestDir: string = ''
                     const contractToMock: IMockContractsList[] = MockContractsList.filter((contract) => contract.name === contractName)
                     if (contractToMock && type === 'deployment') {
@@ -370,6 +371,7 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                             if (contractToMock[0].deploymentScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptTs
                             else if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
                         }
+                        finalPath = deploymentScriptOrTestPath
                     }
                     if (contractToMock && type === 'test') {
                         scriptOrTestDir = 'test'
@@ -379,14 +381,16 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                             if (contractToMock[0].testScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptTs
                             else if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
                         }
+                        finalPath = deploymentScriptOrTestPath
                     }
                     if (contractToMock && type === 'testForge') {
                         scriptOrTestDir = 'contracts/test'
-                        if (contractToMock[0].testContractFoundry !== undefined) deploymentScriptOrTestPath = contractToMock[0].testContractFoundry
+                        if (contractToMock[0]?.testContractFoundry !== undefined) deploymentScriptOrTestPath = contractToMock[0].testContractFoundry
+                        finalPath = deploymentScriptOrTestPath.replace('testForge/', 'contracts/test/')
                     }
-                    if (contractToMock && deploymentScriptOrTestPath) {
-                        if (fs.existsSync(deploymentScriptOrTestPath)) {
-                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' ' + scriptOrTestDir + ' already exists')
+                    if (contractToMock && deploymentScriptOrTestPath && finalPath) {
+                        if (fs.existsSync(finalPath)) {
+                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' in ' + scriptOrTestDir + '/ already exists')
                         } else {
                             if (fs.existsSync(deploymentScriptOrTestPath)) {
                                 console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' ' + scriptOrTestDir)
@@ -396,7 +400,7 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                                 let scriptsTestRawdataModify = rawdata
                                 if (type !== 'testForge') scriptsTestRawdataModify = rawdata.toString().slice(2).replace(/\*\//g, '').trim()
                                 await sleep(500)
-                                fs.writeFileSync(deploymentScriptOrTestPath, `${scriptsTestRawdataModify}`)
+                                fs.writeFileSync(finalPath, `${scriptsTestRawdataModify}`)
                             }
                         }
                     }
@@ -1440,7 +1444,7 @@ const serveMockContractCreatorSelector = async () => {
                 await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
             }
             if (mockContractToAdd.mockTestContractFoundry === 'yes') {
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockTestContractFoundry, 'testForge')
+                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'testForge')
             }
         }
     }

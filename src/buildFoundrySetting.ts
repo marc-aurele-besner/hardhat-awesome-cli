@@ -7,8 +7,7 @@ const buildFoundrySetting = async () => {
     if (!fs.existsSync('foundry.toml')) {
         fs.writeFileSync(
             'foundry.toml',
-            `
-[default]
+            `[default]
 src = 'contracts/test'                                        # the source directory
 test = 'contracts/test'                                       # the test directory
 out = 'artifacts/contracts'                                   # the output directory (for artifacts)
@@ -44,10 +43,9 @@ block_difficulty = 0                                          # the value of blo
     if (!fs.existsSync('remappings.txt')) {
         fs.writeFileSync(
             'remappings.txt',
-            `
-hardhat/=node_modules/hardhat/
+            `hardhat/=node_modules/hardhat/
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts
-@openzeppelin/contracts-upgradeable/=node_modules\@openzeppelin\contracts-upgradeable`
+@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable`
         )
         console.log('\x1b[32m%s\x1b[0m', 'Creating Foundry settings in remappings.txt')
     } else console.log('\x1b[33m%s\x1b[0m', 'The Foundry settings already exists at remappings.txt')
