@@ -169,3 +169,5 @@ export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
         addInHardhatConfig: true
     }
 ]
+
+export const DefaultFoundryTestUtilsList: string[] = ['utils/cheatcodes.sol', 'utils/console.sol', 'utils/stdlib.sol', 'utils/test.sol', 'utils/Vm.sol']
