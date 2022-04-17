@@ -65,6 +65,17 @@ npm link hardhat-awesome-cli
     - Install/Uninstall other Hardhat plugins
     - Create Github test workflows (for NPM and/or Yarn and for Hardhat test&coverage and/or Foundry test)
     - Create Foundry settings, remmapping and test utilities
+        <details>
+            <summary>More details on Foundry</summary>
+        [Foundry Documentation](https://book.getfoundry.sh/index.html)
+
+        Run forge test
+
+        ```commandline
+            forge test
+        ```
+
+        </details>
 - Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     - MockERC20
     - MockERC721
@@ -127,7 +138,8 @@ await addressBook.saveContract('MockERC20', mockERC20.address, 'ethereum', deplo
 await addressBook.retrieveContract('MockERC20', 'ethereum')
 ```
 
-## 💪 Done
+<details>
+    <summary>## 💪 Done</summary>
 - Run test on all or single test file (from all your file in test/)
 - Run scripts  on all or single scripts file (from all your file in scripts/)
 - Run Forge test on all or single test contracts if forge setting is detected
@@ -153,6 +165,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - hre.addressBook.{ saveContract, retrieveContract }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
 - Write some test on the package using mocha
+</details>
 
 ## 🏗️ To do:
 - Start working on documentation
