@@ -2,7 +2,8 @@
 
 import { spawn } from 'child_process'
 import fs from 'fs'
-import { extendConfig, extendEnvironment, task } from 'hardhat/config'
+import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from 'hardhat/builtin-tasks/task-names'
+import { extendConfig, extendEnvironment, subtask, task } from 'hardhat/config'
 import { lazyObject } from 'hardhat/plugins'
 import { HardhatConfig, HardhatUserConfig, NetworksUserConfig } from 'hardhat/types'
 import inquirer from 'inquirer'
@@ -306,10 +307,8 @@ const buildTestsList = async () => {
                 return !buildFilePath.includes(script.filePath)
             })
             return allTestList
-        }
-    } else {
-        return allTestList
-    }
+        } else return allTestList
+    } else return allTestList
 }
 
 const buildScriptsList = async () => {
@@ -326,19 +325,17 @@ const buildScriptsList = async () => {
                 return !buildFilePath.includes(script.filePath)
             })
             return allScriptList
-        }
-    } else {
-        return allScriptList
-    }
+        } else return allScriptList
+    } else return allScriptList
 }
 
 const buildContractsList = async () => {
     let allContractsList: IFileList[] = await buildAllContractsList()
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const buildFilePath: string[] = []
-    if (excludedFiles && excludedFiles.length > 0) {
+    if (excludedFiles !== undefined && excludedFiles.length > 0) {
         excludedFiles = excludedFiles.filter((test: any) => test.directory === 'contracts')
-        if (excludedFiles && excludedFiles.length > 0) {
+        if (excludedFiles !== undefined && excludedFiles.length > 0) {
             excludedFiles.map((file: any) => {
                 buildFilePath.push(file.filePath)
             })
@@ -346,10 +343,8 @@ const buildContractsList = async () => {
                 return !buildFilePath.includes(script.filePath)
             })
             return allContractsList
-        }
-    } else {
-        return allContractsList
-    }
+        } else return allContractsList
+    } else return allContractsList
 }
 
 const buildMockContract = async (contractName: string) => {
@@ -360,12 +355,10 @@ const buildMockContract = async (contractName: string) => {
                 if (MockContractsList) {
                     const contractToMock: IMockContractsList[] = MockContractsList.filter((contract) => contract.name === contractName)
                     if (contractToMock) {
-                        if (fs.existsSync('contracts/' + contractName + '.sol')) {
-                            console.log('\x1b[33m%s\x1b[0m', 'Mock contract already exists')
-                        } else {
-                            if (fs.existsSync('contracts/' + contractName + '.sol')) {
-                                console.log('\x1b[33m%s\x1b[0m', "Can't locate the mock contract")
-                            } else {
+                        if (fs.existsSync('contracts/' + contractName + '.sol')) console.log('\x1b[33m%s\x1b[0m', 'Mock contract already exists')
+                        else {
+                            if (fs.existsSync('contracts/' + contractName + '.sol')) console.log('\x1b[33m%s\x1b[0m', "Can't locate the mock contract")
+                            else {
                                 console.log('\x1b[32m%s\x1b[0m', 'Creating ', contractName, ' in contracts/')
                                 fs.copyFileSync(packageRootPath + '/' + contractName + '.sol', 'contracts/' + contractName + '.sol')
                             }
@@ -395,22 +388,22 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                     const contractToMock: IMockContractsList[] = MockContractsList.filter((contract) => contract.name === contractName)
                     if (contractToMock && type === 'deployment') {
                         scriptOrTestDir = 'scripts'
-                        if (fs.existsSync('hardhat.config.js')) {
+                        if (fs.existsSync('hardhat.config.js'))
                             if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
-                        } else if (fs.existsSync('hardhat.config.ts')) {
-                            if (contractToMock[0].deploymentScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptTs
-                            else if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
-                        }
+                            else if (fs.existsSync('hardhat.config.ts')) {
+                                if (contractToMock[0].deploymentScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptTs
+                                else if (contractToMock[0].deploymentScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
+                            }
                         finalPath = deploymentScriptOrTestPath
                     }
                     if (contractToMock && type === 'test') {
                         scriptOrTestDir = 'test'
-                        if (fs.existsSync('hardhat.config.js')) {
+                        if (fs.existsSync('hardhat.config.js'))
                             if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
-                        } else if (fs.existsSync('hardhat.config.ts')) {
-                            if (contractToMock[0].testScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptTs
-                            else if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
-                        }
+                            else if (fs.existsSync('hardhat.config.ts')) {
+                                if (contractToMock[0].testScriptTs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptTs
+                                else if (contractToMock[0].testScriptJs !== undefined) deploymentScriptOrTestPath = contractToMock[0].testScriptJs
+                            }
                         finalPath = deploymentScriptOrTestPath
                     }
                     if (contractToMock && type === 'testForge') {
@@ -419,12 +412,10 @@ const buildMockDeploymentScriptOrTest = async (contractName: string, type: strin
                         finalPath = deploymentScriptOrTestPath.replace('testForge/', 'contracts/test/')
                     }
                     if (contractToMock && deploymentScriptOrTestPath && finalPath) {
-                        if (fs.existsSync(finalPath)) {
-                            console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' in ' + scriptOrTestDir + '/ already exists')
-                        } else {
-                            if (fs.existsSync(deploymentScriptOrTestPath)) {
-                                console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' ' + scriptOrTestDir)
-                            } else {
+                        if (fs.existsSync(finalPath)) console.log('\x1b[33m%s\x1b[0m', 'The ' + type + ' in ' + scriptOrTestDir + '/ already exists')
+                        else {
+                            if (fs.existsSync(deploymentScriptOrTestPath)) console.log('\x1b[33m%s\x1b[0m', "Can't locate the " + type + ' ' + scriptOrTestDir)
+                            else {
                                 console.log('\x1b[32m%s\x1b[0m', 'Creating ' + type + ' for ', contractName, ' in ' + scriptOrTestDir + '/')
                                 const rawdata: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
                                 let scriptsTestRawdataModify = rawdata
@@ -445,9 +436,7 @@ const buildExcludedFile = async () => {
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
-        if (fileSetting && fileSetting.excludedFiles && fileSetting.excludedFiles.length > 0) {
-            return fileSetting.excludedFiles
-        }
+        if (fileSetting && fileSetting.excludedFiles && fileSetting.excludedFiles.length > 0) return fileSetting.excludedFiles
     }
     return []
 }
@@ -480,9 +469,7 @@ const addChain = async (chainName: string, chainToAdd: IChain) => {
             if (!fileSetting.activatedChain.find((chain: IChain) => chain.name === chainName)) {
                 fileSetting.activatedChain.push(chainToAdd)
             }
-        } else {
-            fileSetting.activatedChain.push(chainToAdd)
-        }
+        } else fileSetting.activatedChain.push(chainToAdd)
     } else {
         fileSetting.push({
             activatedChain: [chainToAdd]
@@ -498,9 +485,7 @@ const addChain = async (chainName: string, chainToAdd: IChain) => {
 const addActivatedChain = async (chainName: string) => {
     const FullChainList: IChain[] = DefaultChainList
     const chainToAdd: IChain | undefined = FullChainList.find((chain: IChain) => chain.name === chainName)
-    if (chainToAdd !== undefined) {
-        await addChain(chainName, chainToAdd)
-    }
+    if (chainToAdd !== undefined) await addChain(chainName, chainToAdd)
 }
 
 const removeActivatedChain = async (chainName: string) => {
@@ -527,19 +512,16 @@ const addCustomChain = async (chainDetails: IChain) => {
     const FullChainList = DefaultChainList
     const ActivatedChainList = await buildActivatedChainList()
     // Verify if the chain already exists in regular full chain list
-    if (FullChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName)) {
+    if (FullChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName))
         console.log('\x1b[33m%s\x1b[0m', 'Chain with same Short-Name already exists in regular chain selection')
-    } else if (FullChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId)) {
+    else if (FullChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId))
         console.log('\x1b[33m%s\x1b[0m', 'Chain with same chainId already exists in regular chain selection')
-    }
     // Verify if the chain already exists in user setting activated chain list
-    else if (ActivatedChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName)) {
+    else if (ActivatedChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName))
         console.log('\x1b[33m%s\x1b[0m', 'Chain with same Short-Name already exists in your settings activated chain list')
-    } else if (ActivatedChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId)) {
+    else if (ActivatedChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId))
         console.log('\x1b[33m%s\x1b[0m', 'Chain with same chainId already exists in your settings activated chain list')
-    } else {
-        await addChain(chainDetails.chainName, chainDetails)
-    }
+    else await addChain(chainDetails.chainName, chainDetails)
 }
 
 const addExcludedFiles = async (directory: string, filePath: string) => {
@@ -564,14 +546,9 @@ const addExcludedFiles = async (directory: string, filePath: string) => {
     }
     if (fileSetting && fileSetting.excludedFiles) {
         if (fileSetting.excludedFiles.length > 0) {
-            if (
-                !fileSetting.excludedFiles.find((file: { directory: string; filePath: string }) => file.directory === directory && file.filePath === filePath)
-            ) {
+            if (!fileSetting.excludedFiles.find((file: { directory: string; filePath: string }) => file.directory === directory && file.filePath === filePath))
                 fileSetting.excludedFiles.push(fileToAdd)
-            }
-        } else {
-            fileSetting.excludedFiles.push(fileToAdd)
-        }
+        } else fileSetting.excludedFiles.push(fileToAdd)
     } else {
         fileSetting.push({
             excludedFiles: [fileToAdd]
@@ -638,11 +615,9 @@ const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, creat
 
 const importPackageHardhatConfigFile = async (packageName: string, addToConfig: boolean, removeFromConfig: boolean) => {
     let hardhatConfigFilePath: string = ''
-    if (fs.existsSync('hardhat.config.js')) {
-        hardhatConfigFilePath = 'hardhat.config.js'
-    } else if (fs.existsSync('hardhat.config.ts')) {
-        hardhatConfigFilePath = 'hardhat.config.ts'
-    } else {
+    if (fs.existsSync('hardhat.config.js')) hardhatConfigFilePath = 'hardhat.config.js'
+    else if (fs.existsSync('hardhat.config.ts')) hardhatConfigFilePath = 'hardhat.config.ts'
+    else {
         console.log('\x1b[31m%s\x1b[0m', 'Hardhat config file not found!')
         return
     }
@@ -762,9 +737,7 @@ const getEnvValue = (envName: string) => {
         const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
         const oldEnv = Object.entries(allEnv.parsed)
         for (const [key, value] of oldEnv) {
-            if (key && value && key === envName) {
-                return value
-            }
+            if (key && value && key === envName) return getEnvValue
         }
     }
     return ''
@@ -777,9 +750,7 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
     const rpcUrlEnv = 'rpcUrl'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.rpcUrl + '"'
     const privateKeyEnv = 'privateKey'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.privateKeyOrMnemonic + '"'
     const mnemonicEnv = 'mnemonic'.toUpperCase() + '_' + chainName.toUpperCase() + ' = ' + '"' + envToBuild.privateKeyOrMnemonic + '"'
-    if (envToBuild.rpcUrl) {
-        isRpcUrl = true
-    }
+    if (envToBuild.rpcUrl) isRpcUrl = true
     if (envToBuild.privateKeyOrMnemonic) {
         try {
             const owner = new env.ethers.Wallet(envToBuild.privateKeyOrMnemonic, env.ethers.provider)
@@ -821,24 +792,14 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
                 } else if (key && value && isMnemonic && key === 'mnemonic'.toUpperCase() + '_' + chainName.toUpperCase()) {
                     newEnv += key + ' = "' + envToBuild.privateKeyOrMnemonic + '"\n'
                     isMnemoniclEnvExist = true
-                } else {
-                    newEnv += key + ' = "' + value + '"\n'
-                }
+                } else newEnv += key + ' = "' + value + '"\n'
             }
         }
-        if (isRpcUrl && !isRpcUrlEnvExist) {
-            newEnv += rpcUrlEnv + '\n'
-        }
-        if (isPrivateKey && !isPrivateKeyEnvExist) {
-            newEnv += privateKeyEnv + '\n'
-        }
-        if (isMnemonic && !isMnemoniclEnvExist) {
-            newEnv += mnemonicEnv + '\n'
-        }
+        if (isRpcUrl && !isRpcUrlEnvExist) newEnv += rpcUrlEnv + '\n'
+        if (isPrivateKey && !isPrivateKeyEnvExist) newEnv += privateKeyEnv + '\n'
+        if (isMnemonic && !isMnemoniclEnvExist) newEnv += mnemonicEnv + '\n'
         fs.writeFileSync(fileEnvHardhatAwesomeCLI, newEnv)
-    } else {
-        fs.writeFileSync(fileEnvHardhatAwesomeCLI, envToWrite)
-    }
+    } else fs.writeFileSync(fileEnvHardhatAwesomeCLI, envToWrite)
     console.log('\x1b[32m%s\x1b[0m', 'Env file updated')
     await addEnvFileInGitiignore('.gitignore', fileEnvHardhatAwesomeCLI, true)
     await addEnvFileInGitiignore('.npmignore', fileEnvHardhatAwesomeCLI, false)
@@ -918,17 +879,12 @@ const serveNetworkSelector = async (env: any, command: string, firstCommand: str
     const BuildFullChainList: IChain[] = DefaultChainList
     const activatedChainList: string[] = []
     ActivatedChainList.map((chain: IChain) => {
-        if (noLocalNetwork && chain.chainName !== 'hardhat') {
-            activatedChainList.push(chain.name)
-        } else if (!noLocalNetwork) {
-            activatedChainList.push(chain.name)
-        }
+        if (noLocalNetwork && chain.chainName !== 'hardhat') activatedChainList.push(chain.name)
+        else if (!noLocalNetwork) activatedChainList.push(chain.name)
     })
     if (activatedChainList.length === 0) {
         const addHardhat = BuildFullChainList.find((basicChain: IChain) => basicChain.chainName === 'hardhat')
-        if (addHardhat) {
-            activatedChainList.push(addHardhat.name)
-        }
+        if (addHardhat) activatedChainList.push(addHardhat.name)
     }
     let commandFlags = ''
     await inquirer
@@ -942,26 +898,19 @@ const serveNetworkSelector = async (env: any, command: string, firstCommand: str
         ])
         .then(async (networkSelected: { network: string }) => {
             ActivatedChainList.map((chain: IChain) => {
-                if (chain.name === networkSelected.network) {
-                    commandFlags = ' --network ' + chain.chainName
-                }
+                if (chain.name === networkSelected.network) commandFlags = ' --network ' + chain.chainName
             })
-            if (GetAccountBalance) {
-                await GetAccountBalance(env)
-            } else if (ServeEnvBuilder) {
-                await ServeEnvBuilder(env, networkSelected.network)
-            }
+            if (GetAccountBalance) await GetAccountBalance(env)
+            else if (ServeEnvBuilder) await ServeEnvBuilder(env, networkSelected.network)
             await sleep(5000)
         })
-    if (command) {
-        await runCommand(command, firstCommand, commandFlags)
-    }
+    if (command) await runCommand(command, firstCommand, commandFlags)
 }
 
 const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
     const testFilesObject = await buildTestsList()
     let testFilesList: string[] = []
-    if (testFilesObject) {
+    if (testFilesObject !== undefined && testFilesObject.length > 0) {
         testFilesList = testFilesObject.map((file: IFileList) => {
             return file.name
         })
@@ -978,14 +927,10 @@ const serveTestSelector = async (env: any, command: string, firstCommand: string
                 .then(async (testSelected: { test: string }) => {
                     testFilesObject.forEach((file: IFileList) => {
                         if (file.name === testSelected.test) {
-                            if (file.type === 'file') {
-                                command = command + ' test/' + file.filePath
-                            }
+                            if (file.type === 'file') command = command + ' test/' + file.filePath
                         }
                     })
-                    if (firstCommand) {
-                        command = 'npx hardhat test ' + command
-                    }
+                    if (firstCommand) command = 'npx hardhat test ' + command
                     await serveNetworkSelector(env, command, firstCommand, '', '', false)
                     await sleep(5000)
                 })
@@ -1014,14 +959,11 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
                     let command = 'npx hardhat run'
                     scriptFilesObject.forEach((file: IFileList) => {
                         if (file.name === scriptSelected.script) {
-                            if (file.type === 'file') {
-                                command = command + ' scripts/' + file.filePath
-                            }
+                            if (file.type === 'file') command = command + ' scripts/' + file.filePath
                         }
                     })
-                    if (ServeTestSelector) {
-                        await ServeTestSelector(env, '', command)
-                    } else {
+                    if (ServeTestSelector) await ServeTestSelector(env, '', command)
+                    else {
                         await serveNetworkSelector(env, command, '', '', '', false)
                         await sleep(5000)
                     }
@@ -1061,9 +1003,7 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                                 }
                             }
                         })
-                    } else {
-                        contractFlattenName = 'AllContractsFlatten.sol'
-                    }
+                    } else contractFlattenName = 'AllContractsFlatten.sol'
                 })
             if (command) {
                 await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
@@ -1184,9 +1124,8 @@ const serveSettingSelector = async (env: any) => {
                         await sleep(1000)
                     })
             }
-            if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain') {
+            if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain')
                 await serveNetworkSelector(env, '', '', '', serveEnvBuilder, true)
-            }
             if (settingSelected.settings === 'Add a custom chain to the current chain selection') {
                 await inquirer
                     .prompt([
@@ -1265,13 +1204,9 @@ const serveExcludeFileSelector = async (option: string) => {
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const allFilesSelection: string[] = []
     let allExcludedSelection: string[] = []
-    if (option === 'test') {
-        allFiles = await buildAllTestsList()
-    } else if (option === 'scripts') {
-        allFiles = await buildAllScriptsList()
-    } else if (option === 'contracts') {
-        allFiles = await buildAllContractsList()
-    }
+    if (option === 'test') allFiles = await buildAllTestsList()
+    else if (option === 'scripts') allFiles = await buildAllScriptsList()
+    else if (option === 'contracts') allFiles = await buildAllContractsList()
     if (allFiles && allFiles.length > 0) {
         if (allFiles.filter((test: IFileList) => test.type === 'file').length > 0) {
             allFiles
@@ -1301,11 +1236,8 @@ const serveExcludeFileSelector = async (option: string) => {
         ])
         .then(async (activateFilesSelected: { allFiles: string[] }) => {
             allFiles.map(async (file: IFileList) => {
-                if (activateFilesSelected.allFiles.includes(file.filePath)) {
-                    await addExcludedFiles(option, file.name)
-                } else {
-                    await removeExcludedFiles(option, file.name)
-                }
+                if (activateFilesSelected.allFiles.includes(file.filePath)) await addExcludedFiles(option, file.name)
+                else await removeExcludedFiles(option, file.name)
             })
             console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
         })
@@ -1356,27 +1288,13 @@ const serveMoreSettingSelector = async () => {
             }
         ])
         .then(async (moreSettingsSelected: { moreSettings: string }) => {
-            if (moreSettingsSelected.moreSettings === 'Exclude test file from the tests selection list') {
-                await serveExcludeFileSelector('test')
-            }
-            if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list') {
-                await serveExcludeFileSelector('scripts')
-            }
-            if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list') {
-                await serveExcludeFileSelector('contracts')
-            }
-            if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') {
-                await servePackageInstaller()
-            }
-            if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') {
-                await servePackageUninstaller()
-            }
-            if (moreSettingsSelected.moreSettings === 'Create Github test workflows') {
-                await serveWorkflowBuilder()
-            }
-            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remmapping and test utilities') {
-                await buildFoundrySetting()
-            }
+            if (moreSettingsSelected.moreSettings === 'Exclude test file from the tests selection list') await serveExcludeFileSelector('test')
+            if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list') await serveExcludeFileSelector('scripts')
+            if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list') await serveExcludeFileSelector('contracts')
+            if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
+            if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
+            if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
+            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remmapping and test utilities') await buildFoundrySetting()
         })
 }
 
@@ -1479,7 +1397,7 @@ const serveMockContractCreatorSelector = async () => {
                     message: 'Create a test script for this mock contract',
                     choices: ['yes', 'no']
                 })
-            if (mockContractFirstSelectedDetail.testContractFoundry !== undefined)
+            if (mockContractFirstSelectedDetail.testContractFoundry !== undefined && fs.existsSync('contracts/test') && fs.existsSync('foundry.toml'))
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockTestContractFoundry',
@@ -1499,15 +1417,9 @@ const serveMockContractCreatorSelector = async () => {
         }
         if (mockContractToAdd !== undefined) {
             await buildMockContract(mockContractToAdd.mockContract)
-            if (mockContractToAdd.mockDeploymentScript === 'yes') {
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'deployment')
-            }
-            if (mockContractToAdd.mockTestScript === 'yes') {
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
-            }
-            if (mockContractToAdd.mockTestContractFoundry === 'yes') {
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'testForge')
-            }
+            if (mockContractToAdd.mockDeploymentScript === 'yes') await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'deployment')
+            if (mockContractToAdd.mockTestScript === 'yes') await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
+            if (mockContractToAdd.mockTestContractFoundry === 'yes') await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'testForge')
         }
     }
 }
@@ -1518,14 +1430,12 @@ const serveAccountBalance = async (env: any) => {
     const getAccountBalance = async (Env: any) => {
         const [deployer] = await Env.ethers.getSigners()
         const network = await Env.network
-
         // Get account balance
         const balance = await deployer.getBalance()
         console.log('\x1b[32m%s\x1b[0m', 'Connected to network: ', '\x1b[97m%s\x1b[0m', network.name)
         console.log('\x1b[32m%s\x1b[0m', 'Account address: ', '\x1b[97m%s\x1b[0m', deployer.address)
         console.log('\x1b[32m%s\x1b[0m', 'Account balance: ', '\x1b[97m%s\x1b[0m', balance.toString())
     }
-
     await serveNetworkSelector(env, '', '', getAccountBalance, '', false)
 }
 
@@ -1573,60 +1483,27 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             }
         ])
         .then(async (answers: { action: string }) => {
-            let command = ''
-
-            if (answers.action === 'Run tests') {
-                command = 'npx hardhat test'
-                await serveTestSelector(env, command, '')
-            }
-            if (answers.action === 'Run scripts') {
-                await serveScriptSelector(env, '')
-            }
-            if (answers.action === 'Flatten contracts') {
-                command = 'npx hardhat flatten'
-                await serveFlattenContractsSelector(env, command)
-            }
-            if (answers.action === 'Run Foundry Forge tests') {
-                command = 'forge test'
-                await serveFoundryTestSelector(env, command)
-            }
-            if (answers.action === 'Select scripts and tests to run') {
-                await serveScriptSelector(env, serveTestSelector)
-            }
-            if (answers.action === 'Run coverage tests') {
-                command = 'npx hardhat coverage'
-                await serveTestSelector(env, command, '')
-            }
-            if (answers.action === 'Setup chains, RPC and accounts') {
-                await serveSettingSelector(env)
-            }
-            if (answers.action === 'More settings') {
-                await serveMoreSettingSelector()
-            }
-
-            if (answers.action === 'Create Mock contracts') {
-                await serveMockContractCreatorSelector()
-            }
-            if (answers.action === 'Create deployment scripts') {
-                await serveDeploymentContractCreatorSelector()
-            }
-            if (answers.action === 'Get account balance') {
-                await serveAccountBalance(env)
-            }
+            if (answers.action === 'Run tests') await serveTestSelector(env, 'npx hardhat test', '')
+            if (answers.action === 'Run scripts') await serveScriptSelector(env, '')
+            if (answers.action === 'Flatten contracts') await serveFlattenContractsSelector(env, 'npx hardhat flatten')
+            if (answers.action === 'Run Foundry Forge tests') await serveFoundryTestSelector(env, 'forge test')
+            if (answers.action === 'Select scripts and tests to run') await serveScriptSelector(env, serveTestSelector)
+            if (answers.action === 'Run coverage tests') await serveTestSelector(env, 'npx hardhat coverage', '')
+            if (answers.action === 'Setup chains, RPC and accounts') await serveSettingSelector(env)
+            if (answers.action === 'More settings') await serveMoreSettingSelector()
+            if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
+            if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
+            if (answers.action === 'Get account balance') await serveAccountBalance(env)
         })
 }
 
 extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
     const userPath = userConfig.paths?.cli
     let cli: string
-    if (userPath === undefined) {
-        cli = path.join(config.paths.root, 'cli')
-    } else {
-        if (path.isAbsolute(userPath)) {
-            cli = userPath
-        } else {
-            cli = path.normalize(path.join(config.paths.root, userPath))
-        }
+    if (userPath === undefined) cli = path.join(config.paths.root, 'cli')
+    else {
+        if (path.isAbsolute(userPath)) cli = userPath
+        else cli = path.normalize(path.join(config.paths.root, userPath))
     }
     config.paths.cli = cli
 
@@ -1675,4 +1552,9 @@ extendEnvironment(async (hre: any) => {
  */
 task('cli', 'Easy command line interface to use hardhat').setAction(async function (args, env) {
     await serveCli(env)
+})
+
+subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_, __, runSuper: any) => {
+    const paths = await runSuper()
+    return paths.filter((p: any) => !p.endsWith('.t.sol'))
 })
