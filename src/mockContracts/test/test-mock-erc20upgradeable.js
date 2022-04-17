@@ -8,7 +8,7 @@ let deployer;
 describe("MockERC20Upgradeable", function () {
 
   beforeEach(async function () {
-    const [deployer] = await ethers.getSigners();
+    [deployer] = await ethers.getSigners();
 
     const MockERC20Upgradeable = await ethers.getContractFactory("MockERC20Upgradeable");
     mockERC20Upgradeable = await MockERC20Upgradeable.deploy();
@@ -26,25 +26,25 @@ describe("MockERC20Upgradeable", function () {
 
   it("Should mint token and have the right balanceOf", async function () {
     const amount = 1000;
-    await mockERC20.mint(deployer.address, amount);
+    await mockERC20Upgradeable.mint(deployer.address, amount);
 
-    expect(await mockERC20.balanceOf(deployer.address)).to.equal(amount);
+    expect(await mockERC20Upgradeable.balanceOf(deployer.address)).to.equal(amount);
   });
 
   it("Should mint token and have the right totalSupply", async function () {
     const amount = 1000;
-    await mockERC20.mint(deployer.address, amount);
+    await mockERC20Upgradeable.mint(deployer.address, amount);
 
-    expect(await mockERC20.totalSupply()).to.equal(amount);
+    expect(await mockERC20Upgradeable.totalSupply()).to.equal(amount);
   });
 
   it("Should mint token and burn them", async function () {
     const amount = 1000;
-    await mockERC20.mint(deployer.address, amount);
-    expect(await mockERC20.balanceOf(deployer.address)).to.equal(amount);
+    await mockERC20Upgradeable.mint(deployer.address, amount);
+    expect(await mockERC20Upgradeable.balanceOf(deployer.address)).to.equal(amount);
 
-    await mockERC20.burn(amount);
-    expect(await mockERC20.balanceOf(deployer.address)).to.equal(0);
+    await mockERC20Upgradeable.burn(amount);
+    expect(await mockERC20Upgradeable.balanceOf(deployer.address)).to.equal(0);
   });
 });
 */

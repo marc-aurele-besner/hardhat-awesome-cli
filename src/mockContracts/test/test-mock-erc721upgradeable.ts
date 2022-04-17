@@ -8,7 +8,7 @@ let deployer: any;
 describe("MockERC721UpgradeableUpgradeable", function () {
 
     beforeEach(async function () {
-        const [deployer] = await ethers.getSigners();
+        [deployer] = await ethers.getSigners();
 
         const MockERC721Upgradeable = await ethers.getContractFactory("MockERC721Upgradeable");
         mockERC721Upgradeable = await MockERC721Upgradeable.deploy();
