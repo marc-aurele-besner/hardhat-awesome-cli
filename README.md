@@ -117,11 +117,11 @@ You can then retrieve your contract address in your tests scripts to run test on
 Import:
 javascript
 ```
-const { addressBook } = require('hardhat')
+const { addressBook, network } = require('hardhat')
 ```
 typescript
 ```
-import { addressBook } from 'hardhat'
+import { addressBook, network } from 'hardhat'
 ```
 
 Usage:
@@ -133,9 +133,24 @@ addressBook.retrieveContract(contractName: string, deployedNetwork: string)
 
 Example:
 ```
-await addressBook.saveContract('MockERC20', mockERC20.address, 'ethereum', deployer.address)
+await addressBook.saveContract('MockERC20', mockERC20.address, network.name, deployer.address)
 
-await addressBook.retrieveContract('MockERC20', 'ethereum')
+await addressBook.retrieveContract('MockERC20', network.name)
+```
+
+
+Retrieve Admin Proxy contract address deployed by @openzeppelin/hardhat-upgrades library
+
+Usage:
+```
+
+addressBook.retrieveOZAdminProxyContract(chainId: number)
+```
+
+Example:
+```
+
+await addressBook.retrieveOZAdminProxyContract(network.config.chainId)
 ```
 
 <details>
@@ -162,7 +177,7 @@ await addressBook.retrieveContract('MockERC20', 'ethereum')
     - Offer to create test scripts
     - Offer to create Foundry/Forge test contracts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
-    - hre.addressBook.{ saveContract, retrieveContract }
+    - hre.addressBook.{ saveContract, retrieveContract, retrieveOZAdminProxyContract }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
 - Write some test on the package using mocha
 </details>

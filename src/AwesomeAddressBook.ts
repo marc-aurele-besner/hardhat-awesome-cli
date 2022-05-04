@@ -101,4 +101,24 @@ export class AwesomeAddressBook {
         }
         return returnContractAddress
     }
+
+    public retrieveOZAdminProxyContract(chainId: number) {
+        let returnContractAddress = ''
+        let ozFileName = `unknown-${chainId}`
+        if (chainId === 1)
+            ozFileName = 'mainnet'
+        else if (chainId === 3)
+            ozFileName = 'ropsten'
+        else if (chainId === 4)
+            ozFileName = 'rinkeby'
+        else if (chainId === 5)
+            ozFileName = 'goerli'
+        else if (chainId === 42)
+            ozFileName = 'kovan'
+        if(fs.existsSync(`.openzeppelin/${ozFileName}.json`)) {
+            const ozFileRawdata: any = fs.readFileSync(`.openzeppelin/${ozFileName}.json`)
+            returnContractAddress = JSON.parse(ozFileRawdata).admin.address
+        }
+        return returnContractAddress
+    }
 }
