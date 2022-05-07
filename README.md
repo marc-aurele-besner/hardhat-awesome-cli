@@ -97,7 +97,7 @@ npm link hardhat-awesome-cli
 - Polygon - Mainnet (chainId 137)
 - Polygon - Mumbai (chainId 80001)
 - Binance Smart Chain - Mainnet (chainId 56)
-- Binance Smart Chain - Tesnet (chainId 97)
+- Binance Smart Chain - Testnet (chainId 97)
 - Optimism - Mainnet (chainId 10)
 - Optimism - Testnet Kovan (chainId 69)
 - Avalanche - Mainnet (chainId 43114)
@@ -126,7 +126,7 @@ import { addressBook, network } from 'hardhat'
 
 Usage:
 ```
-addressBook.saveContract(contractName: string, contractAddress: string, deployedNetwork: string, deployedBy: string)
+addressBook.saveContract(contractName: string, contractAddress: string, deployedNetwork: string, deployedBy: string, blockHah?: string, blockNumber?: number)
 
 addressBook.retrieveContract(contractName: string, deployedNetwork: string)
 ```
@@ -138,6 +138,37 @@ await addressBook.saveContract('MockERC20', mockERC20.address, network.name, dep
 await addressBook.retrieveContract('MockERC20', network.name)
 ```
 
+Return:
+```
+address: string
+```
+
+Retrieve a deployed contract object
+
+Usage:
+```
+
+addressBook.retrieveContractObject(contractName: string, deployedNetwork: string)
+```
+
+Example:
+```
+
+await addressBook.retrieveContractObject('MockERC20', network.name)
+```
+
+Return:
+```
+{
+    name: string
+    address: string
+    network: string
+    deployer: string
+    deploymentDate: Date
+    blockHah?: string
+    blockNumber?: number
+}
+```
 
 Retrieve Admin Proxy contract address deployed by @openzeppelin/hardhat-upgrades library
 
@@ -153,6 +184,40 @@ Example:
 await addressBook.retrieveOZAdminProxyContract(network.config.chainId)
 ```
 
+Return:
+```
+address: string
+```
+
+Retrieve all contracts deployed for a network name
+
+Usage:
+```
+
+addressBook.retrieveContractHistory(deployedNetwork: string)
+```
+
+Example:
+```
+
+await addressBook.retrieveContractHistory(network.name)
+```
+
+Return:
+```
+[
+    {
+        name: string
+        address: string
+        network: string
+        deployer: string
+        deploymentDate: Date
+        blockHah?: string
+        blockNumber?: number
+    }
+]
+```
+
 <details>
     <summary>## 💪 Done</summary>
 - Run test on all or single test file (from all your file in test/)
@@ -166,7 +231,7 @@ await addressBook.retrieveOZAdminProxyContract(network.config.chainId)
     - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
     - See all config for activated chain
     - Create Github test workflows
-    - Create Foundry settings, remmapping and test utilities
+    - Create Foundry settings, remapping and test utilities
 - More settings
     - Exclude files from, tests scripts, and contracts selection (useful for config and share helper file)
     - Add/remove other hardhat plugins (In npm/yarn and in hardhat.config)
@@ -177,7 +242,7 @@ await addressBook.retrieveOZAdminProxyContract(network.config.chainId)
     - Offer to create test scripts
     - Offer to create Foundry/Forge test contracts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
-    - hre.addressBook.{ saveContract, retrieveContract, retrieveOZAdminProxyContract }
+    - hre.addressBook.{ saveContract, retrieveContract, retrieveContractObject, retrieveOZAdminProxyContract, retrieveContractHistory }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
 - Write some test on the package using mocha
 </details>
@@ -187,7 +252,7 @@ await addressBook.retrieveOZAdminProxyContract(network.config.chainId)
 - Deployment contract generator
 - Make 'Run coverage tests' available only if the task is exported by hardhat
 - More Settings:
-    - Handle directory for file exeption
+    - Handle directory for file exception
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
     - Create a custom command
 - Improve all the tests, to test transfer, mint, burn (all basic ERC20, ERC721, ERC1155 functions)
