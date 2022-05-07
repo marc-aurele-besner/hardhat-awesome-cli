@@ -31,8 +31,7 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                contractsAddressDeployed = contractsAddressDeployed
-                    .filter((c: IAddressDetails) => c.name !== contractName && c.network !== deployedNetwork)
+                contractsAddressDeployed = contractsAddressDeployed.filter((c: IAddressDetails) => c.name !== contractName && c.network !== deployedNetwork)
                 contractsAddressDeployed.push(contractToAdd)
             }
             fs.unlinkSync(contractsAddressDeployedFile)
@@ -91,17 +90,12 @@ export class AwesomeAddressBook {
     public retrieveOZAdminProxyContract(chainId: number) {
         let returnContractAddress = ''
         let ozFileName = `unknown-${chainId}`
-        if (chainId === 1)
-            ozFileName = 'mainnet'
-        else if (chainId === 3)
-            ozFileName = 'ropsten'
-        else if (chainId === 4)
-            ozFileName = 'rinkeby'
-        else if (chainId === 5)
-            ozFileName = 'goerli'
-        else if (chainId === 42)
-            ozFileName = 'kovan'
-        if(fs.existsSync(`.openzeppelin/${ozFileName}.json`)) {
+        if (chainId === 1) ozFileName = 'mainnet'
+        else if (chainId === 3) ozFileName = 'ropsten'
+        else if (chainId === 4) ozFileName = 'rinkeby'
+        else if (chainId === 5) ozFileName = 'goerli'
+        else if (chainId === 42) ozFileName = 'kovan'
+        if (fs.existsSync(`.openzeppelin/${ozFileName}.json`)) {
             const ozFileRawdata: any = fs.readFileSync(`.openzeppelin/${ozFileName}.json`)
             returnContractAddress = JSON.parse(ozFileRawdata).admin.address
         }
@@ -110,7 +104,7 @@ export class AwesomeAddressBook {
 
     public retrieveContractHistory(deployedNetwork: string) {
         const contractsAddressDeployedFile = 'contractsAddressDeployedHistory.json'
-        let returnContractAddress: IAddressDetails[] = []
+        const returnContractAddress: IAddressDetails[] = []
         if (fs.existsSync(contractsAddressDeployedFile)) {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             const contractsAddressDeployedHistory: IAddressDetails[] = JSON.parse(rawdata)
