@@ -31,8 +31,21 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                contractsAddressDeployed = contractsAddressDeployed.filter((c: IAddressDetails) => c.name !== contractName && c.network !== deployedNetwork)
-                contractsAddressDeployed.push(contractToAdd)
+                let recordModify = false
+                contractsAddressDeployed = contractsAddressDeployed.map((c: IAddressDetails) => {
+                    if (c.name === contractName && c.network === deployedNetwork) {
+                        c.address = contractAddress
+                        c.deployer = deployedBy
+                        c.deploymentDate = new Date()
+                        c.blockHah = blockHah || ''
+                        c.blockNumber = blockNumber || 0
+                        recordModify = true
+                    }
+                    return c
+                })
+                if (!recordModify) {
+                    contractsAddressDeployed.push(contractToAdd)
+                }
             }
             fs.unlinkSync(contractsAddressDeployedFile)
         } else {
@@ -76,15 +89,13 @@ export class AwesomeAddressBook {
 
     public retrieveContractObject(contractName: string, deployedNetwork: string) {
         const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
-        let returnContractAddress = {}
         if (fs.existsSync(contractsAddressDeployedFile)) {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                returnContractAddress = contractsAddressDeployed.filter((c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork)[0]
+                return contractsAddressDeployed.filter((c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork)[0]
             }
         }
-        return returnContractAddress
     }
 
     public retrieveOZAdminProxyContract(chainId: number) {
