@@ -209,7 +209,15 @@ const buildAllTestsList = async () => {
         })
         const files = fs.readdirSync('test')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            let fileName
+            if (fs.lstatSync('test/' + file).isFile()) {
+                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            } else if (fs.lstatSync('test/' + file).isDirectory()) {
+                fileName = file + '/'
+                file = file + '/'
+            } else {
+                fileName = file
+            }
             const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
                 words[i] = words[i][0].toUpperCase() + words[i].substr(1)
@@ -230,7 +238,15 @@ const buildAllScriptsList = async () => {
     if (fs.existsSync('scripts')) {
         const files = fs.readdirSync('scripts')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            let fileName
+            if (fs.lstatSync('scripts/' + file).isFile()) {
+                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            } else if (fs.lstatSync('scripts/' + file).isDirectory()) {
+                fileName = file + '/'
+                file = file + '/'
+            } else {
+                fileName = file
+            }
             const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
                 words[i] = words[i][0].toUpperCase() + words[i].substr(1)
@@ -251,7 +267,15 @@ const buildAllContractsList = async () => {
     if (fs.existsSync('contracts')) {
         const files = fs.readdirSync('contracts')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, '')
+            let fileName
+            if (fs.lstatSync('contracts/' + file).isFile()) {
+                fileName = file.replace(/\.[^/.]+$/, '')
+            } else if (fs.lstatSync('contracts/' + file).isDirectory()) {
+                fileName = file + '/'
+                file = file + '/'
+            } else {
+                fileName = file
+            }
             const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
                 words[i] = words[i][0].toUpperCase() + words[i].substr(1)
@@ -277,7 +301,14 @@ const buildAllForgeTestsList = async () => {
         })
         const files = fs.readdirSync('contracts/test')
         files.map((file) => {
-            let fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            let fileName
+            if (fs.lstatSync('contracts/test/' + file).isFile()) {
+                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
+            } else if (fs.lstatSync('contracts/test/' + file).isDirectory()) {
+                fileName = file + '/'
+            } else {
+                fileName = file
+            }
             const words = fileName.split(' ')
             for (let i = 0; i < words.length; i++) {
                 words[i] = words[i][0].toUpperCase() + words[i].substr(1)

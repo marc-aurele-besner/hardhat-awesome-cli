@@ -1,6 +1,6 @@
 {
   "name": "hardhat-awesome-cli",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Hardhat made awesome with a flexible CLI to help run test, deploy and more.",
   "repository": "https://github.com/marc-aurele-besner/hardhat-awesome-cli.git",
   "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
@@ -30,7 +30,7 @@
     "README.md"
   ],
   "scripts": {
-    "lint:fix": "prettier --write src/**/*.{js,ts} && tslint --fix --config tslint.json --project tsconfig.json",
+    "lint:fix": "prettier --write src/**/*.{js,ts} && prettier --write test/**/*.{js,ts} && tslint --fix --config tslint.json --project tsconfig.json",
     "lint": "tslint --config tslint.json --project tsconfig.json",
     "test": "mocha --exit --recursive 'test/**/*.test.ts'",
     "prepublishOnly": "tsc --project tsconfig.prod.json",

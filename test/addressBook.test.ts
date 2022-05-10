@@ -5,6 +5,16 @@ import path from 'path'
 
 import { useEnvironment } from './helpers'
 
+interface IAddressDetails {
+    name: string
+    address: string
+    network: string
+    deployer: string
+    deploymentDate: Date
+    blockHah?: string
+    blockNumber?: number
+}
+
 describe('Integration tests', function () {
     describe('AwesomeAddressBook', function () {
         useEnvironment('hardhat-cli')
@@ -20,8 +30,55 @@ describe('Integration tests', function () {
             ).to.be.equal(undefined)
         })
 
+        it('saveContract() wit extra arguments', function () {
+            expect(
+                this.hre.addressBook.saveContract(
+                    'MockERC20',
+                    '0x0000000000000000000000000000000000000000',
+                    'hardhat',
+                    '0x0000000000000000000000000000000000000000',
+                    '0x0000000000000000000000000000000000000001',
+                    1
+                )
+            ).to.be.equal(undefined)
+        })
+
+        it('2x saveContract() wit extra arguments', function () {
+            this.hre.addressBook.saveContract(
+                'MockERC20',
+                '0x0000000000000000000000000000000000000000',
+                'hardhat',
+                '0x0000000000000000000000000000000000000000',
+                '0x0000000000000000000000000000000000000001',
+                1
+            )
+            this.hre.addressBook.saveContract(
+                'MockERC20-B',
+                '0x0000000000000000000000000000000000000001',
+                'hardhat',
+                '0x0000000000000000000000000000000000000001',
+                '0x0000000000000000000000000000000000000002',
+                2
+            )
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000000')
+            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000001')
+        })
+
         it('retrieveContract()', function () {
             expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000000')
+        })
+
+        it('retrieveContractObject()', function () {
+            const retrieveContractObject: IAddressDetails | undefined = this.hre.addressBook.retrieveContractObject('MockERC20', 'hardhat')
+
+            expect(retrieveContractObject).to.not.be.equal(undefined)
+            if (retrieveContractObject) {
+                expect(retrieveContractObject.name).to.be.equal('MockERC20')
+                expect(retrieveContractObject.address).to.be.equal('0x0000000000000000000000000000000000000000')
+                expect(retrieveContractObject.network).to.be.equal('hardhat')
+                expect(retrieveContractObject.blockHah).to.be.equal('0x0000000000000000000000000000000000000001')
+                expect(retrieveContractObject.blockNumber).to.be.equal(1)
+            }
         })
 
         it('contractsAddressDeployed.json exist', function () {
