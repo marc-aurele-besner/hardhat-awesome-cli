@@ -35,7 +35,7 @@ const MockContractsList: IMockContractsList[] = [
     {
         name: 'MockERC20Upgradeable',
         desc: 'Basic Upgradeable ERC20 Token contract.',
-        dependencies: ['@openzeppelin/contracts-Upgradeable'],
+        dependencies: ['@openzeppelin/contracts-upgradeable'],
         deploymentScriptJs: 'scripts/deploy-Mock-ERC20Upgradeable.js',
         deploymentScriptTs: 'scripts/deploy-Mock-ERC20Upgradeable.ts',
         testScriptJs: 'test/test-Mock-ERC20Upgradeable.js',
@@ -46,7 +46,7 @@ const MockContractsList: IMockContractsList[] = [
     {
         name: 'MockERC721Upgradeable',
         desc: 'Basic Upgradeable ERC721 NFT Token contract (unique nft).',
-        dependencies: ['@openzeppelin/contracts-Upgradeable'],
+        dependencies: ['@openzeppelin/contracts-upgradeable'],
         deploymentScriptJs: 'scripts/deploy-Mock-ERC721Upgradeable.js',
         deploymentScriptTs: 'scripts/deploy-Mock-ERC721Upgradeable.ts',
         testScriptJs: 'test/test-Mock-ERC721Upgradeable.js',
@@ -57,7 +57,7 @@ const MockContractsList: IMockContractsList[] = [
     {
         name: 'MockERC1155Upgradeable',
         desc: 'Basic Upgradeable ERC1155 NFT Token contract (multiple nfts).',
-        dependencies: ['@openzeppelin/contracts-Upgradeable'],
+        dependencies: ['@openzeppelin/contracts-upgradeable'],
         deploymentScriptJs: 'scripts/deploy-Mock-ERC1155Upgradeable.js',
         deploymentScriptTs: 'scripts/deploy-Mock-ERC1155Upgradeable.ts',
         testScriptJs: 'test/test-Mock-ERC1155Upgradeable.js',
