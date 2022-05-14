@@ -1,4 +1,10 @@
-import { IChain, IHardhatPluginAvailableList } from './types'
+import { IChain, IDefaultGithubWorkflowsList, IHardhatPluginAvailableList } from './types'
+
+export const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
+export const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
+
+export const fileContractsAddressDeployed = 'contractsAddressDeployed.json'
+export const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.json'
 
 export const DefaultChainList: IChain[] = [
     {
@@ -130,7 +136,7 @@ export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
     },
     {
         title: 'Hardhat etherscan',
-        name: '@nomiclabs/hardhat-etherscan ',
+        name: '@nomiclabs/hardhat-etherscan',
         addInHardhatConfig: true
     },
     {
@@ -170,4 +176,37 @@ export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
     }
 ]
 
-export const DefaultFoundryTestUtilsList: string[] = ['utils/cheatcodes.sol', 'utils/console.sol', 'utils/stdlib.sol', 'utils/test.sol', 'utils/Vm.sol']
+export const DefaultFoundryTestUtilsList: string[] = [
+    'utils/cheatcodes.sol',
+    'utils/console.sol',
+    'utils/stdlib.sol',
+    'utils/test.sol',
+    'utils/Vm.sol'
+]
+
+export const DefaultGithubWorkflowsGroup: string[] = ['npm', 'yarn']
+
+export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
+    {
+        title: 'NPM - Hardhat - Test & Coverage',
+        file: 'hardhat-npm',
+        group: 'npm',
+        requirement: ['solidity-coverage']
+    },
+    {
+        title: 'NPM - Foundry - Forge Test',
+        file: 'foundry-npm',
+        group: 'npm'
+    },
+    {
+        title: 'Yarn - Hardhat - Test & Coverage',
+        file: 'hardhat-yarn',
+        group: 'npm',
+        requirement: ['solidity-coverage']
+    },
+    {
+        title: 'Yarn - Foundry - Forge Test',
+        file: 'foundry-yarn',
+        group: 'npm'
+    }
+]

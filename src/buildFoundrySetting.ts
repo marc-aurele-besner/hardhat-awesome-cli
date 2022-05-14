@@ -61,13 +61,20 @@ block_difficulty = 0                                          # the value of blo
         fs.mkdirSync('contracts/test/utils')
     }
     if (require && require.main) {
-        const packageRootPath = path.join(path.dirname(require.main.filename), '../../../hardhat-awesome-cli/src/mockContracts')
+        const packageRootPath = path.join(
+            path.dirname(require.main.filename),
+            '../../../hardhat-awesome-cli/src/mockContracts'
+        )
         if (fs.existsSync(packageRootPath)) {
             DefaultFoundryTestUtilsList.map((testUtils: string) => {
                 if (!fs.existsSync('contracts/test/' + testUtils)) {
                     fs.copyFileSync(packageRootPath + '/testForge/' + testUtils, 'contracts/test/' + testUtils)
                     console.log('\x1b[32m%s\x1b[0m', 'Creating Foundry test utilities in contracts/test/' + testUtils)
-                } else console.log('\x1b[33m%s\x1b[0m', 'The Foundry test utilities already exists in contracts/test/' + testUtils)
+                } else
+                    console.log(
+                        '\x1b[33m%s\x1b[0m',
+                        'The Foundry test utilities already exists in contracts/test/' + testUtils
+                    )
             })
         }
     }

@@ -60,16 +60,25 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000000')
-            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000001')
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+                '0x0000000000000000000000000000000000000000'
+            )
+            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
+                '0x0000000000000000000000000000000000000001'
+            )
         })
 
         it('retrieveContract()', function () {
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('0x0000000000000000000000000000000000000000')
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+                '0x0000000000000000000000000000000000000000'
+            )
         })
 
         it('retrieveContractObject()', function () {
-            const retrieveContractObject: IAddressDetails | undefined = this.hre.addressBook.retrieveContractObject('MockERC20', 'hardhat')
+            const retrieveContractObject: IAddressDetails | undefined = this.hre.addressBook.retrieveContractObject(
+                'MockERC20',
+                'hardhat'
+            )
 
             expect(retrieveContractObject).to.not.be.equal(undefined)
             if (retrieveContractObject) {
