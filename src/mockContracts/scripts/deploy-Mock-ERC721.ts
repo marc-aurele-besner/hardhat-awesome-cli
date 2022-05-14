@@ -3,7 +3,7 @@ import { ethers, addressBook, network } from 'hardhat'
 
 async function main() {
     const [deployer] = await ethers.getSigners()
-    
+
     const MockERC721 = await ethers.getContractFactory('MockERC721')
     const mockERC721 = await MockERC721.deploy()
 
@@ -17,4 +17,5 @@ main().catch((error) => {
     console.error(error)
     process.exitCode = 1
 })
+
 */
