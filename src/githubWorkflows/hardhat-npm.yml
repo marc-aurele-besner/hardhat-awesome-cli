@@ -1,0 +1,19 @@
+name: Run Hardhat Test with NPM
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test_hardhat_npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: NPM Clean Install
+        run: npm ci
+      - name: Hardhat Compile
+        run: npx hardhat compile
+      - name: Hardhat Test
+        run: npx hardhat test
+      - name: Hardhat Coverage Result
+        run: npx hardhat coverage

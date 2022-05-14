@@ -11,7 +11,14 @@ interface IAddressDetails {
 }
 
 export class AwesomeAddressBook {
-    public saveContract(contractName: string, contractAddress: string, deployedNetwork: string, deployedBy: string, blockHah?: string, blockNumber?: number) {
+    public saveContract(
+        contractName: string,
+        contractAddress: string,
+        deployedNetwork: string,
+        deployedBy: string,
+        blockHah?: string,
+        blockNumber?: number
+    ) {
         const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
         const contractsAddressDeployedHistoryFile = 'contractsAddressDeployedHistory.json'
         const contractToAdd: IAddressDetails = {
@@ -67,7 +74,10 @@ export class AwesomeAddressBook {
             contractsAddressDeployedHistory.push(contractToAdd)
         }
         try {
-            fs.writeFileSync(contractsAddressDeployedHistoryFile, JSON.stringify(contractsAddressDeployedHistory, null, 2))
+            fs.writeFileSync(
+                contractsAddressDeployedHistoryFile,
+                JSON.stringify(contractsAddressDeployedHistory, null, 2)
+            )
         } catch (err) {
             console.log('Error writing address to file: ', err)
         }
@@ -80,8 +90,9 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                returnContractAddress = contractsAddressDeployed.filter((c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork)[0]
-                    .address
+                returnContractAddress = contractsAddressDeployed.filter(
+                    (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                )[0].address
             }
         }
         return returnContractAddress
@@ -93,7 +104,9 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                return contractsAddressDeployed.filter((c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork)[0]
+                return contractsAddressDeployed.filter(
+                    (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                )[0]
             }
         }
     }

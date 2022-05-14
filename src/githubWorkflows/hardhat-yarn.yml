@@ -1,0 +1,19 @@
+name: Run Hardhat Test with Yarn
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test_hardhat_yarn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Yarn Install
+        run: yarn
+      - name: Hardhat Compile
+        run: npx hardhat compile
+      - name: Hardhat Test
+        run: npx hardhat test
+      - name: Hardhat Coverage Result
+        run: npx hardhat coverage

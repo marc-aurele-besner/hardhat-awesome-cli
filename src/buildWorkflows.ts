@@ -1,84 +1,50 @@
 import fs from 'fs'
+import path from 'path'
 
-const buildWorkflows = async (workflowName: string) => {
+import detectPackage from './packageInstaller'
+import { IDefaultGithubWorkflowsList } from './types'
+
+const buildWorkflows = async (workflowToAdd: IDefaultGithubWorkflowsList) => {
     if (fs.existsSync('.github')) {
         if (!fs.existsSync('.github/workflows')) fs.mkdirSync('.github/workflows')
     } else {
         fs.mkdirSync('.github')
         fs.mkdirSync('.github/workflows')
     }
-    let workflowFile: string = ''
-    let workflowInstall: string = ''
+    if (require && require.main) {
+        const packageRootPath = path.join(
+            path.dirname(require.main.filename),
+            '../../../hardhat-awesome-cli/src/githubWorkflows'
+        )
+        if (fs.existsSync(packageRootPath + '/' + workflowToAdd.file + '.yml')) {
+            if (!fs.existsSync('.github/workflows/' + workflowToAdd.file + '.yml')) {
+                fs.copyFileSync(
+                    packageRootPath + '/' + workflowToAdd.file + '.yml',
+                    '.github/workflows/' + workflowToAdd.file + '.yml'
+                )
 
-    if (workflowName === 'NPM - Hardhat - Test & Coverage') {
-        workflowFile = 'hardhat'
-        workflowInstall = 'npm'
-    }
-    if (workflowName === 'NPM - Foundry - Forge Test') {
-        workflowFile = 'foundry'
-        workflowInstall = 'npm'
-    }
-    if (workflowName === 'Yarn - Hardhat - Test & Coverage') {
-        workflowFile = 'hardhat'
-        workflowInstall = 'yarn'
-    }
-    if (workflowName === 'Yarn - Foundry - Forge Test') {
-        workflowFile = 'foundry'
-        workflowInstall = 'yarn'
-    }
-
-    if (workflowFile && workflowInstall) {
-        if (!fs.existsSync('.github/workflows/' + workflowFile + '.yml')) {
-            if (workflowFile === 'hardhat') {
-                fs.writeFileSync(
-                    '.github/workflows/' + workflowFile + '.yml',
-                    `name: Run Hardhat Test
-
-on: [push]
-
-jobs:
-    test_hardhat:
-    runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v2
-        - uses: actions/setup-node@v3
-        with:
-            node-version: 16
-        - name: ${workflowInstall === 'npm' ? 'NPM Clean Install' : 'Yarn Install'}
-        run: ${workflowInstall === 'npm' ? 'npm ci' : 'yarn'}
-        - name: Run All Hardhat Tests
-        run: npx hardhat test
-        - name: Run hardhat coverage on all Test
-        run: npx hardhat coverage`
+                console.log(
+                    '\x1b[32m%s\x1b[0m',
+                    'Creating workflow ' + workflowToAdd.title + ' in .github/workflows/' + workflowToAdd.file + '.yml'
+                )
+                if (workflowToAdd.requirement !== undefined) {
+                    if (workflowToAdd.requirement.length > 0) {
+                        workflowToAdd.requirement.forEach(async (packageRequire) => {
+                            await detectPackage(packageRequire, true, false, true)
+                        })
+                    }
+                }
+            } else {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'The workflow ' +
+                        workflowToAdd.title +
+                        ' already exists at .github/workflows/' +
+                        workflowToAdd.file +
+                        '.yml'
                 )
             }
-            if (workflowFile === 'foundry') {
-                fs.writeFileSync(
-                    '.github/workflows/' + workflowFile + '.yml',
-                    `name: Run Foundry Test
-
-on: [push]
-
-jobs:
-    test_foundry:
-    runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v2
-        - uses: actions/setup-node@v3
-        with:
-            node-version: 16
-        - name: Install Foundry
-        uses: onbjerg/foundry-toolchain@v1
-        with:
-            version: nightly
-        - name: ${workflowInstall === 'npm' ? 'NPM Clean Install' : 'Yarn Install'}
-        run: ${workflowInstall === 'npm' ? 'npm ci' : 'yarn'}
-        - name: Run Forge Test
-        run: forge test`
-                )
-            }
-            console.log('\x1b[32m%s\x1b[0m', 'Creating workflow ' + workflowName + ' in .github/workflows/' + workflowFile + '.yml')
-        } else console.log('\x1b[33m%s\x1b[0m', 'The workflow ' + workflowName + ' already exists at .github/workflows/' + workflowFile + '.yml')
+        }
     }
 }
 

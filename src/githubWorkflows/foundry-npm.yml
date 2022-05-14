@@ -1,0 +1,20 @@
+name: Run Foundry Test with NPM
+
+on: [push]
+
+jobs:
+  test_foundry_npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: Yarn Install
+        run: yarn
+      - name: Run Forge Test
+        run: forge test

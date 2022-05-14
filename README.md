@@ -262,3 +262,4 @@ Return:
     - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
 - Write more test with mocha to test the package functionality
 - Use commander to create command to access some functionality (and use them in the package test)
+- Create contracts/, test/ and scripts/ folder if they don't exist when adding mock contracts

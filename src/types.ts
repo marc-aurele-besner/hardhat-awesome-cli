@@ -54,3 +54,10 @@ export interface IContractAddressDeployed {
     deployer: string
     deploymentDate: Date
 }
+
+export interface IDefaultGithubWorkflowsList {
+    title: string
+    file: string
+    group: string
+    requirement?: string[]
+}
