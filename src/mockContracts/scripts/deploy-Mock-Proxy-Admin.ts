@@ -10,7 +10,7 @@ async function main() {
     await mockProxyAdmin.deployed()
     await addressBook.saveContract('MockProxyAdmin', mockProxyAdmin.address, network.name, deployer.address)
 
-    console.log('MockERC20 deployed to:', mockProxyAdmin.address)
+    console.log('MockProxyAdmin deployed to:', mockProxyAdmin.address)
 }
 
 main().catch((error) => {

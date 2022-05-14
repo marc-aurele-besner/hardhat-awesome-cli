@@ -11,7 +11,7 @@ async function main() {
     await addressBook.saveContract('MockERC1155Upgradeable', mockERC1155.address, network.name, deployer.address)
     await mockERC1155.initialize('MockERC1155', 'MOCK', 'https://google.com')
 
-    console.log('MockERC1155 deployed to:', mockERC1155.address)
+    console.log('MockERC1155Upgradeable deployed to:', mockERC1155.address)
 }
 
 main().catch((error) => {
