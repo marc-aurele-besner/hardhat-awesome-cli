@@ -1,6 +1,6 @@
 {
   "name": "hardhat-awesome-cli",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Hardhat made awesome with a flexible CLI to help run test, deploy and more.",
   "repository": "https://github.com/marc-aurele-besner/hardhat-awesome-cli.git",
   "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
@@ -8,7 +8,7 @@
   "main": "dist/src/index",
   "typings": "dist/src/index",
   "bin": {
-    "hardhat-awesome-cli": "./src/index-cli.ts"
+    "hardhat-awesome-cli": "./src/index.ts"
   },
   "bugs": {
     "url": "https://github.com/marc-aurele-besner/hardhat-awesome-cli/issues"
