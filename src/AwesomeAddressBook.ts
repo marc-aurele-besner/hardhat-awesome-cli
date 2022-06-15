@@ -6,7 +6,7 @@ interface IAddressDetails {
     network: string
     deployer: string
     deploymentDate: Date
-    blockHah?: string
+    blockHash?: string
     blockNumber?: number
 }
 
@@ -16,7 +16,7 @@ export class AwesomeAddressBook {
         contractAddress: string,
         deployedNetwork: string,
         deployedBy: string,
-        blockHah?: string,
+        blockHash?: string,
         blockNumber?: number
     ) {
         const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
@@ -27,7 +27,7 @@ export class AwesomeAddressBook {
             network: deployedNetwork,
             deployer: deployedBy,
             deploymentDate: new Date(),
-            blockHah: blockHah || '',
+            blockHash: blockHash || '',
             blockNumber: blockNumber || 0
         }
         let contractsAddressDeployed = []
@@ -44,7 +44,7 @@ export class AwesomeAddressBook {
                         c.address = contractAddress
                         c.deployer = deployedBy
                         c.deploymentDate = new Date()
-                        c.blockHah = blockHah || ''
+                        c.blockHash = blockHash || ''
                         c.blockNumber = blockNumber || 0
                         recordModify = true
                     }
