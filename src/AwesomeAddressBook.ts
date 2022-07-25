@@ -5,31 +5,60 @@ interface IAddressDetails {
     address: string
     network: string
     deployer: string
-    deploymentDate: Date
+    deploymentDate: string
     blockHash?: string
     blockNumber?: number
+    tag?: string
+    extra?: any
 }
 
 export class AwesomeAddressBook {
+    public formatSaveContract(
+        contractName: string,
+        contractAddress: string,
+        deployedNetwork: string,
+        deployedBy: string,
+        blockHash?: string,
+        blockNumber?: number,
+        tag?: string,
+        extra?: any
+    ) {
+        const contractToAdd: IAddressDetails = {
+            name: contractName,
+            address: contractAddress,
+            network: deployedNetwork,
+            deployer: deployedBy,
+            deploymentDate: new Date().toString(),
+            blockHash: blockHash || '',
+            blockNumber: blockNumber || 0,
+            tag: tag ? tag : '',
+            extra: extra || {}
+        }
+        return contractToAdd
+    }
+
     public saveContract(
         contractName: string,
         contractAddress: string,
         deployedNetwork: string,
         deployedBy: string,
         blockHash?: string,
-        blockNumber?: number
+        blockNumber?: number,
+        tag?: string,
+        extra?: any
     ) {
         const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
         const contractsAddressDeployedHistoryFile = 'contractsAddressDeployedHistory.json'
-        const contractToAdd: IAddressDetails = {
-            name: contractName,
-            address: contractAddress,
-            network: deployedNetwork,
-            deployer: deployedBy,
-            deploymentDate: new Date(),
-            blockHash: blockHash || '',
-            blockNumber: blockNumber || 0
-        }
+        const contractToAdd: IAddressDetails = this.formatSaveContract(
+            contractName,
+            contractAddress,
+            deployedNetwork,
+            deployedBy,
+            blockHash,
+            blockNumber,
+            tag,
+            extra
+        )
         let contractsAddressDeployed = []
         let contractsAddressDeployedHistory = []
 
@@ -38,15 +67,17 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                let recordModify = false
+                const recordModify = false
                 contractsAddressDeployed = contractsAddressDeployed.map((c: IAddressDetails) => {
                     if (c.name === contractName && c.network === deployedNetwork) {
                         c.address = contractAddress
                         c.deployer = deployedBy
-                        c.deploymentDate = new Date()
+                        c.deploymentDate = new Date().toString()
                         c.blockHash = blockHash || ''
                         c.blockNumber = blockNumber || 0
-                        recordModify = true
+                        c.tag = tag || ''
+                        c.extra = extra || {}
+                        // recordModify = true
                     }
                     return c
                 })
@@ -113,12 +144,21 @@ export class AwesomeAddressBook {
 
     public retrieveOZAdminProxyContract(chainId: number) {
         let returnContractAddress = ''
-        let ozFileName = `unknown-${chainId}`
-        if (chainId === 1) ozFileName = 'mainnet'
-        else if (chainId === 3) ozFileName = 'ropsten'
-        else if (chainId === 4) ozFileName = 'rinkeby'
-        else if (chainId === 5) ozFileName = 'goerli'
-        else if (chainId === 42) ozFileName = 'kovan'
+        let ozFileName = ''
+        switch (chainId) {
+            case 1:
+                ozFileName = 'mainnet'
+            case 3:
+                ozFileName = 'ropsten'
+            case 4:
+                ozFileName = 'rinkeby'
+            case 5:
+                ozFileName = 'goerli'
+            case 42:
+                ozFileName = 'kovan'
+            default:
+                ozFileName = `unknown-${chainId}`
+        }
         if (fs.existsSync(`.openzeppelin/${ozFileName}.json`)) {
             const ozFileRawdata: any = fs.readFileSync(`.openzeppelin/${ozFileName}.json`)
             returnContractAddress = JSON.parse(ozFileRawdata).admin.address
