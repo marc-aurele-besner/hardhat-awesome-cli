@@ -108,6 +108,7 @@ export const buildMockDeploymentScriptOrTest = async (contractName: string, type
                                     contractName,
                                     ' in ' + scriptOrTestDir + '/'
                                 )
+                                if (!fs.existsSync(scriptOrTestDir + '/')) fs.mkdirSync(scriptOrTestDir + '/')
                                 const rawdata: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
                                 let scriptsTestRawdataModify = rawdata
                                 if (type !== 'testForge')

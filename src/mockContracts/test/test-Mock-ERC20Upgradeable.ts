@@ -7,7 +7,7 @@ let deployer: any
 let user1: any
 let user2: any
 
-describe('mockERC20UpgradeableUpgradeable', function () {
+describe('MockERC20UpgradeableUpgradeable', function () {
     beforeEach(async function () {
         ;[deployer, user1, user2] = await ethers.getSigners()
 

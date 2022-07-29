@@ -10,9 +10,11 @@ interface IAddressDetails {
     address: string
     network: string
     deployer: string
-    deploymentDate: Date
-    blockHah?: string
+    deploymentDate: string
+    blockHash?: string
     blockNumber?: number
+    tag?: string
+    extra?: any
 }
 
 describe('Integration tests', function () {
@@ -85,7 +87,7 @@ describe('Integration tests', function () {
                 expect(retrieveContractObject.name).to.be.equal('MockERC20')
                 expect(retrieveContractObject.address).to.be.equal('0x0000000000000000000000000000000000000000')
                 expect(retrieveContractObject.network).to.be.equal('hardhat')
-                expect(retrieveContractObject.blockHah).to.be.equal('0x0000000000000000000000000000000000000001')
+                expect(retrieveContractObject.blockHash).to.be.equal('0x0000000000000000000000000000000000000001')
                 expect(retrieveContractObject.blockNumber).to.be.equal(1)
             }
         })
