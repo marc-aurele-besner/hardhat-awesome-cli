@@ -1,6 +1,6 @@
 {
   "name": "hardhat-awesome-cli",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Hardhat made awesome with a flexible CLI to help run test, deploy and more.",
   "repository": "https://github.com/marc-aurele-besner/hardhat-awesome-cli.git",
   "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
