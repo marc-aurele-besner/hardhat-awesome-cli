@@ -21,7 +21,7 @@ import {
     buildActivatedChainNetworkConfig,
     removeActivatedChain
 } from './buildNetworks'
-import buildWorkflows from './buildWorkflows'
+import buildWorkflows, { buildWorkflowsFromCommand } from './buildWorkflows'
 import {
     DefaultChainList,
     DefaultGithubWorkflowsGroup,
@@ -491,7 +491,7 @@ const serveMoreSettingSelector = async () => {
                     'Remove other Hardhat plugins',
                     new inquirer.Separator(),
                     'Create Github test workflows',
-                    'Create Foundry settings, remmapping and test utilities',
+                    'Create Foundry settings, remapping and test utilities',
                     new inquirer.Separator()
                 ]
             }
@@ -506,7 +506,7 @@ const serveMoreSettingSelector = async () => {
             if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
             if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
             if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
-            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remmapping and test utilities')
+            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities')
                 await buildFoundrySetting()
         })
 }
@@ -685,7 +685,7 @@ const serveAccountBalance = async (env: any) => {
     await serveNetworkSelector(env, '', '', getAccountBalance, '', false)
 }
 
-const serveCli = async (env: any) => {
+const serveInquirer = async (env: any) => {
     console.log(
         `
 `,
@@ -742,6 +742,33 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
             if (answers.action === 'Get account balance') await serveAccountBalance(env)
         })
+}
+
+const serveCli = async (args: any, env: any) => {
+    switch (true) {
+        case args.excludeTestFile !== '':
+            return removeExcludedFiles('test', args.excludeTestFile)
+        case args.excludeScriptFile !== '':
+            return removeExcludedFiles('scripts', args.excludeScriptFile)
+        case args.excludeContractFile !== '':
+            return removeExcludedFiles('contracts', args.excludeContractFile)
+        case args.addHardhatPlugin !== '':
+            return detectPackage(args.addHardhatPlugin, true, false, true)
+        case args.removeHardhatPlugin !== '':
+            return detectPackage(args.removeHardhatPlugin, false, true, true)
+        case args.addGithubTestWorkflow !== '':
+            return buildWorkflowsFromCommand(args.addGithubTestWorkflow)
+        case args.addFoundry === true || args.addFoundry === 'true' || args.addFoundry === 'yes':
+            return buildFoundrySetting()
+        case args.addActivatedChain !== '':
+            return addActivatedChain(args.addActivatedChain)
+        case args.removeActivatedChain !== '':
+            return removeActivatedChain(args.removeActivatedChain)
+        case args.getAccountBalance === true || args.getAccountBalance === 'true' || args.getAccountBalance === 'yes':
+            return serveAccountBalance(env)
+        default:
+            return serveInquirer(env)
+    }
 }
 
 export default serveCli

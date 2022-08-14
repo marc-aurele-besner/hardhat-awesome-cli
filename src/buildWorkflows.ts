@@ -1,8 +1,15 @@
 import fs from 'fs'
 import path from 'path'
 
+import { DefaultGithubWorkflowsList } from './config'
 import detectPackage from './packageInstaller'
 import { IDefaultGithubWorkflowsList } from './types'
+
+export const buildWorkflowsFromCommand = async (workflowToAdd: string) => {
+    const toAdd = DefaultGithubWorkflowsList.find((workflow) => workflow.file === workflowToAdd)
+    if (toAdd !== undefined) await buildWorkflows(toAdd)
+    return null
+}
 
 const buildWorkflows = async (workflowToAdd: IDefaultGithubWorkflowsList) => {
     if (fs.existsSync('.github')) {
