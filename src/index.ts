@@ -79,9 +79,20 @@ extendEnvironment(async (hre: any) => {
  * @param  {HardhatUserArgs} args
  * @param  {HardhatEnv} env
  */
-task('cli', 'Easy command line interface to use hardhat').setAction(async function (args, env) {
-    await serveCli(env)
-})
+task('cli', 'Easy command line interface to use hardhat')
+    .addOptionalParam('excludeTestFile', 'Exclude test file from the tests selection list', '')
+    .addOptionalParam('excludeScriptFile', 'Exclude script file from the scripts selection list', '')
+    .addOptionalParam('excludeContractFile', 'Exclude contract file from the contract selection list', '')
+    .addOptionalParam('addHardhatPlugin', 'Add other Hardhat plugins', '')
+    .addOptionalParam('removeHardhatPlugin', 'Remove other Hardhat plugins', '')
+    .addOptionalParam('addGithubTestWorkflow', 'Create Github test workflows', '')
+    .addOptionalParam('addFoundry', 'Create Foundry settings, remapping and test utilities', '')
+    .addOptionalParam('addActivatedChain', 'Add chains from the chain selection', '')
+    .addOptionalParam('removeActivatedChain', 'Remove chains from the chain selection', '')
+    .addOptionalParam('getAccountBalance', 'Get account balance', '')
+    .setAction(async function (args, env) {
+        await serveCli(args, env)
+    })
 
 subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_, __, runSuper: any) => {
     const paths = await runSuper()

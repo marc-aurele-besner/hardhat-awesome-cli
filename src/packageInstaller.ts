@@ -179,13 +179,13 @@ import '${packageName}'`
 const detectPackage = async (
     packageName: string,
     install: boolean,
-    unistall: boolean,
+    uninstall: boolean,
     addRemoveInHardhatConfig: boolean
 ) => {
     if (require && require.main) {
         const nodeModulesPath = path.join(path.dirname(require.main.filename), '../../../')
         if (fs.existsSync(nodeModulesPath + packageName)) {
-            if (unistall) {
+            if (uninstall) {
                 console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
                 if (fs.existsSync('package-lock.json')) {
                     if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
@@ -199,7 +199,7 @@ const detectPackage = async (
             }
             return true
         } else {
-            if (install) {
+            if (uninstall) {
                 console.log('\x1b[34m%s\x1b[0m', 'Installing package: ', '\x1b[97m\x1b[0m', packageName)
                 if (fs.existsSync('package-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')

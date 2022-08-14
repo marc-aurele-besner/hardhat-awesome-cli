@@ -64,7 +64,7 @@ npm link hardhat-awesome-cli
     - Exclude script or contract file from the contract selection list
     - Install/Uninstall other Hardhat plugins
     - Create Github test workflows (for NPM and/or Yarn and for Hardhat test&coverage and/or Foundry test)
-    - Create Foundry settings, remmapping and test utilities
+    - Create Foundry settings, remapping and test utilities
         <details>
             <summary>More details on Foundry</summary>
         [Foundry Documentation](https://book.getfoundry.sh/index.html)
@@ -105,6 +105,20 @@ npm link hardhat-awesome-cli
 
 In 'More settings' you can also add a custom chain, create an issue or pull request to add other chains.
 
+## CLI optional flags
+
+- --add-activated-chain         Add chains from the chain selection (default: "")
+- --add-foundry                 Create Foundry settings, remapping and test utilities (default: "")
+- --add-github-test-workflow   Create Github test workflows (default: "")
+- --add-hardhat-plugin          Add other Hardhat plugins (default: "")
+- --exclude-contract-file       Exclude contract file from the contract selection list (default: "")
+- --exclude-script-file         Exclude script file from the scripts selection list (default: "")
+- --exclude-test-file           Exclude test file from the tests selection list (default: "")
+- --get-account-balance         Get account balance (default: "")
+- --remove-activated-chain      Remove chains from the chain selection (default: "")
+- --remove-hardhat-plugin       Remove other Hardhat plugins (default: "")
+
+
 ## Helper tools
 Tools that you can use in your scripts and tests to make your life easier
 
@@ -126,7 +140,7 @@ import { addressBook, network } from 'hardhat'
 
 Usage:
 ```
-addressBook.saveContract(contractName: string, contractAddress: string, deployedNetwork: string, deployedBy: string, blockHah?: string, blockNumber?: number)
+addressBook.saveContract(contractName: string, contractAddress: string, deployedNetwork: string, deployedBy: string, blockHah?: string, blockNumber?: number, tag?: string, extra?: any)
 
 addressBook.retrieveContract(contractName: string, deployedNetwork: string)
 ```
@@ -167,6 +181,8 @@ Return:
     deploymentDate: Date
     blockHah?: string
     blockNumber?: number
+    tag?: string
+    extra?: any
 }
 ```
 
@@ -245,12 +261,12 @@ Return:
     - hre.addressBook.{ saveContract, retrieveContract, retrieveContractObject, retrieveOZAdminProxyContract, retrieveContractHistory }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
 - Write some test on the package using mocha
+- Add optional flag to "cli" command to access some functionality
 </details>
 
 ## 🏗️ To do:
-- Start working on documentation
+- Improving documentation
 - Deployment contract generator
-- Make 'Run coverage tests' available only if the task is exported by hardhat
 - More Settings:
     - Handle directory for file exception
     - Setup slack API or email report to receive a copy of test result and contracts list deployed
@@ -261,5 +277,5 @@ Return:
     - Verify that the input name does not conflict with inheritance
     - Rename the Mock file, contract name, deployment script, test scripts (and the test values)
 - Write more test with mocha to test the package functionality
-- Use commander to create command to access some functionality (and use them in the package test)
 - Create contracts/, test/ and scripts/ folder if they don't exist when adding mock contracts
+- Remove package from hardhat config when remove
