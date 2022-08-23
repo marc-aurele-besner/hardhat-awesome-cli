@@ -36,6 +36,10 @@ git clone https://github.com/marc-aurele-besner/hardhat-awesome-cli
 
 cd hardhat-awesome-cli
 
+npm install
+
+npm run build
+
 npm link
 ```
 
