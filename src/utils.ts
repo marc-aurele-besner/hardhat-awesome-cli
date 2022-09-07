@@ -45,7 +45,12 @@ if (fs.existsSync(fileContractsAddressDeployedHistory)) {
     } catch {}
 }
 
-export const runCommand = async (command: string, firstCommand: string, commandFlags: string) => {
+export const runCommand = async (
+    command: string,
+    firstCommand: string,
+    commandFlags: string,
+    thenExit: boolean = true
+) => {
     let commandToRun = command + commandFlags
     if (firstCommand) {
         commandToRun = firstCommand + commandFlags + ' && ' + commandToRun
@@ -58,7 +63,7 @@ export const runCommand = async (command: string, firstCommand: string, commandF
         shell: true
     })
     runSpawn.on('exit', (code) => {
-        exit()
+        if (thenExit) exit()
     })
 }
 
