@@ -87,7 +87,7 @@ const serveNetworkSelector = async (
             else if (ServeEnvBuilder) await ServeEnvBuilder(env, networkSelected.network)
             await sleep(5000)
         })
-    if (command) await runCommand(command, firstCommand, commandFlags)
+    if (command) await runCommand(command, firstCommand, commandFlags, true)
 }
 
 const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
@@ -158,6 +158,7 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
 const serveFlattenContractsSelector = async (env: any, command: string) => {
     const contractsFilesObject = await buildContractsList()
     const contractsFilesList: string[] = ['Flatten all contracts']
+    let renameLicenseIdentifier = false
     if (contractsFilesObject) {
         contractsFilesObject.map((file: IFileList) => {
             contractsFilesList.push(file.name)
@@ -171,12 +172,16 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                         name: 'flatten',
                         message: 'Select a contract to flatten',
                         choices: contractsFilesList
+                    },
+                    {
+                        type: 'confirm',
+                        name: 'renameLicenseIdentifier',
+                        message: 'Rename SPDX-License-Identifier'
                     }
                 ])
-                .then(async (contractsSelected: { flatten: string }) => {
-                    if (!fs.existsSync('contractsFlatten')) {
-                        fs.mkdirSync('contractsFlatten')
-                    }
+                .then(async (contractsSelected: { flatten: string; renameLicenseIdentifier: boolean }) => {
+                    renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
+                    if (!fs.existsSync('contractsFlatten')) fs.mkdirSync('contractsFlatten')
                     if (contractsSelected.flatten !== 'Flatten all contracts') {
                         contractsFilesObject.forEach((file: IFileList) => {
                             if (file.name === contractsSelected.flatten) {
@@ -189,8 +194,31 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                     } else contractFlattenName = 'AllContractsFlatten.sol'
                 })
             if (command) {
-                await runCommand(command, '', ' > contractsFlatten/' + contractFlattenName)
+                await runCommand(
+                    command,
+                    '',
+                    ' > contractsFlatten/' + contractFlattenName,
+                    renameLicenseIdentifier ? false : true
+                )
                 await sleep(3000)
+                if (renameLicenseIdentifier) {
+                    while (fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8').length === 0) {
+                        await sleep(1000)
+                    }
+                    if (fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8').length > 0) {
+                        let fileContent = fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8')
+                        if (fileContent.includes('SPDX-License-Identifier')) {
+                            fileContent = fileContent.replace(
+                                'SPDX-License-Identifier',
+                                'SPDX-License-Flatten-Identifier'
+                            )
+                            fs.writeFileSync('contractsFlatten/' + contractFlattenName, fileContent)
+                        } else
+                            console.log(
+                                'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
+                            )
+                    }
+                }
             }
         }
     }
@@ -221,7 +249,7 @@ const serveFoundryTestSelector = async (env: any, command: string) => {
                             }
                         }
                     })
-                    await runCommand(command, '', '')
+                    await runCommand(command, '', '', true)
                     await sleep(5000)
                 })
         }

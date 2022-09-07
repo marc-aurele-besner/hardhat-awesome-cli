@@ -189,11 +189,11 @@ const detectPackage = async (
                 console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
                 if (fs.existsSync('package-lock.json')) {
                     if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                    await runCommand('npm remove ' + packageName, '', '')
+                    await runCommand('npm remove ' + packageName, '', '', true)
                     await sleep(5000)
                 } else if (fs.existsSync('yarn-lock.json')) {
                     if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                    await runCommand('yarn remove ' + packageName, '', '')
+                    await runCommand('yarn remove ' + packageName, '', '', true)
                     await sleep(5000)
                 }
             }
@@ -204,12 +204,12 @@ const detectPackage = async (
                 if (fs.existsSync('package-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
                     if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                    await runCommand('npm install ' + packageName, '', ' --save-dev')
+                    await runCommand('npm install ' + packageName, '', ' --save-dev', true)
                     await sleep(5000)
                 } else if (fs.existsSync('yarn-lock.json')) {
                     console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
                     if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                    await runCommand('yarn add ' + packageName, '', ' -D')
+                    await runCommand('yarn add ' + packageName, '', ' -D', true)
                     await sleep(5000)
                 }
             }

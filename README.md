@@ -36,6 +36,10 @@ git clone https://github.com/marc-aurele-besner/hardhat-awesome-cli
 
 cd hardhat-awesome-cli
 
+npm install
+
+npm run build
+
 npm link
 ```
 
@@ -50,7 +54,7 @@ npm link hardhat-awesome-cli
 - Run tests (Allow you you to run tests on all files or specific files in test/)
 - Run scripts (Allow you you to run scripts on specific files in scripts/)
 - Select scripts and tests to run (Allow you to select a script to execute and all or one test to perform afterward)
-- Flatten all your contract or a specific contract
+- Flatten all your contract or a specific contract (offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue)
 - Run Forge test on all or single test contracts if forge setting is detected
 - Run coverage tests (Available only if solidity-coverage is installed and available as a task)
 - Setup chains, RPC and accounts 
@@ -230,6 +234,8 @@ Return:
         deploymentDate: Date
         blockHah?: string
         blockNumber?: number
+        tag?: string
+        extra?: any
     }
 ]
 ```
@@ -259,7 +265,7 @@ Return:
     - Offer to create Foundry/Forge test contracts
 - Tool to log all contracts deploy on each chain (1 unique contractName/chain + full log) and retrieve them (not tested yet)
     - hre.addressBook.{ saveContract, retrieveContract, retrieveContractObject, retrieveOZAdminProxyContract, retrieveContractHistory }
-- Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/
+- Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/ and offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue
 - Write some test on the package using mocha
 - Add optional flag to "cli" command to access some functionality
 </details>
