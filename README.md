@@ -1,6 +1,5 @@
 [![license](https://img.shields.io/github/license/jamesisaac/react-native-background-task.svg)](https://opensource.org/licenses/MIT)
-[![npm version](https://badge.fury.io/js/hardhat-awesome-cli.svg)](https://badge.fury.io/hardhat-awesome-cli)
-[![buidler](https://buidler.dev/buidler-plugin-badge.svg?1)](https://github.com/marc-aurele-besner/hardhat-awesome-cli)
+[![npm version](https://badge.fury.io/js/hardhat-awesome-cli.svg)](https://badge.fury.io/js/hardhat-awesome-cli)
 
 # 👷 hardhat-awesome-cli
  Hardhat made awesome with a flexible CLI to help run tests, deploy and more.
