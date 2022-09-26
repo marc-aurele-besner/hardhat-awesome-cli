@@ -1,11 +1,14 @@
 import fs from 'fs'
 
+import { TAddressBookFields } from './types'
+
 interface IAddressDetails {
     name: string
     address: string
     network: string
     deployer: string
     deploymentDate: string
+    chainId: number
     blockHash?: string
     blockNumber?: number
     tag?: string
@@ -18,6 +21,7 @@ export class AwesomeAddressBook {
         contractAddress: string,
         deployedNetwork: string,
         deployedBy: string,
+        chainId: number,
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
@@ -29,6 +33,7 @@ export class AwesomeAddressBook {
             network: deployedNetwork,
             deployer: deployedBy,
             deploymentDate: new Date().toString(),
+            chainId,
             blockHash: blockHash || '',
             blockNumber: blockNumber || 0,
             tag: tag ? tag : '',
@@ -42,6 +47,7 @@ export class AwesomeAddressBook {
         contractAddress: string,
         deployedNetwork: string,
         deployedBy: string,
+        chainId: number,
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
@@ -54,6 +60,7 @@ export class AwesomeAddressBook {
             contractAddress,
             deployedNetwork,
             deployedBy,
+            chainId,
             blockHash,
             blockNumber,
             tag,
@@ -73,6 +80,7 @@ export class AwesomeAddressBook {
                         c.address = contractAddress
                         c.deployer = deployedBy
                         c.deploymentDate = new Date().toString()
+                        c.chainId = chainId
                         c.blockHash = blockHash || ''
                         c.blockNumber = blockNumber || 0
                         c.tag = tag || ''
@@ -181,5 +189,50 @@ export class AwesomeAddressBook {
             }
         }
         return returnContractAddress
+    }
+
+    public cleanContractDeployed(field: TAddressBookFields, value: any, applyToPrimary: boolean = true, applyToHistory: boolean = true) {
+        if (applyToPrimary) {
+            const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
+            if (fs.existsSync(contractsAddressDeployedFile)) {
+                const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+                const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
+                if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
+                    const contractsAddressDeployedFiltered = contractsAddressDeployed.filter(
+                        (c: IAddressDetails) => c[field] !== value
+                    )
+                    fs.unlinkSync(contractsAddressDeployedFile)
+                    try {
+                        fs.writeFileSync(
+                            contractsAddressDeployedFile,
+                            JSON.stringify(contractsAddressDeployedFiltered, null, 2)
+                        )
+                    } catch (err) {
+                        console.log('Error writing address to file: ', err)
+                    }
+                }
+            }
+        }
+        if (applyToHistory) {
+            const contractsAddressDeployedHistoryFile = 'contractsAddressDeployedHistory.json'
+            if (fs.existsSync(contractsAddressDeployedHistoryFile)) {
+                const rawdata: any = fs.readFileSync(contractsAddressDeployedHistoryFile)
+                const contractsAddressHistoryDeployed: IAddressDetails[] = JSON.parse(rawdata)
+                if (contractsAddressHistoryDeployed !== undefined && contractsAddressHistoryDeployed.length > 0) {
+                    const contractsAddressDeployedHistoryFiltered = contractsAddressHistoryDeployed.filter(
+                        (c: IAddressDetails) => c[field] !== value
+                    )
+                    fs.unlinkSync(contractsAddressDeployedHistoryFile)
+                    try {
+                        fs.writeFileSync(
+                            contractsAddressDeployedHistoryFile,
+                            JSON.stringify(contractsAddressDeployedHistoryFiltered, null, 2)
+                        )
+                    } catch (err) {
+                        console.log('Error writing address to file: ', err)
+                    }
+                }
+            }
+        }
     }
 }
