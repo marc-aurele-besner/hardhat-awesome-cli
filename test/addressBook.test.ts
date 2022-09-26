@@ -110,15 +110,8 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.cleanContractDeployed(
-                'network',
-                'hardhat',
-                true,
-                true
-            )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
-                ''
-            )
+            this.hre.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
         })
 
         it('3x saveContract() wit extra arguments, then clean then from log', function () {
@@ -149,18 +142,9 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.cleanContractDeployed(
-                'network',
-                'hardhat',
-                true,
-                true
-            )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
-                ''
-            )
-            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
-                ''
-            )
+            this.hre.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
+            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal('')
         })
 
         it('3x saveContract() wit extra arguments, then clean then from lo only one', function () {
@@ -191,15 +175,8 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.cleanContractDeployed(
-                'network',
-                'testnet',
-                true,
-                true
-            )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'testnet')).to.be.equal(
-                ''
-            )
+            this.hre.addressBook.cleanContractDeployed('network', 'testnet', true, true)
+            expect(this.hre.addressBook.retrieveContract('MockERC20', 'testnet')).to.be.equal('')
             expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000000'
             )

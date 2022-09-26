@@ -34,6 +34,7 @@ export interface IMockContractsList {
 
 export interface IExcludedFiles {
     directory: string
+    name: string
     filePath: string
 }
 

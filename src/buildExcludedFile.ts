@@ -15,10 +15,11 @@ export const buildExcludedFile = async () => {
     return []
 }
 
-export const addExcludedFiles = async (directory: string, filePath: string) => {
+export const addExcludedFiles = async (directory: string, name: string, filePath: string) => {
     let fileSetting: any = []
     const fileToAdd = {
         directory,
+        name,
         filePath
     }
     if (fs.existsSync(fileHardhatAwesomeCLI)) {
@@ -39,7 +40,7 @@ export const addExcludedFiles = async (directory: string, filePath: string) => {
         if (fileSetting.excludedFiles.length > 0) {
             if (
                 !fileSetting.excludedFiles.find(
-                    (file: { directory: string; filePath: string }) =>
+                    (file: { directory: string; name: string; filePath: string }) =>
                         file.directory === directory && file.filePath === filePath
                 )
             )
