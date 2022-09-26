@@ -182,6 +182,7 @@ Return:
     network: string
     deployer: string
     deploymentDate: Date
+    chainId: number
     blockHah?: string
     blockNumber?: number
     tag?: string
@@ -231,6 +232,7 @@ Return:
         network: string
         deployer: string
         deploymentDate: Date
+        chainId: number
         blockHah?: string
         blockNumber?: number
         tag?: string
@@ -238,6 +240,21 @@ Return:
     }
 ]
 ```
+
+Clean the contractsAddressDeployed files by filtering a field and a value and remove these entry from the file, can be apply to both files or just the primary
+
+Usage:
+```
+
+addressBook.cleanContractDeployed(field: TAddressBookFields, value: any, applyToPrimary: boolean = true, applyToHistory: boolean = true)
+```
+
+Example:
+```
+
+await addressBook.cleanContractDeployed('network', 'hardhat', true, true)
+```
+
 
 <details>
     <summary>## 💪 Done</summary>
