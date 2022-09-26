@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import { fileContractsAddressDeployed, fileContractsAddressDeployedHistory } from './config'
 import { TAddressBookFields } from './types'
 
 interface IAddressDetails {
@@ -47,14 +48,12 @@ export class AwesomeAddressBook {
         contractAddress: string,
         deployedNetwork: string,
         deployedBy: string,
-        chainId: number,
+        chainId: number = 0,
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
         extra?: any
     ) {
-        const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
-        const contractsAddressDeployedHistoryFile = 'contractsAddressDeployedHistory.json'
         const contractToAdd: IAddressDetails = this.formatSaveContract(
             contractName,
             contractAddress,
@@ -70,8 +69,8 @@ export class AwesomeAddressBook {
         let contractsAddressDeployedHistory = []
 
         // Add or edit contract address if deploy on same network
-        if (fs.existsSync(contractsAddressDeployedFile)) {
-            const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+        if (fs.existsSync(fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
                 const recordModify = false
@@ -93,28 +92,28 @@ export class AwesomeAddressBook {
                     contractsAddressDeployed.push(contractToAdd)
                 }
             }
-            fs.unlinkSync(contractsAddressDeployedFile)
+            fs.unlinkSync(fileContractsAddressDeployed)
         } else {
             contractsAddressDeployed.push(contractToAdd)
         }
         try {
-            fs.writeFileSync(contractsAddressDeployedFile, JSON.stringify(contractsAddressDeployed, null, 2))
+            fs.writeFileSync(fileContractsAddressDeployed, JSON.stringify(contractsAddressDeployed, null, 2))
         } catch (err) {
             console.log('Error writing address to file: ', err)
         }
 
         // Log all contracts deployed
-        if (fs.existsSync(contractsAddressDeployedHistoryFile)) {
-            const rawdata: any = fs.readFileSync(contractsAddressDeployedHistoryFile)
+        if (fs.existsSync(fileContractsAddressDeployedHistory)) {
+            const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
             contractsAddressDeployedHistory = JSON.parse(rawdata)
             contractsAddressDeployedHistory.push(contractToAdd)
-            fs.unlinkSync(contractsAddressDeployedHistoryFile)
+            fs.unlinkSync(fileContractsAddressDeployedHistory)
         } else {
             contractsAddressDeployedHistory.push(contractToAdd)
         }
         try {
             fs.writeFileSync(
-                contractsAddressDeployedHistoryFile,
+                fileContractsAddressDeployedHistory,
                 JSON.stringify(contractsAddressDeployedHistory, null, 2)
             )
         } catch (err) {
@@ -123,31 +122,40 @@ export class AwesomeAddressBook {
     }
 
     public retrieveContract(contractName: string, deployedNetwork: string) {
-        const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
         let returnContractAddress = ''
-        if (fs.existsSync(contractsAddressDeployedFile)) {
-            const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+        if (fs.existsSync(fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                returnContractAddress = contractsAddressDeployed.filter(
-                    (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
-                )[0].address
+                if (
+                    contractsAddressDeployed.find(
+                        (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                    )
+                )
+                    returnContractAddress = contractsAddressDeployed.filter(
+                        (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                    )[0].address
             }
         }
         return returnContractAddress
     }
 
     public retrieveContractObject(contractName: string, deployedNetwork: string) {
-        const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
-        if (fs.existsSync(contractsAddressDeployedFile)) {
-            const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+        if (fs.existsSync(fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                return contractsAddressDeployed.filter(
-                    (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
-                )[0]
-            }
-        }
+                if (
+                    contractsAddressDeployed.find(
+                        (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                    )
+                )
+                    return contractsAddressDeployed.filter(
+                        (c: IAddressDetails) => c.name === contractName && c.network === deployedNetwork
+                    )[0]
+                else return null
+            } else return null
+        } else return null
     }
 
     public retrieveOZAdminProxyContract(chainId: number) {
@@ -175,10 +183,9 @@ export class AwesomeAddressBook {
     }
 
     public retrieveContractHistory(deployedNetwork: string) {
-        const contractsAddressDeployedFile = 'contractsAddressDeployedHistory.json'
         const returnContractAddress: IAddressDetails[] = []
-        if (fs.existsSync(contractsAddressDeployedFile)) {
-            const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+        if (fs.existsSync(fileContractsAddressDeployedHistory)) {
+            const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
             const contractsAddressDeployedHistory: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployedHistory !== undefined && contractsAddressDeployedHistory.length > 0) {
                 contractsAddressDeployedHistory
@@ -191,48 +198,58 @@ export class AwesomeAddressBook {
         return returnContractAddress
     }
 
-    public cleanContractDeployed(field: TAddressBookFields, value: any, applyToPrimary: boolean = true, applyToHistory: boolean = true) {
-        if (applyToPrimary) {
-            const contractsAddressDeployedFile = 'contractsAddressDeployed.json'
-            if (fs.existsSync(contractsAddressDeployedFile)) {
-                const rawdata: any = fs.readFileSync(contractsAddressDeployedFile)
+    public cleanContractDeployed(
+        field: TAddressBookFields,
+        value: any,
+        applyToPrimary: boolean = true,
+        applyToHistory: boolean = true
+    ) {
+        if (applyToPrimary)
+            if (fs.existsSync(fileContractsAddressDeployed)) {
+                const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
                 const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
                 if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                    const contractsAddressDeployedFiltered = contractsAddressDeployed.filter(
-                        (c: IAddressDetails) => c[field] !== value
-                    )
-                    fs.unlinkSync(contractsAddressDeployedFile)
-                    try {
-                        fs.writeFileSync(
-                            contractsAddressDeployedFile,
-                            JSON.stringify(contractsAddressDeployedFiltered, null, 2)
+                    if (contractsAddressDeployed.find((c: IAddressDetails) => c[field] === value)) {
+                        const contractsAddressDeployedFiltered = contractsAddressDeployed.filter(
+                            (c: IAddressDetails) => c[field] !== value
                         )
-                    } catch (err) {
-                        console.log('Error writing address to file: ', err)
+                        fs.unlinkSync(fileContractsAddressDeployed)
+                        const contractsAddressDeployedFilteredString =
+                            contractsAddressDeployedFiltered.length > 0
+                                ? JSON.stringify(contractsAddressDeployedFiltered, null, 2)
+                                : ''
+                        try {
+                            fs.writeFileSync(fileContractsAddressDeployed, contractsAddressDeployedFilteredString)
+                        } catch (err) {
+                            console.log('Error writing address to file: ', err)
+                        }
                     }
                 }
             }
-        }
-        if (applyToHistory) {
-            const contractsAddressDeployedHistoryFile = 'contractsAddressDeployedHistory.json'
-            if (fs.existsSync(contractsAddressDeployedHistoryFile)) {
-                const rawdata: any = fs.readFileSync(contractsAddressDeployedHistoryFile)
+        if (applyToHistory)
+            if (fs.existsSync(fileContractsAddressDeployedHistory)) {
+                const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
                 const contractsAddressHistoryDeployed: IAddressDetails[] = JSON.parse(rawdata)
                 if (contractsAddressHistoryDeployed !== undefined && contractsAddressHistoryDeployed.length > 0) {
-                    const contractsAddressDeployedHistoryFiltered = contractsAddressHistoryDeployed.filter(
-                        (c: IAddressDetails) => c[field] !== value
-                    )
-                    fs.unlinkSync(contractsAddressDeployedHistoryFile)
-                    try {
-                        fs.writeFileSync(
-                            contractsAddressDeployedHistoryFile,
-                            JSON.stringify(contractsAddressDeployedHistoryFiltered, null, 2)
+                    if (contractsAddressHistoryDeployed.find((c: IAddressDetails) => c[field] === value)) {
+                        const contractsAddressDeployedHistoryFiltered = contractsAddressHistoryDeployed.filter(
+                            (c: IAddressDetails) => c[field] !== value
                         )
-                    } catch (err) {
-                        console.log('Error writing address to file: ', err)
+                        fs.unlinkSync(fileContractsAddressDeployedHistory)
+                        const contractsAddressDeployedHistoryFilteredString =
+                            contractsAddressDeployedHistoryFiltered.length > 0
+                                ? JSON.stringify(contractsAddressDeployedHistoryFiltered, null, 2)
+                                : ''
+                        try {
+                            fs.writeFileSync(
+                                fileContractsAddressDeployedHistory,
+                                contractsAddressDeployedHistoryFilteredString
+                            )
+                        } catch (err) {
+                            console.log('Error writing address to file: ', err)
+                        }
                     }
                 }
             }
-        }
     }
 }
