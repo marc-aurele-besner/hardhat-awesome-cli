@@ -34,6 +34,7 @@ export interface IMockContractsList {
 
 export interface IExcludedFiles {
     directory: string
+    name: string
     filePath: string
 }
 
@@ -61,3 +62,15 @@ export interface IDefaultGithubWorkflowsList {
     group: string
     requirement?: string[]
 }
+
+export type TAddressBookFields =
+    | 'name'
+    | 'address'
+    | 'network'
+    | 'deployer'
+    | 'deploymentDate'
+    | 'chainId'
+    | 'blockHash'
+    | 'blockNumber'
+    | 'tag'
+    | 'extra'

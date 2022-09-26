@@ -466,7 +466,8 @@ const serveExcludeFileSelector = async (option: string) => {
         ])
         .then(async (activateFilesSelected: { allFiles: string[] }) => {
             allFiles.map(async (file: IFileList) => {
-                if (activateFilesSelected.allFiles.includes(file.filePath)) await addExcludedFiles(option, file.name)
+                if (activateFilesSelected.allFiles.includes(file.filePath))
+                    await addExcludedFiles(option, file.name, file.filePath)
                 else await removeExcludedFiles(option, file.name)
             })
             console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
