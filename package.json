@@ -43,6 +43,7 @@
     "@types/inquirer": "^9.0.1",
     "@types/mocha": "^9.1.1",
     "@types/node": "^18.7.21",
+    "awesome-readme": "^0.0.4",
     "chai": "^4.3.6",
     "hardhat": "^2.11.2",
     "mocha": "^10.0.0",
