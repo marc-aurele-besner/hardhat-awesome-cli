@@ -1,7 +1,16 @@
+
 [![license](https://img.shields.io/github/license/jamesisaac/react-native-background-task.svg)](https://opensource.org/licenses/MIT)
 [![npm version](https://badge.fury.io/js/hardhat-awesome-cli.svg)](https://badge.fury.io/js/hardhat-awesome-cli)
 
 # 👷 hardhat-awesome-cli
+
+#    #   ##   #####  #####  #    #   ##   #####         ##   #    # ######  ####   ####  #    # ######        ####  #      # 
+#    #  #  #  #    # #    # #    #  #  #    #          #  #  #    # #      #      #    # ##  ## #            #    # #      # 
+###### #    # #    # #    # ###### #    #   #   ##### #    # #    # #####   ####  #    # # ## # #####  ##### #      #      # 
+#    # ###### #####  #    # #    # ######   #         ###### # ## # #           # #    # #    # #            #      #      # 
+#    # #    # #   #  #    # #    # #    #   #         #    # ##  ## #      #    # #    # #    # #            #    # #      # 
+#    # #    # #    # #####  #    # #    #   #         #    # #    # ######  ####   ####  #    # ######        ####  ###### # 
+
  Hardhat made awesome with a flexible CLI to help run tests, deploy and more.
 
 ## How to install this package
@@ -49,6 +58,26 @@ npm link hardhat-awesome-cli
 ```
 </details>
 
+## Directories
+ - [src/](./src/)
+ - [test/](./test/)
+
+ - [.eslintrc.js](./.eslintrc.js)
+ - [.mocharc.json](./.mocharc.json)
+ - [.npmignore](./.npmignore)
+ - [.prettierignore](./.prettierignore)
+ - [.prettierrc](./.prettierrc)
+ - [awesome-readme.config.js](./awesome-readme.config.js)
+ - [CONTRIBUTING.md](./CONTRIBUTING.md)
+ - [LICENSE](./LICENSE)
+ - [package-lock.json](./package-lock.json)
+ - [package.json](./package.json)
+ - [README3.md](./README3.md)
+ - [tsconfig.json](./tsconfig.json)
+ - [tsconfig.prod.json](./tsconfig.prod.json)
+ - [tslint.json](./tslint.json)
+
+ 
 ## CLI features
 - Run tests (Allow you you to run tests on all files or specific files in test/)
 - Run scripts (Allow you you to run scripts on specific files in scripts/)
@@ -285,6 +314,48 @@ await addressBook.cleanContractDeployed('network', 'hardhat', true, true)
 - Write some test on the package using mocha
 - Add optional flag to "cli" command to access some functionality
 </details>
+
+## Directory Tree
+```
+hardhat-awesome-cli/
+│   .eslintrc.js/
+│   .mocharc.json/
+│   .npmignore/
+│   .prettierignore/
+│   .prettierrc/
+│   awesome-readme.config.js/
+│   CONTRIBUTING.md/
+│   LICENSE/
+│   package-lock.json/
+│   package.json/
+│   README3.md/
+│   tsconfig.json/
+│   tsconfig.prod.json/
+│   tslint.json/
+└─── src/
+└─── test/
+   │   AwesomeAddressBook.ts/
+   │   buildEnv.ts/
+   │   buildExcludedFile.ts/
+   │   buildFilesList.ts/
+   │   buildFoundrySetting.ts/
+   │   buildMockContracts.ts/
+   │   buildNetworks.ts/
+   │   buildWorkflows.ts/
+   │   config.ts/
+   │   index.ts/
+   │   packageInstaller.ts/
+   │   serveInquirer.ts/
+   │   type-extensions.ts/
+   │   types.ts/
+   │   utils.ts/
+   └─── githubWorkflows/
+   └─── mockContracts/
+   │   addressBook.test.ts/
+   │   cli.test.ts/
+   │   helpers.ts/
+   └─── hardhat-cli/
+```
 
 ## 🏗️ To do:
 - Improving documentation
