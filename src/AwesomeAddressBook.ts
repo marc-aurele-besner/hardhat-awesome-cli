@@ -73,7 +73,7 @@ export class AwesomeAddressBook {
             const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
-                const recordModify = false
+                let recordModify = false
                 contractsAddressDeployed = contractsAddressDeployed.map((c: IAddressDetails) => {
                     if (c.name === contractName && c.network === deployedNetwork) {
                         c.address = contractAddress
@@ -84,7 +84,7 @@ export class AwesomeAddressBook {
                         c.blockNumber = blockNumber || 0
                         c.tag = tag || ''
                         c.extra = extra || {}
-                        // recordModify = true
+                        recordModify = true
                     }
                     return c
                 })
