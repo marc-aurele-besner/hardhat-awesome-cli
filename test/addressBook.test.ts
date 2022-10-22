@@ -73,7 +73,7 @@ describe('Integration tests', function () {
             )
         })
 
-        it('2x saveContract() (same contract twice, replacing 1st entry)', function () {
+        it('4x saveContract() (2 different contracts twice, replacing 1st entry)', function () {
             this.hre.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
@@ -84,6 +84,15 @@ describe('Integration tests', function () {
                 1
             )
             this.hre.addressBook.saveContract(
+                'MockERC20-B',
+                '0x0000000000000000000000000000000000000001',
+                'hardhat',
+                '0x0000000000000000000000000000000000000001',
+                0,
+                '0x0000000000000000000000000000000000000002',
+                2
+            )
+            this.hre.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -92,11 +101,20 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
+            this.hre.addressBook.saveContract(
+                'MockERC20-B',
+                '0x0000000000000000000000000000000000000001',
+                'hardhat',
+                '0x0000000000000000000000000000000000000001',
+                0,
+                '0x0000000000000000000000000000000000000002',
+                2
+            )
             expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000001'
             )
             const data = fs.readFileSync('./contractsAddressDeployed.json')
-            expect(JSON.parse(data.toString()).length).to.be.equal(1)
+            expect(JSON.parse(data.toString()).length).to.be.equal(2)
         })
 
         it('saveContract() wit extra arguments, then clean then from log', function () {
