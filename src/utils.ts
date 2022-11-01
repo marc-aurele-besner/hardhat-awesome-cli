@@ -41,7 +41,9 @@ export let inquirerFileContractsAddressDeployedHistory: IInquirerListField | str
 }
 if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
     try {
-        const rawdata: any = fs.readFileSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)
+        const rawdata: any = fs.readFileSync(
+            addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory
+        )
         contractsAddressDeployedHistory = JSON.parse(rawdata)
         inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
     } catch {}

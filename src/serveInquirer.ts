@@ -26,7 +26,8 @@ import {
     DefaultChainList,
     DefaultGithubWorkflowsGroup,
     DefaultGithubWorkflowsList,
-    DefaultHardhatPluginsList
+    DefaultHardhatPluginsList,
+    getAddressBookConfig
 } from './config'
 import MockContractsList from './mockContracts'
 import detectPackage from './packageInstaller'
@@ -158,6 +159,7 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
 const serveFlattenContractsSelector = async (env: any, command: string) => {
     const contractsFilesObject = await buildContractsList()
     const contractsFilesList: string[] = ['Flatten all contracts']
+    const addressBookConfig = getAddressBookConfig(env.userConfig)
     let renameLicenseIdentifier = false
     if (contractsFilesObject) {
         contractsFilesObject.map((file: IFileList) => {
@@ -181,41 +183,64 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                 ])
                 .then(async (contractsSelected: { flatten: string; renameLicenseIdentifier: boolean }) => {
                     renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
-                    if (!fs.existsSync('contractsFlatten')) fs.mkdirSync('contractsFlatten')
+                    if (!fs.existsSync(addressBookConfig.contractsFlattenPath))
+                        fs.mkdirSync(addressBookConfig.contractsFlattenPath)
                     if (contractsSelected.flatten !== 'Flatten all contracts') {
                         contractsFilesObject.forEach((file: IFileList) => {
                             if (file.name === contractsSelected.flatten) {
                                 if (file.type === 'file') {
                                     command = command + ' contracts/' + file.filePath
-                                    contractFlattenName = file.filePath.replace('.sol', 'Flatten.sol')
+                                    contractFlattenName = addressBookConfig.contractsFlattenPrefix + file.filePath
                                 }
                             }
                         })
-                    } else contractFlattenName = 'AllContractsFlatten.sol'
+                    } else contractFlattenName = addressBookConfig.contractsFlattenPrefix + 'All.sol'
                 })
             if (command) {
                 await runCommand(
                     command,
                     '',
-                    ' > contractsFlatten/' + contractFlattenName,
+                    ' > ' + addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
                     renameLicenseIdentifier ? false : true
                 )
                 await sleep(3000)
                 if (renameLicenseIdentifier) {
-                    while (fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8').length === 0) {
+                    while (
+                        fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8')
+                            .length === 0
+                    ) {
                         await sleep(1000)
                     }
-                    if (fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8').length > 0) {
-                        let fileContent = fs.readFileSync('contractsFlatten/' + contractFlattenName, 'utf8')
+                    if (
+                        fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8')
+                            .length > 0
+                    ) {
+                        let fileContent = fs.readFileSync(
+                            addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
+                            'utf8'
+                        )
                         if (fileContent.includes('SPDX-License-Identifier')) {
                             fileContent = fileContent.replace(
                                 'SPDX-License-Identifier',
-                                'SPDX-License-Flatten-Identifier'
+                                'SPDX-License-DISABLED-Identifier'
                             )
-                            fs.writeFileSync('contractsFlatten/' + contractFlattenName, fileContent)
+                            fs.writeFileSync(
+                                addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
+                                fileContent
+                            )
                         } else
                             console.log(
                                 'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
+                            )
+                        if (fileContent.includes('pragma solidity')) {
+                            fileContent = fileContent.replace('pragma solidity', '// pragma solidity')
+                            fs.writeFileSync(
+                                addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
+                                fileContent
+                            )
+                        } else
+                            console.log(
+                                'pragma solidity not found in ' + contractFlattenName + ' file, skipping rename'
                             )
                     }
                 }
