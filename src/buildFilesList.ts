@@ -1,14 +1,15 @@
 import fs from 'fs'
 
 import { buildExcludedFile } from './buildExcludedFile'
-import { fileHardhatAwesomeCLI } from './config'
+import { getAddressBookConfig } from './config'
 import { IChain, IExcludedFiles, IFileList, IFileSetting } from './types'
 
 export const buildActivatedChainList = async () => {
     const chainList: IChain[] = []
     let fileSetting: IFileSetting = {}
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
     }
     if (fileSetting && fileSetting.activatedChain) {

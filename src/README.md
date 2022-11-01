@@ -14,7 +14,7 @@
 ## Directories
  - [githubWorkflows/](./githubWorkflows/) - [mockContracts/](./mockContracts/)
 
- - [AwesomeAddressBook.ts](./AwesomeAddressBook.ts) - [buildEnv.ts](./buildEnv.ts) - [buildExcludedFile.ts](./buildExcludedFile.ts) - [buildFilesList.ts](./buildFilesList.ts) - [buildFoundrySetting.ts](./buildFoundrySetting.ts) - [buildMockContracts.ts](./buildMockContracts.ts) - [buildNetworks.ts](./buildNetworks.ts) - [buildWorkflows.ts](./buildWorkflows.ts) - [config.ts](./config.ts) - [index.ts](./index.ts) - [packageInstaller.ts](./packageInstaller.ts) - [serveInquirer.ts](./serveInquirer.ts) - [type-extensions.ts](./type-extensions.ts) - [types.ts](./types.ts) - [utils.ts](./utils.ts)
+ - [AwesomeAddressBook.ts](./AwesomeAddressBook.ts) - [buildEnv.ts](./buildEnv.ts) - [buildExcludedFile.ts](./buildExcludedFile.ts) - [buildFilesList.ts](./buildFilesList.ts) - [buildFoundrySetting.ts](./buildFoundrySetting.ts) - [buildMockContracts.ts](./buildMockContracts.ts) - [buildNetworks.ts](./buildNetworks.ts) - [buildWorkflows.ts](./buildWorkflows.ts) - [config.ts](./config.ts) - [index.ts](./index.ts) - [packageInstaller.ts](./packageInstaller.ts) - [README.md](./README.md) - [serveInquirer.ts](./serveInquirer.ts) - [type-extensions.ts](./type-extensions.ts) - [types.ts](./types.ts) - [utils.ts](./utils.ts)
 ## Directory Tree
 [<- Previous](https://github.com/marc-aurele-besner/hardhat-awesome-cli.git)
 src/
@@ -29,6 +29,7 @@ src/
    │   config.ts/
    │   index.ts/
    │   packageInstaller.ts/
+   │   README.md/
    │   serveInquirer.ts/
    │   type-extensions.ts/
    │   types.ts/

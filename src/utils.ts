@@ -2,11 +2,13 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import { exit } from 'process'
 
-import { fileContractsAddressDeployed, fileContractsAddressDeployedHistory } from './config'
+import { getAddressBookConfig } from './config'
 import { IContractAddressDeployed, IInquirerListField } from './types'
 
 let contractsAddressDeployed: IContractAddressDeployed[] = []
 let contractsAddressDeployedHistory: IContractAddressDeployed[] = []
+
+const addressBookConfig = getAddressBookConfig()
 
 export const inquirerRunTests: IInquirerListField = { name: 'Run tests' }
 if (!fs.existsSync('test')) inquirerRunTests.disabled = "We can't run tests without a test/ directory"
@@ -26,8 +28,8 @@ export let inquirerFileContractsAddressDeployed: IInquirerListField | string = {
     name: 'Get the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
-if (fs.existsSync(fileContractsAddressDeployed)) {
-    const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
+if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
+    const rawdata: any = fs.readFileSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)
     try {
         contractsAddressDeployed = JSON.parse(rawdata)
         inquirerFileContractsAddressDeployed = 'Get the previously deployed contracts address'
@@ -37,9 +39,9 @@ export let inquirerFileContractsAddressDeployedHistory: IInquirerListField | str
     name: 'Get all the previously deployed contracts address',
     disabled: 'Please deploy the contracts first'
 }
-if (fs.existsSync(fileContractsAddressDeployedHistory)) {
+if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
     try {
-        const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+        const rawdata: any = fs.readFileSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)
         contractsAddressDeployedHistory = JSON.parse(rawdata)
         inquirerFileContractsAddressDeployedHistory = 'Get all the previously deployed contracts address'
     } catch {}

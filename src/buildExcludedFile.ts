@@ -1,13 +1,14 @@
 import fs from 'fs'
 
 import { buildAllScriptsList, buildAllTestsList } from './buildFilesList'
-import { fileHardhatAwesomeCLI } from './config'
+import { getAddressBookConfig } from './config'
 import { IExcludedFiles, IFileList } from './types'
 
 export const buildExcludedFile = async () => {
     let fileSetting: any = []
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && fileSetting.excludedFiles && fileSetting.excludedFiles.length > 0)
             return fileSetting.excludedFiles
@@ -17,13 +18,14 @@ export const buildExcludedFile = async () => {
 
 export const addExcludedFiles = async (directory: string, name: string, filePath: string) => {
     let fileSetting: any = []
+    const addressBookConfig = getAddressBookConfig()
     const fileToAdd = {
         directory,
         name,
         filePath
     }
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && !fileSetting.excludedFiles) {
             fileSetting = {
@@ -52,7 +54,7 @@ export const addExcludedFiles = async (directory: string, name: string, filePath
         })
     }
     try {
-        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+        fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
     } catch {
         console.log(
             '\x1b[31m%s\x1b[0m',
@@ -63,6 +65,7 @@ export const addExcludedFiles = async (directory: string, name: string, filePath
 
 export const removeExcludedFiles = async (directory: string, filePath: string) => {
     let allFiles: any = []
+    const addressBookConfig = getAddressBookConfig()
     if (directory === 'test') {
         allFiles = (await buildAllTestsList())
             .filter((test) => test.type === 'file')
@@ -80,8 +83,8 @@ export const removeExcludedFiles = async (directory: string, filePath: string) =
         (file: IExcludedFiles) => file.directory === directory && file.filePath === filePath
     )
     let fileSetting: any = []
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && fileSetting.excludedFiles) {
             if (fileSetting.excludedFiles.length > 0) {
@@ -89,7 +92,7 @@ export const removeExcludedFiles = async (directory: string, filePath: string) =
                     .filter((file: IExcludedFiles) => file.directory === directory && file.filePath === filePath)
                     .forEach(() => {
                         fileSetting.excludedFiles.pop(fileToRemove)
-                        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+                        fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
                     })
             }
         }
