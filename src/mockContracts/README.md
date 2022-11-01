@@ -14,7 +14,7 @@
 ## Directories
  - [scripts/](./scripts/) - [test/](./test/) - [testForge/](./testForge/)
 
- - [index.ts](./index.ts) - [MockERC1155.sol](./MockERC1155.sol) - [MockERC1155Upgradeable.sol](./MockERC1155Upgradeable.sol) - [MockERC20.sol](./MockERC20.sol) - [MockERC20Upgradeable.sol](./MockERC20Upgradeable.sol) - [MockERC721.sol](./MockERC721.sol) - [MockERC721Upgradeable.sol](./MockERC721Upgradeable.sol) - [MockProxyAdmin.sol](./MockProxyAdmin.sol) - [MockTransparentUpgradeableProxy.sol](./MockTransparentUpgradeableProxy.sol)
+ - [index.ts](./index.ts) - [MockERC1155.sol](./MockERC1155.sol) - [MockERC1155Upgradeable.sol](./MockERC1155Upgradeable.sol) - [MockERC20.sol](./MockERC20.sol) - [MockERC20Upgradeable.sol](./MockERC20Upgradeable.sol) - [MockERC721.sol](./MockERC721.sol) - [MockERC721Upgradeable.sol](./MockERC721Upgradeable.sol) - [MockProxyAdmin.sol](./MockProxyAdmin.sol) - [MockTransparentUpgradeableProxy.sol](./MockTransparentUpgradeableProxy.sol) - [README.md](./README.md)
 ## Directory Tree
 [<- Previous](https://github.com/marc-aurele-besner/hardhat-awesome-cli.git)
 mockContracts/
@@ -27,6 +27,7 @@ mockContracts/
    │   MockERC721Upgradeable.sol/
    │   MockProxyAdmin.sol/
    │   MockTransparentUpgradeableProxy.sol/
+   │   README.md/
    └─── scripts/
    └─── test/
    └─── testForge/

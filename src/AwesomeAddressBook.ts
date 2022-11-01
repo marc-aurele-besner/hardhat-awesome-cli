@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { fileContractsAddressDeployed, fileContractsAddressDeployedHistory } from './config'
+import { getAddressBookConfig } from './config'
 import { TAddressBookFields } from './types'
 
 interface IAddressDetails {
@@ -17,6 +17,12 @@ interface IAddressDetails {
 }
 
 export class AwesomeAddressBook {
+    private readonly _env: any
+
+    constructor(hre: any) {
+        this._env = hre
+    }
+
     public formatSaveContract(
         contractName: string,
         contractAddress: string,
@@ -67,10 +73,14 @@ export class AwesomeAddressBook {
         )
         let contractsAddressDeployed = []
         let contractsAddressDeployedHistory = []
-
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        // Add folder if not exist
+        if (!fs.existsSync(addressBookConfig.savePath)) fs.mkdirSync(addressBookConfig.savePath)
         // Add or edit contract address if deploy on same network
-        if (fs.existsSync(fileContractsAddressDeployed)) {
-            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
+        if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
+            )
             contractsAddressDeployed = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
                 let recordModify = false
@@ -92,28 +102,33 @@ export class AwesomeAddressBook {
                     contractsAddressDeployed.push(contractToAdd)
                 }
             }
-            fs.unlinkSync(fileContractsAddressDeployed)
+            fs.unlinkSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)
         } else {
             contractsAddressDeployed.push(contractToAdd)
         }
         try {
-            fs.writeFileSync(fileContractsAddressDeployed, JSON.stringify(contractsAddressDeployed, null, 2))
+            fs.writeFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed,
+                JSON.stringify(contractsAddressDeployed, null, 2)
+            )
         } catch (err) {
             console.log('Error writing address to file: ', err)
         }
 
         // Log all contracts deployed
-        if (fs.existsSync(fileContractsAddressDeployedHistory)) {
-            const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+        if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
+            const rawdata: any = fs.readFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory
+            )
             contractsAddressDeployedHistory = JSON.parse(rawdata)
             contractsAddressDeployedHistory.push(contractToAdd)
-            fs.unlinkSync(fileContractsAddressDeployedHistory)
+            fs.unlinkSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)
         } else {
             contractsAddressDeployedHistory.push(contractToAdd)
         }
         try {
             fs.writeFileSync(
-                fileContractsAddressDeployedHistory,
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory,
                 JSON.stringify(contractsAddressDeployedHistory, null, 2)
             )
         } catch (err) {
@@ -123,8 +138,11 @@ export class AwesomeAddressBook {
 
     public retrieveContract(contractName: string, deployedNetwork: string) {
         let returnContractAddress = ''
-        if (fs.existsSync(fileContractsAddressDeployed)) {
-            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
+            )
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
                 if (
@@ -141,8 +159,11 @@ export class AwesomeAddressBook {
     }
 
     public retrieveContractObject(contractName: string, deployedNetwork: string) {
-        if (fs.existsSync(fileContractsAddressDeployed)) {
-            const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
+            const rawdata: any = fs.readFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
+            )
             const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
                 if (
@@ -160,6 +181,7 @@ export class AwesomeAddressBook {
 
     public retrieveOZAdminProxyContract(chainId: number) {
         let returnContractAddress = ''
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
         let ozFileName = ''
         switch (chainId) {
             case 1:
@@ -175,17 +197,20 @@ export class AwesomeAddressBook {
             default:
                 ozFileName = `unknown-${chainId}`
         }
-        if (fs.existsSync(`.openzeppelin/${ozFileName}.json`)) {
-            const ozFileRawdata: any = fs.readFileSync(`.openzeppelin/${ozFileName}.json`)
+        if (fs.existsSync(`${addressBookConfig.openzeppelinPath}/${ozFileName}.json`)) {
+            const ozFileRawdata: any = fs.readFileSync(`${addressBookConfig.openzeppelinPath}/${ozFileName}.json`)
             returnContractAddress = JSON.parse(ozFileRawdata).admin.address
         }
         return returnContractAddress
     }
 
     public retrieveContractHistory(deployedNetwork: string) {
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
         const returnContractAddress: IAddressDetails[] = []
-        if (fs.existsSync(fileContractsAddressDeployedHistory)) {
-            const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+        if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
+            const rawdata: any = fs.readFileSync(
+                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory
+            )
             const contractsAddressDeployedHistory: IAddressDetails[] = JSON.parse(rawdata)
             if (contractsAddressDeployedHistory !== undefined && contractsAddressDeployedHistory.length > 0) {
                 contractsAddressDeployedHistory
@@ -204,22 +229,28 @@ export class AwesomeAddressBook {
         applyToPrimary: boolean = true,
         applyToHistory: boolean = true
     ) {
+        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
         if (applyToPrimary)
-            if (fs.existsSync(fileContractsAddressDeployed)) {
-                const rawdata: any = fs.readFileSync(fileContractsAddressDeployed)
+            if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
+                const rawdata: any = fs.readFileSync(
+                    addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
+                )
                 const contractsAddressDeployed: IAddressDetails[] = JSON.parse(rawdata)
                 if (contractsAddressDeployed !== undefined && contractsAddressDeployed.length > 0) {
                     if (contractsAddressDeployed.find((c: IAddressDetails) => c[field] === value)) {
                         const contractsAddressDeployedFiltered = contractsAddressDeployed.filter(
                             (c: IAddressDetails) => c[field] !== value
                         )
-                        fs.unlinkSync(fileContractsAddressDeployed)
+                        fs.unlinkSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)
                         const contractsAddressDeployedFilteredString =
                             contractsAddressDeployedFiltered.length > 0
                                 ? JSON.stringify(contractsAddressDeployedFiltered, null, 2)
                                 : ''
                         try {
-                            fs.writeFileSync(fileContractsAddressDeployed, contractsAddressDeployedFilteredString)
+                            fs.writeFileSync(
+                                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed,
+                                contractsAddressDeployedFilteredString
+                            )
                         } catch (err) {
                             console.log('Error writing address to file: ', err)
                         }
@@ -227,22 +258,26 @@ export class AwesomeAddressBook {
                 }
             }
         if (applyToHistory)
-            if (fs.existsSync(fileContractsAddressDeployedHistory)) {
-                const rawdata: any = fs.readFileSync(fileContractsAddressDeployedHistory)
+            if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
+                const rawdata: any = fs.readFileSync(
+                    addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory
+                )
                 const contractsAddressHistoryDeployed: IAddressDetails[] = JSON.parse(rawdata)
                 if (contractsAddressHistoryDeployed !== undefined && contractsAddressHistoryDeployed.length > 0) {
                     if (contractsAddressHistoryDeployed.find((c: IAddressDetails) => c[field] === value)) {
                         const contractsAddressDeployedHistoryFiltered = contractsAddressHistoryDeployed.filter(
                             (c: IAddressDetails) => c[field] !== value
                         )
-                        fs.unlinkSync(fileContractsAddressDeployedHistory)
+                        fs.unlinkSync(
+                            addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory
+                        )
                         const contractsAddressDeployedHistoryFilteredString =
                             contractsAddressDeployedHistoryFiltered.length > 0
                                 ? JSON.stringify(contractsAddressDeployedHistoryFiltered, null, 2)
                                 : ''
                         try {
                             fs.writeFileSync(
-                                fileContractsAddressDeployedHistory,
+                                addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory,
                                 contractsAddressDeployedHistoryFilteredString
                             )
                         } catch (err) {

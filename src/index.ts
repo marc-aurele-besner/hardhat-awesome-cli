@@ -71,7 +71,7 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
 })
 
 extendEnvironment(async (hre: any) => {
-    hre.addressBook = lazyObject(() => new AwesomeAddressBook())
+    hre.addressBook = lazyObject(() => new AwesomeAddressBook(hre))
 })
 
 /**

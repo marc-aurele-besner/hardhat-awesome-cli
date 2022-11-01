@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { fileEnvHardhatAwesomeCLI } from './config'
+import { getAddressBookConfig } from './config'
 
 const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, createIfNotExist: boolean) => {
     if (fs.existsSync(ignoreFile)) {
@@ -21,8 +21,9 @@ const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, creat
 }
 
 export const getEnvValue = (envName: string) => {
-    if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
-        const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileEnvHardhatAwesomeCLI)) {
+        const allEnv = require('dotenv').config({ path: addressBookConfig.fileEnvHardhatAwesomeCLI })
         const oldEnv = Object.entries(allEnv.parsed)
         for (const [key, value] of oldEnv) {
             if (key && value && key === envName) return getEnvValue
@@ -32,6 +33,7 @@ export const getEnvValue = (envName: string) => {
 }
 
 const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: string; privateKeyOrMnemonic: any }) => {
+    const addressBookConfig = getAddressBookConfig(env.userConfig)
     let isRpcUrl = false
     let isPrivateKey = false
     let isMnemonic = false
@@ -60,8 +62,8 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
     if (isPrivateKey) envToWrite = privateKeyEnv + '\n'
     if (isMnemonic) envToWrite = mnemonicEnv + '\n'
 
-    if (fs.existsSync(fileEnvHardhatAwesomeCLI)) {
-        const allEnv = require('dotenv').config({ path: fileEnvHardhatAwesomeCLI })
+    if (fs.existsSync(addressBookConfig.fileEnvHardhatAwesomeCLI)) {
+        const allEnv = require('dotenv').config({ path: addressBookConfig.fileEnvHardhatAwesomeCLI })
         const oldEnv = Object.entries(allEnv.parsed)
         let newEnv = ''
         const wipEnv: any = []
@@ -98,11 +100,11 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
         if (isRpcUrl && !isRpcUrlEnvExist) newEnv += rpcUrlEnv + '\n'
         if (isPrivateKey && !isPrivateKeyEnvExist) newEnv += privateKeyEnv + '\n'
         if (isMnemonic && !isMnemoniclEnvExist) newEnv += mnemonicEnv + '\n'
-        fs.writeFileSync(fileEnvHardhatAwesomeCLI, newEnv)
-    } else fs.writeFileSync(fileEnvHardhatAwesomeCLI, envToWrite)
+        fs.writeFileSync(addressBookConfig.fileEnvHardhatAwesomeCLI, newEnv)
+    } else fs.writeFileSync(addressBookConfig.fileEnvHardhatAwesomeCLI, envToWrite)
     console.log('\x1b[32m%s\x1b[0m', 'Env file updated')
-    await addEnvFileInGitiignore('.gitignore', fileEnvHardhatAwesomeCLI, true)
-    await addEnvFileInGitiignore('.npmignore', fileEnvHardhatAwesomeCLI, false)
+    await addEnvFileInGitiignore('.gitignore', addressBookConfig.fileEnvHardhatAwesomeCLI, true)
+    await addEnvFileInGitiignore('.npmignore', addressBookConfig.fileEnvHardhatAwesomeCLI, false)
 }
 
 export default writeToEnv

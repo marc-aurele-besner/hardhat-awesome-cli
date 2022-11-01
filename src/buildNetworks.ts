@@ -2,14 +2,15 @@ import fs from 'fs'
 
 import { getEnvValue } from './buildEnv'
 import { buildActivatedChainList } from './buildFilesList'
-import { DefaultChainList, fileHardhatAwesomeCLI } from './config'
+import { DefaultChainList, getAddressBookConfig } from './config'
 import { IChain } from './types'
 
 export const buildActivatedChainNetworkConfig = () => {
     let chainConfig: string = ''
     let fileSetting: any = []
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
     }
     if (fileSetting && fileSetting.activatedChain) {
@@ -99,8 +100,9 @@ export const buildActivatedChainNetworkConfig = () => {
 
 const addChain = async (chainName: string, chainToAdd: IChain) => {
     let fileSetting: any = []
-    if (fs.existsSync(fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
         if (fileSetting) {
             if (!fileSetting.activatedChain) {
@@ -132,7 +134,7 @@ const addChain = async (chainName: string, chainToAdd: IChain) => {
         })
     }
     try {
-        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+        fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
     } catch {
         console.log('\x1b[31m%s\x1b[0m', 'Error adding chain: ' + chainName + ' to your settings!')
     }
@@ -148,8 +150,9 @@ export const removeActivatedChain = async (chainName: string) => {
     const FullChainList: IChain[] = DefaultChainList
     const chainToRemove: IChain | undefined = FullChainList.find((chain: IChain) => chain.name === chainName)
     let fileSetting: any = []
-    if (fs.existsSync(fileHardhatAwesomeCLI) && chainToRemove) {
-        const rawdata: any = fs.readFileSync(fileHardhatAwesomeCLI)
+    const addressBookConfig = getAddressBookConfig()
+    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI) && chainToRemove) {
+        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && fileSetting.activatedChain) {
             if (fileSetting.activatedChain.length > 0) {
@@ -157,7 +160,7 @@ export const removeActivatedChain = async (chainName: string) => {
                     .filter((chain: IChain) => chain.chainName === chainToRemove.chainName)
                     .forEach((chain: IChain) => {
                         fileSetting.activatedChain.pop(chain)
-                        fs.writeFileSync(fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+                        fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
                     })
             }
         }

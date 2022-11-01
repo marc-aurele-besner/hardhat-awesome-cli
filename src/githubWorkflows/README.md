@@ -12,7 +12,7 @@
 #    # #    # #    # #####  #    # #    #   #         #    # #    # ######  ####   ####  #    # ######        ####  ###### # 
 
 
- - [foundry-npm.yml](./foundry-npm.yml) - [foundry-yarn.yml](./foundry-yarn.yml) - [hardhat-npm.yml](./hardhat-npm.yml) - [hardhat-yarn.yml](./hardhat-yarn.yml)
+ - [foundry-npm.yml](./foundry-npm.yml) - [foundry-yarn.yml](./foundry-yarn.yml) - [hardhat-npm.yml](./hardhat-npm.yml) - [hardhat-yarn.yml](./hardhat-yarn.yml) - [README.md](./README.md)
 ## Directory Tree
 [<- Previous](https://github.com/marc-aurele-besner/hardhat-awesome-cli.git)
 githubWorkflows/
@@ -20,4 +20,5 @@ githubWorkflows/
    │   foundry-yarn.yml/
    │   hardhat-npm.yml/
    │   hardhat-yarn.yml/
+   │   README.md/
 
