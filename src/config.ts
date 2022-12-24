@@ -3,9 +3,6 @@ import { IChain, IDefaultGithubWorkflowsList, IHardhatPluginAvailableList } from
 export const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 export const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
 
-export const fileContractsAddressDeployed = 'contractsAddressDeployed.json'
-export const fileContractsAddressDeployedHistory = 'contractsAddressDeployedHistory.json'
-
 export const DefaultChainList: IChain[] = [
     {
         name: 'Hardhat local',
@@ -210,3 +207,41 @@ export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
         group: 'npm'
     }
 ]
+
+export const addressBookDefaultConfig = {
+    savePath: './',
+    openzeppelinPath: '.openzeppelin',
+    contractsFlattenPath: 'contractsFlatten',
+    contractsFlattenPrefix: 'flat_',
+    fileHardhatAwesomeCLI: 'hardhat-awesome-cli.json',
+    fileEnvHardhatAwesomeCLI: '.env.hardhat-awesome-cli',
+    fileContractsAddressDeployed: 'contractsAddressDeployed.json',
+    fileContractsAddressDeployedHistory: 'contractsAddressDeployedHistory.json'
+}
+
+export const getAddressBookConfig = (
+    userConfig = {
+        addressBook: addressBookDefaultConfig
+    } as any
+) => {
+    if (userConfig.addressBook)
+        return {
+            savePath: userConfig.addressBook.savePath || addressBookDefaultConfig.savePath,
+            openzeppelinPath: userConfig.addressBook.openzeppelinPath || addressBookDefaultConfig.openzeppelinPath,
+            contractsFlattenPath:
+                userConfig.addressBook.contractsFlattenPath || addressBookDefaultConfig.contractsFlattenPath,
+            contractsFlattenPrefix:
+                userConfig.addressBook.contractsFlattenPrefix || addressBookDefaultConfig.contractsFlattenPrefix,
+            fileHardhatAwesomeCLI:
+                userConfig.addressBook.fileHardhatAwesomeCLI || addressBookDefaultConfig.fileHardhatAwesomeCLI,
+            fileEnvHardhatAwesomeCLI:
+                userConfig.addressBook.fileEnvHardhatAwesomeCLI || addressBookDefaultConfig.fileEnvHardhatAwesomeCLI,
+            fileContractsAddressDeployed:
+                userConfig.addressBook.fileContractsAddressDeployed ||
+                addressBookDefaultConfig.fileContractsAddressDeployed,
+            fileContractsAddressDeployedHistory:
+                userConfig.addressBook.fileContractsAddressDeployedHistory ||
+                addressBookDefaultConfig.fileContractsAddressDeployedHistory
+        }
+    return addressBookDefaultConfig
+}
