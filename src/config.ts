@@ -5,8 +5,15 @@ export const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
 
 export const DefaultChainList: IChain[] = [
     {
-        name: 'Hardhat local',
+        name: 'Hardhat (Temporary instance)',
         chainName: 'hardhat',
+        chainId: 31337,
+        gas: 'auto',
+        currency: 'ETH'
+    },
+    {
+        name: 'Hardhat (Localhost node)',
+        chainName: 'localhost',
         chainId: 31337,
         gas: 'auto',
         currency: 'ETH'

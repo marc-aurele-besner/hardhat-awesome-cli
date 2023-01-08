@@ -68,7 +68,17 @@ const serveNetworkSelector = async (
     })
     if (activatedChainList.length === 0) {
         const addHardhat = BuildFullChainList.find((basicChain: IChain) => basicChain.chainName === 'hardhat')
-        if (addHardhat) activatedChainList.push(addHardhat.name)
+        const addHardhatLocalhost = BuildFullChainList.find(
+            (basicChain: IChain) => basicChain.chainName === 'localhost'
+        )
+        if (addHardhat) {
+            ActivatedChainList.push(addHardhat)
+            activatedChainList.push(addHardhat.name)
+        }
+        if (addHardhatLocalhost) {
+            ActivatedChainList.push(addHardhatLocalhost)
+            activatedChainList.push(addHardhatLocalhost.name)
+        }
     }
     let commandFlags = ''
     await inquirer
