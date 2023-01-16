@@ -1,0 +1,18 @@
+name: Dependencies check NPM
+
+on:
+    schedule:
+        # Runs "at 7h30 am every day" (see https://crontab.guru)
+        - cron: '30 7 * * *'
+    push:
+    workflow_dispatch:
+
+jobs:
+    dependencies_check_npm:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: NPM Install
+              run: npm i
+            - name: NPM Outdated
+              run: npm outdated
