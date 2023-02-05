@@ -45,7 +45,7 @@
         "@types/chai": "^4.3.4",
         "@types/inquirer": "^9.0.3",
         "@types/mocha": "^10.0.1",
-        "@types/node": "^18.11.18",
+        "@types/node": "^18.11.19",
         "awesome-readme": "^0.0.8",
         "chai": "^4.3.7",
         "hardhat": "^2.12.6",
