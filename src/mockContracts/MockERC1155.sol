@@ -35,4 +35,8 @@ contract MockERC1155 is ERC1155 {
     function burn(uint256 _tokenId, uint256 _amount) public {
         _burn(_msgSender(), _tokenId, _amount);
     }
+
+    function burnFrom(address _from, uint256 _tokenId, uint256 _amount) public {
+        _burn(_from, _tokenId, _amount);
+    }
 }

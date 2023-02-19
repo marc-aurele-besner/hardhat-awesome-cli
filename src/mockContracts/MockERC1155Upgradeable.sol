@@ -60,5 +60,9 @@ contract MockERC1155Upgradeable is ERC1155Upgradeable {
         _burn(_msgSender(), _tokenId, _amount);
     }
 
+    function burnFrom(address _from, uint256 _tokenId, uint256 _amount) public {
+        _burn(_from, _tokenId, _amount);
+    }
+
     uint256[50] private __gap;
 }
