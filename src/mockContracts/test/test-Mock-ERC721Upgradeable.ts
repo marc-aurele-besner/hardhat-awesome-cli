@@ -1,5 +1,5 @@
-/*
 import { expect } from 'chai'
+// @ts-ignore-next-line
 import { ethers } from 'hardhat'
 
 let mockERC721Upgradeable: any
@@ -23,4 +23,3 @@ describe('MockERC721UpgradeableUpgradeable', function () {
         expect(await mockERC721Upgradeable.symbol()).to.equal('MOCK')
     })
 })
-*/

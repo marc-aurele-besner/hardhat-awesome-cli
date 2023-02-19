@@ -20,4 +20,9 @@ contract MockERC20 is ERC20 {
         require(_amount > 0);
         _burn(_msgSender(), _amount);
     }
+
+    function burnFrom(address _from, uint256 _amount) public {
+        require(_amount > 0);
+        _burn(_from, _amount);
+    }
 }
