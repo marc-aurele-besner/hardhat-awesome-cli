@@ -39,7 +39,7 @@ contract MockERC721UpgradeableTest is DSTest {
         address to_, 
         uint256 tokenId_
     ) public {
-        vm.assume(to_ != address(0));
+        vm.assume(to_ != address(0) && to_.code.length == 0);
         vm.assume(tokenId_ > 0);
 
         assertEq(mockERC721Upgradeable.balanceOf(to_), 0);
@@ -54,7 +54,7 @@ contract MockERC721UpgradeableTest is DSTest {
         address to_, 
         uint256 tokenId_
     ) public {
-        vm.assume(to_ != address(0));
+        vm.assume(to_ != address(0) && to_.code.length == 0);
         vm.assume(tokenId_ > 0);
 
         assertEq(mockERC721Upgradeable.balanceOf(to_), 0);

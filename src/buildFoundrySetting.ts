@@ -7,7 +7,7 @@ const buildFoundrySetting = async () => {
     if (!fs.existsSync('foundry.toml')) {
         fs.writeFileSync(
             'foundry.toml',
-            `[default]
+            `[profile.default]
 src = 'contracts/test'                                        # the source directory
 test = 'contracts/test'                                       # the test directory
 out = 'artifacts/contracts'                                   # the output directory (for artifacts)
@@ -51,6 +51,10 @@ block_difficulty = 0                                          # the value of blo
     if (fs.existsSync('contracts')) {
         if (!fs.existsSync('contracts/test')) {
             fs.mkdirSync('contracts/test')
+            if (!fs.existsSync('contracts/test/utils')) {
+                fs.mkdirSync('contracts/test/utils')
+            }
+        } else {
             if (!fs.existsSync('contracts/test/utils')) {
                 fs.mkdirSync('contracts/test/utils')
             }
