@@ -39,7 +39,7 @@ contract MockERC1155Test is DSTest {
         uint256 tokenId_,
         uint256 amount_
     ) public {
-        vm.assume(to_ != address(0));
+        vm.assume(to_ != address(0) && to_.code.length == 0);
         vm.assume(tokenId_ > 0);
         vm.assume(amount_ > 0);
 
@@ -55,7 +55,7 @@ contract MockERC1155Test is DSTest {
         uint256 tokenId_,
         uint256 amount_
     ) public {
-        vm.assume(to_ != address(0));
+        vm.assume(to_ != address(0) && to_.code.length == 0);
         vm.assume(tokenId_ > 0);
         vm.assume(amount_ > 0);
 
@@ -77,7 +77,7 @@ contract MockERC1155Test is DSTest {
         uint256 tokenId_,
         uint256 amount_
     ) public {
-        vm.assume(to_ != address(0));
+        vm.assume(to_ != address(0) && to_.code.length == 0);
         vm.assume(tokenId_ > 0);
         vm.assume(amount_ > 0);
 
