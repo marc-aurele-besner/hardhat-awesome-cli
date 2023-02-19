@@ -7,7 +7,7 @@ const buildFoundrySetting = async () => {
     if (!fs.existsSync('foundry.toml')) {
         fs.writeFileSync(
             'foundry.toml',
-            `[default]
+            `[profile.default]
 src = 'contracts/test'                                        # the source directory
 test = 'contracts/test'                                       # the test directory
 out = 'artifacts/contracts'                                   # the output directory (for artifacts)
