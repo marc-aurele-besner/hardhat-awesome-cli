@@ -54,6 +54,10 @@ block_difficulty = 0                                          # the value of blo
             if (!fs.existsSync('contracts/test/utils')) {
                 fs.mkdirSync('contracts/test/utils')
             }
+        } else {
+            if (!fs.existsSync('contracts/test/utils')) {
+                fs.mkdirSync('contracts/test/utils')
+            }
         }
     } else {
         fs.mkdirSync('contracts')
