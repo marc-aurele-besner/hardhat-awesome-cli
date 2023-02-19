@@ -1,5 +1,5 @@
-/*
-import { ethers, addressBook, network } from 'hardhat'
+// @ts-ignore-next-line
+import { addressBook, ethers, network } from 'hardhat'
 
 async function main() {
     const [deployer] = await ethers.getSigners()
@@ -23,4 +23,3 @@ main().catch((error) => {
     console.error(error)
     process.exitCode = 1
 })
-*/

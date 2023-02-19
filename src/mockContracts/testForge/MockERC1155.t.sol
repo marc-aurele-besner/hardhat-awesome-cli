@@ -71,4 +71,24 @@ contract MockERC1155Test is DSTest {
 
         assertEq(mockERC1155.balanceOf(to_, tokenId_), 0);
     }
+
+    function test_MockERC1155_burnFrom(
+        address to_, 
+        uint256 tokenId_,
+        uint256 amount_
+    ) public {
+        vm.assume(to_ != address(0));
+        vm.assume(tokenId_ > 0);
+        vm.assume(amount_ > 0);
+
+        assertEq(mockERC1155.balanceOf(to_, tokenId_), 0);
+
+        mockERC1155.mint(to_, tokenId_, amount_);
+
+        assertEq(mockERC1155.balanceOf(to_, tokenId_), amount_);
+
+        mockERC1155.burnFrom(to_, tokenId_, amount_);
+
+        assertEq(mockERC1155.balanceOf(to_, tokenId_), 0);
+    }
 }

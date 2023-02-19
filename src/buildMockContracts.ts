@@ -109,12 +109,9 @@ export const buildMockDeploymentScriptOrTest = async (contractName: string, type
                                     ' in ' + scriptOrTestDir + '/'
                                 )
                                 if (!fs.existsSync(scriptOrTestDir + '/')) fs.mkdirSync(scriptOrTestDir + '/')
-                                const rawdata: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
-                                let scriptsTestRawdataModify = rawdata
-                                if (type !== 'testForge')
-                                    scriptsTestRawdataModify = rawdata.toString().slice(2).replace(/\*\//g, '').trim()
+                                const rawData: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
                                 await sleep(500)
-                                fs.writeFileSync(finalPath, `${scriptsTestRawdataModify}`)
+                                fs.writeFileSync(finalPath, rawData)
                             }
                         }
                     }

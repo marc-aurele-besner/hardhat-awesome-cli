@@ -1,5 +1,5 @@
-/*
 import { expect } from 'chai'
+// @ts-ignore-next-line
 import { ethers } from 'hardhat'
 
 let mockERC20: any
@@ -66,4 +66,3 @@ describe('MockERC20', function () {
         expect(await mockERC20.balanceOf(user2.address)).to.equal(1000)
     })
 })
-*/
