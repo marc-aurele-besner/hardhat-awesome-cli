@@ -42,9 +42,10 @@
         "@types/chai": "^4.3.4",
         "@types/inquirer": "^9.0.3",
         "@types/mocha": "^10.0.1",
-        "@types/node": "^18.14.0",
+        "@types/node": "^18.14.6",
         "awesome-readme": "^0.0.8",
         "chai": "^4.3.7",
+        "hardhat": "^2.13.0",
         "mocha": "^10.2.0",
         "prettier": "^2.8.4",
         "ts-node": "^10.9.1",
@@ -54,12 +55,11 @@
         "typescript": "^4.9.5"
     },
     "peerDependencies": {
-        "hardhat": "^2.12.7"
+        "hardhat": "^2.13.0"
     },
     "dependencies": {
         "dotenv": "^16.0.3",
         "fs": "^0.0.1-security",
-        "hardhat": "^2.12.7",
         "inquirer": "^8.2.5"
     }
 }
