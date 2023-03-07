@@ -11,7 +11,7 @@ jobs:
     dependencies_check_npm:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - name: NPM Install
               run: npm i
             - name: NPM Outdated
