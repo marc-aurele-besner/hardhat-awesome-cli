@@ -74,3 +74,8 @@ export type TAddressBookFields =
     | 'blockNumber'
     | 'tag'
     | 'extra'
+
+export type FunctionSelector = {
+    name: string
+    selector: string
+}
