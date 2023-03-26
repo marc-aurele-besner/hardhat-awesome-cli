@@ -2,6 +2,7 @@ import 'hardhat/types/config'
 import 'hardhat/types/runtime'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
+import { FunctionList } from './functionList'
 
 declare module 'hardhat/types/config' {
     // We extend the UserConfig type, which represents the config as written
@@ -24,5 +25,6 @@ declare module 'hardhat/types/runtime' {
     // This new field will be available in tasks' actions, scripts, and tests.
     export interface HardhatRuntimeEnvironment {
         addressBook: AwesomeAddressBook
+        functionList: FunctionList
     }
 }

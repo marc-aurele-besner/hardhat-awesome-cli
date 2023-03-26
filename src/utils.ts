@@ -3,7 +3,7 @@ import fs from 'fs'
 import { exit } from 'process'
 
 import { getAddressBookConfig } from './config'
-import { IContractAddressDeployed, IInquirerListField } from './types'
+import { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types'
 
 let contractsAddressDeployed: IContractAddressDeployed[] = []
 let contractsAddressDeployedHistory: IContractAddressDeployed[] = []
@@ -69,6 +69,22 @@ export const runCommand = async (
     runSpawn.on('exit', (code) => {
         if (thenExit) exit()
     })
+}
+
+export const listAllFunctionSelectors = async (hre: any, contractName: string) => {
+    const factory = await hre.ethers.getContractFactory(contractName)
+
+    const functions: FunctionSelector[] = []
+    for (const [name] of Object.entries(factory.interface.functions)) {
+        functions.push({
+            name,
+            selector: hre.ethers.utils.id(name).substring(0, 10)
+        })
+    }
+    functions.sort((a, b) => {
+        return a.selector.localeCompare(b.selector)
+    })
+    return functions
 }
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

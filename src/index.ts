@@ -8,6 +8,7 @@ import path from 'path'
 
 import { AwesomeAddressBook } from './AwesomeAddressBook'
 import { buildActivatedChainNetworkConfig } from './buildNetworks'
+import { FunctionList } from './functionList'
 import serveCli from './serveInquirer'
 import './type-extensions'
 
@@ -72,6 +73,7 @@ extendConfig(async (config: HardhatConfig, userConfig: HardhatUserConfig) => {
 
 extendEnvironment(async (hre: any) => {
     hre.addressBook = lazyObject(() => new AwesomeAddressBook(hre))
+    hre.functionList = lazyObject(() => new FunctionList(hre))
 })
 
 /**

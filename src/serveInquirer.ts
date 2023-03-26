@@ -47,6 +47,7 @@ import {
     inquirerRunMockContractCreator,
     inquirerRunScripts,
     inquirerRunTests,
+    listAllFunctionSelectors,
     runCommand,
     sleep
 } from './utils'
@@ -256,6 +257,40 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
                 }
             }
         }
+    }
+}
+
+const serveFunctionListSelector = async (env: any) => {
+    const contractsFilesObject = await buildContractsList()
+    const contractsFilesList: string[] = []
+    if (contractsFilesObject) {
+        contractsFilesObject.map((file: IFileList) => contractsFilesList.push(file.name))
+        if (contractsFilesList.length > 0)
+            await inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'contractName',
+                        message: 'Select a contract to list all functions',
+                        choices: contractsFilesList
+                    }
+                ])
+                .then(async (contractsSelected: { contractName: string }) => {
+                    const functions = await listAllFunctionSelectors(env, contractsSelected.contractName)
+                    console.log(
+                        'Contract: ',
+                        '\x1b[32m',
+                        contractsSelected.contractName,
+                        '\x1b[0m',
+                        'has ',
+                        '\x1b[32m',
+                        functions.length,
+                        '\x1b[0m',
+                        'public and external functions, ordered by selector'
+                    )
+                    console.table(functions)
+                    await sleep(5000)
+                })
     }
 }
 
@@ -539,7 +574,7 @@ const serveWorkflowBuilder = async () => {
     }
 }
 
-const serveMoreSettingSelector = async () => {
+const serveMoreSettingSelector = async (env: any) => {
     await inquirer
         .prompt([
             {
@@ -550,6 +585,8 @@ const serveMoreSettingSelector = async () => {
                     'Exclude test file from the tests selection list',
                     'Exclude script file from the scripts selection list',
                     'Exclude contract file from the contract selection list',
+                    new inquirer.Separator(),
+                    'List function from a contract by function selector',
                     new inquirer.Separator(),
                     'Add other Hardhat plugins',
                     'Remove other Hardhat plugins',
@@ -567,6 +604,8 @@ const serveMoreSettingSelector = async () => {
                 await serveExcludeFileSelector('scripts')
             if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list')
                 await serveExcludeFileSelector('contracts')
+            if (moreSettingsSelected.moreSettings === 'List function from a contract by function selector')
+                await serveFunctionListSelector(env)
             if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
             if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
             if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
@@ -801,7 +840,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
             if (answers.action === 'Select scripts and tests to run') await serveScriptSelector(env, serveTestSelector)
             if (answers.action === 'Run coverage tests') await serveTestSelector(env, 'npx hardhat coverage', '')
             if (answers.action === 'Setup chains, RPC and accounts') await serveSettingSelector(env)
-            if (answers.action === 'More settings') await serveMoreSettingSelector()
+            if (answers.action === 'More settings') await serveMoreSettingSelector(env)
             if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
             if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
             if (answers.action === 'Get account balance') await serveAccountBalance(env)
