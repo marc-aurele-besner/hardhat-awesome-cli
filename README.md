@@ -199,7 +199,8 @@ addressBook.saveContract(
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
-        extra?: any
+        extra?: any,
+        forceAdd = false as boolean
     )
 
 addressBook.retrieveContract(contractName: string, deployedNetwork: string)
