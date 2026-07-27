@@ -62,10 +62,10 @@ export class AwesomeAddressBook {
         forceAdd = false as boolean
     ) {
         if (
-            !forceAdd ||
-            this._env.network.name === 'hardhat' ||
-            this._env.network.name === 'localhost' ||
-            this._env.network.name === 'anvil'
+            !forceAdd &&
+            this._env.network.name !== 'hardhat' &&
+            this._env.network.name !== 'localhost' &&
+            this._env.network.name !== 'anvil'
         )
             return
         const contractToAdd: IAddressDetails = this.formatSaveContract(
