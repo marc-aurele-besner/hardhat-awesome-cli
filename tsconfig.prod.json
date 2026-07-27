@@ -8,6 +8,7 @@
         "outDir": "./dist",
         "strict": false,
         "rootDirs": ["./src", "./test"],
+        "types": ["node", "mocha"],
         "esModuleInterop": true,
         "skipLibCheck": true
     },
