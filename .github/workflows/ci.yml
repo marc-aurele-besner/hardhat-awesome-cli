@@ -13,6 +13,6 @@ jobs:
         with:
           node-version: 16
       - name: NPM Clean Install
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Run test
         run: npm run test
