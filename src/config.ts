@@ -27,57 +27,40 @@ export const DefaultChainList: IChain[] = [
         defaultBlockExplorer: 'https://etherscan.io/'
     },
     {
-        name: 'Ethereum - Ropstein',
-        chainName: 'ropsten',
-        chainId: 3,
+        name: 'Ethereum - Sepolia',
+        chainName: 'ethereumSepolia',
+        chainId: 11155111,
         gas: 'auto',
         currency: 'ETH',
-        defaultBlockExplorer: 'https://ropsten.etherscan.io/'
+        defaultBlockExplorer: 'https://sepolia.etherscan.io/'
     },
     {
-        name: 'Ethereum - Rinkeby',
-        chainName: 'rinkeby',
-        chainId: 4,
+        name: 'Ethereum - Holesky',
+        chainName: 'holesky',
+        chainId: 17000,
         gas: 'auto',
         currency: 'ETH',
-        defaultBlockExplorer: 'https://rinkeby.etherscan.io/'
-    },
-    {
-        name: 'Ethereum - Goerli',
-        chainName: 'goerli',
-        chainId: 5,
-        gas: 'auto',
-        currency: 'ETH',
-        defaultBlockExplorer: 'https://goerli.etherscan.io/'
-    },
-    {
-        name: 'Ethereum - Kovan',
-        chainName: 'kovan',
-        chainId: 42,
-        gas: 'auto',
-        currency: 'ETH',
-        defaultBlockExplorer: 'https://kovan.etherscan.io/'
+        defaultBlockExplorer: 'https://holesky.etherscan.io/'
     },
     {
         name: 'Polygon - Mainnet',
         chainName: 'polygon',
         chainId: 137,
         gas: 'auto',
-        currency: 'MATIC',
+        currency: 'POL',
         defaultRpcUrl: 'https://polygon-rpc.com',
         defaultBlockExplorer: 'https://polygonscan.com/'
     },
     {
-        name: 'Polygon - Mumbai',
-        chainName: 'mumbai',
-        chainId: 80001,
+        name: 'Polygon - Amoy',
+        chainName: 'polygonAmoy',
+        chainId: 80002,
         gas: 'auto',
-        currency: 'MATIC',
-        defaultRpcUrl: 'https://rpc-mumbai.maticvigil.com',
-        defaultBlockExplorer: 'https://mumbai.polygonscan.com/'
+        currency: 'POL',
+        defaultBlockExplorer: 'https://amoy.polygonscan.com/'
     },
     {
-        name: 'Binance Smart Chain - Mainnet',
+        name: 'BNB Smart Chain - Mainnet',
         chainName: 'binance',
         chainId: 56,
         gas: 'auto',
@@ -86,12 +69,12 @@ export const DefaultChainList: IChain[] = [
         defaultBlockExplorer: 'https://bscscan.com'
     },
     {
-        name: 'Binance Smart Chain - Testnet',
+        name: 'BNB Smart Chain - Testnet',
         chainName: 'binanceTestnet',
         chainId: 97,
         gas: 'auto',
         currency: 'BNB',
-        defaultBlockExplorer: 'https://explorer.binance.org/smart-testnet'
+        defaultBlockExplorer: 'https://testnet.bscscan.com'
     },
     {
         name: 'Optimism - Mainnet',
@@ -103,21 +86,61 @@ export const DefaultChainList: IChain[] = [
         defaultBlockExplorer: 'https://optimistic.etherscan.io/'
     },
     {
-        name: 'Optimism - Testnet Kovan',
-        chainName: 'optimismTestnetKovan',
-        chainId: 69,
+        name: 'Optimism - Sepolia',
+        chainName: 'optimismSepolia',
+        chainId: 11155420,
         gas: 'auto',
         currency: 'ETH',
-        defaultRpcUrl: 'https://kovan.optimism.io'
+        defaultBlockExplorer: 'https://sepolia-optimism.etherscan.io/'
     },
     {
-        name: 'Avalanche - Mainnet',
+        name: 'Arbitrum One - Mainnet',
+        chainName: 'arbitrum',
+        chainId: 42161,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://arbiscan.io/'
+    },
+    {
+        name: 'Arbitrum One - Sepolia',
+        chainName: 'arbitrumSepolia',
+        chainId: 421614,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://sepolia.arbiscan.io/'
+    },
+    {
+        name: 'Base - Mainnet',
+        chainName: 'base',
+        chainId: 8453,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://basescan.org/'
+    },
+    {
+        name: 'Base - Sepolia',
+        chainName: 'baseSepolia',
+        chainId: 84532,
+        gas: 'auto',
+        currency: 'ETH',
+        defaultBlockExplorer: 'https://sepolia.basescan.org/'
+    },
+    {
+        name: 'Avalanche - C-Chain',
         chainName: 'avalanche',
         chainId: 43114,
         gas: 'auto',
         currency: 'AVAX',
         defaultRpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
         defaultBlockExplorer: 'https://snowtrace.io/'
+    },
+    {
+        name: 'Avalanche - Fuji',
+        chainName: 'avalancheFuji',
+        chainId: 43113,
+        gas: 'auto',
+        currency: 'AVAX',
+        defaultBlockExplorer: 'https://testnet.snowtrace.io/'
     }
 ]
 
