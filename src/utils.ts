@@ -57,22 +57,35 @@ export const buildCommand = (command: string, firstCommand: string, commandFlags
     return commandToRun
 }
 
+/**
+ * Run a shell command and resolve once the child process exits.
+ *
+ * `thenExit=true` (the default for backwards compatibility) terminates the
+ * current Node process after the child exits, mirroring the previous fire-and-
+ * exit behaviour. `thenExit=false` keeps the process alive so callers can chain
+ * follow-up work; in that case the returned promise only resolves after the
+ * child has actually exited, replacing the `sleep(N)` calls that used to mask
+ * the spawn.
+ */
 export const runCommand = async (
     command: string,
     firstCommand: string,
     commandFlags: string,
     thenExit: boolean = true
-) => {
+): Promise<void> => {
     const commandToRun = buildCommand(command, firstCommand, commandFlags)
     console.log('\x1b[33m%s\x1b[0m', 'Command to run: ', '\x1b[97m\x1b[0m', commandToRun)
     console.log(`Please wait...
 `)
-    const runSpawn = spawn(commandToRun, {
-        stdio: 'inherit',
-        shell: true
-    })
-    runSpawn.on('exit', (code) => {
-        if (thenExit) exit()
+    await new Promise<void>((resolve) => {
+        const runSpawn = spawn(commandToRun, {
+            stdio: 'inherit',
+            shell: true
+        })
+        runSpawn.on('exit', (code) => {
+            resolve()
+            if (thenExit) exit(typeof code === 'number' ? code : 0)
+        })
     })
 }
 
@@ -133,4 +146,27 @@ export const listAllFunctionSelectors = async (hre: any, contractName: string) =
     return functions
 }
 
+/**
+ * Raw `setTimeout`-backed delay. Kept for backward compatibility; new code that
+ * only wants a brief pause for human readability should call `waitForReadability`
+ * instead, which honours the `AWESOME_CLI_PAUSE_MS` / `AWESOME_CLI_NO_PAUSE`
+ * environment variables so users can skip or shorten the pause.
+ */
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const DEFAULT_READABILITY_PAUSE_MS = 250
+
+/**
+ * Resolve after a short, optional pause used to let the terminal settle before
+ * the next menu step paints over the previous output.
+ *
+ * The duration is read from `AWESOME_CLI_PAUSE_MS` (default 250ms). Set
+ * `AWESOME_CLI_NO_PAUSE=1` to skip the pause entirely, which is useful in CI
+ * or non-interactive contexts. Pauses are never longer than 5s — anything
+ * genuinely waiting for a child process should `await runCommand` instead.
+ */
+export const waitForReadability = (ms?: number): Promise<void> => {
+    if (process.env.AWESOME_CLI_NO_PAUSE === '1') return Promise.resolve()
+    const effective = Math.min(Math.max(ms ?? DEFAULT_READABILITY_PAUSE_MS, 0), 5000)
+    return sleep(effective).then(() => undefined)
+}

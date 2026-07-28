@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { runCommand, sleep } from './utils.ts'
+import { runCommand } from './utils.ts'
 
 const importPackageHardhatConfigFile = async (packageName: string, addToConfig: boolean, removeFromConfig: boolean) => {
     let hardhatConfigFilePath: string = ''
@@ -193,12 +193,12 @@ const detectPackage = async (
             console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
             if (fs.existsSync('package-lock.json')) {
                 if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+                // Wait for `npm remove` to actually finish; previously this
+                // relied on a 5s sleep which was both slow and unreliable.
                 await runCommand('npm remove ' + packageName, '', '', false)
-                await sleep(5000)
             } else if (fs.existsSync('yarn-lock.json')) {
                 if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
                 await runCommand('yarn remove ' + packageName, '', '', false)
-                await sleep(5000)
             }
         }
         return true
@@ -209,12 +209,10 @@ const detectPackage = async (
                 console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
                 if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                 await runCommand('npm install ' + packageName, '', ' --save-dev', false)
-                await sleep(5000)
             } else if (fs.existsSync('yarn-lock.json')) {
                 console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
                 if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
                 await runCommand('yarn add ' + packageName, '', ' -D', false)
-                await sleep(5000)
             }
         }
         return false

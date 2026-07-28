@@ -49,7 +49,7 @@ import {
     inquirerRunTests,
     listAllFunctionSelectors,
     runCommand,
-    sleep
+    waitForReadability
 } from './utils.ts'
 
 // Entry added on top of the mock contract selection to create every mock contract
@@ -85,7 +85,9 @@ const serveNetworkSelector = async (
             })
             if (GetAccountBalance) await GetAccountBalance(env)
             else if (ServeEnvBuilder) await ServeEnvBuilder(env, networkSelected.network)
-            await sleep(5000)
+            // Brief pause so the env/account summary stays visible before the
+            // next prompt renders. Honours AWESOME_CLI_NO_PAUSE / _PAUSE_MS.
+            await waitForReadability()
         })
     if (command) await runCommand(command, firstCommand, commandFlags, true)
 }
@@ -142,7 +144,8 @@ const serveTestSelector = async (env: any, command: string, firstCommand: string
     if (testSelected.type === 'file') command = command + ' test/' + testSelected.filePath
     if (firstCommand) command = 'npx hardhat test ' + command
     await serveNetworkSelector(env, command, firstCommand, '', '', false)
-    await sleep(5000)
+    // `runCommand` above used `thenExit=true`, so the Node process already exited
+    // when the suite finishes — no need for a sleep.
 }
 
 const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
@@ -153,7 +156,6 @@ const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
     if (ServeTestSelector) await ServeTestSelector(env, '', command)
     else {
         await serveNetworkSelector(env, command, '', '', '', false)
-        await sleep(5000)
     }
 }
 
@@ -190,32 +192,34 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
             ' > ' + addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
             renameLicenseIdentifier ? false : true
         )
-        await sleep(3000)
         if (renameLicenseIdentifier) {
-            while (
-                fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8').length === 0
-            ) {
-                await sleep(1000)
+            // `runCommand` now resolves once `npx hardhat flatten` has exited,
+            // but the redirected file may still be flushing. Poll for content
+            // with a bounded number of short attempts; bail out (and warn) if
+            // the file stays empty, instead of looping indefinitely.
+            const flattenFilePath = addressBookConfig.contractsFlattenPath + '/' + contractFlattenName
+            const maxAttempts = 10
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                if (fs.existsSync(flattenFilePath) && fs.readFileSync(flattenFilePath, 'utf8').length > 0) break
+                await waitForReadability(250)
             }
-            if (
-                fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8').length > 0
-            ) {
-                let fileContent = fs.readFileSync(
-                    addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-                    'utf8'
-                )
+            if (fs.existsSync(flattenFilePath) && fs.readFileSync(flattenFilePath, 'utf8').length > 0) {
+                let fileContent = fs.readFileSync(flattenFilePath, 'utf8')
                 if (fileContent.includes('SPDX-License-Identifier')) {
                     fileContent = fileContent.replace('SPDX-License-Identifier', 'SPDX-License-DISABLED-Identifier')
-                    fs.writeFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, fileContent)
+                    fs.writeFileSync(flattenFilePath, fileContent)
                 } else
                     console.log(
                         'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
                     )
                 if (fileContent.includes('pragma solidity')) {
                     fileContent = fileContent.replace('pragma solidity', '// pragma solidity')
-                    fs.writeFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, fileContent)
+                    fs.writeFileSync(flattenFilePath, fileContent)
                 } else console.log('pragma solidity not found in ' + contractFlattenName + ' file, skipping rename')
-            }
+            } else
+                console.log(
+                    'Flatten output file ' + contractFlattenName + ' is still empty after waiting, skipping rename'
+                )
         }
     }
 }
@@ -236,15 +240,17 @@ const serveFunctionListSelector = async (env: any) => {
         'public and external functions, ordered by selector'
     )
     console.table(functions)
-    await sleep(5000)
+    // Give the user a moment to read the table before the menu redraws.
+    await waitForReadability()
 }
 
 const serveFoundryTestSelector = async (env: any, command: string) => {
     const testSelected = await serveFileListSelector('Select a forge test', buildAllForgeTestsList)
     if (!testSelected || testSelected === 'back') return
     if (testSelected.type === 'file') command = command + ' --match-path contracts/test/' + testSelected.filePath
+    // `thenExit=true`, so the Node process already exits once `forge test`
+    // finishes — no sleep needed.
     await runCommand(command, '', '', true)
-    await sleep(5000)
 }
 
 const serveEnvBuilder = async (env: any, chainSelected: string) => {
@@ -276,7 +282,7 @@ const serveEnvBuilder = async (env: any, chainSelected: string) => {
             .then(async (envToBuild: { rpcUrl: string; privateKeyOrMnemonic: string }) => {
                 await writeToEnv(env, selectedChain.chainName, envToBuild)
             })
-        await sleep(2000)
+        await waitForReadability()
     }
 }
 
@@ -329,7 +335,7 @@ const serveSettingSelector = async (env: any) => {
                             }
                         })
                         console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
-                        await sleep(1000)
+                        await waitForReadability()
                     })
             }
             if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain')
@@ -494,7 +500,7 @@ const serveWorkflowBuilder = async () => {
     if (workflowToAdd !== undefined) {
         await buildWorkflows(workflowToAdd)
         displayFinalCliCommand('addGithubTestWorkflow', workflowToAdd.file)
-        await sleep(2000)
+        await waitForReadability()
     }
 }
 
@@ -554,13 +560,17 @@ const servePackageInstaller = async () => {
             return plugin.title
         }
     )
-    const hardhatPluginInstalled: string[] = []
-    DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false, false)) {
-            hardhatPluginInstalled.push(plugin.title)
-        }
-    })
-    await sleep(500)
+    // Resolve every detection up-front: previously this used `Array.map(async)`
+    // and a `sleep(500)` to mask the race between the spawned probes and the
+    // subsequent read, which was both slow and flaky.
+    const hardhatPluginInstalled: string[] = (
+        await Promise.all(
+            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
+                if (await detectPackage(plugin.name, false, false, false)) return plugin.title
+                return null
+            })
+        )
+    ).filter((title): title is string => title !== null)
     const hardhatPluginToNotInclude = new Set(hardhatPluginInstalled)
     const hardhatPluginToInstall: string[] = hardhatPluginAvailableList.filter(
         (plugin: string) => !hardhatPluginToNotInclude.has(plugin)
@@ -579,23 +589,23 @@ const servePackageInstaller = async () => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
                 if (plugin.title === pluginssSelected.plugins) packageToInstall = plugin
             })
-            await sleep(1500)
         })
     if (packageToInstall !== undefined) {
         await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
         displayFinalCliCommand('addHardhatPlugin', packageToInstall.name)
-        await sleep(5000)
+        await waitForReadability()
     }
 }
 
 const servePackageUninstaller = async () => {
-    const hardhatPluginInstalled: string[] = []
-    DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-        if (await detectPackage(plugin.name, false, false, false)) {
-            hardhatPluginInstalled.push(plugin.title)
-        }
-    })
-    await sleep(1000)
+    const hardhatPluginInstalled: string[] = (
+        await Promise.all(
+            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
+                if (await detectPackage(plugin.name, false, false, false)) return plugin.title
+                return null
+            })
+        )
+    ).filter((title): title is string => title !== null)
     let packageToUninstall: IHardhatPluginAvailableList | undefined
     await inquirer
         .prompt([
@@ -610,13 +620,12 @@ const servePackageUninstaller = async () => {
             DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
                 if (plugin.title === pluginssSelected.plugins) packageToUninstall = plugin
             })
-            await sleep(1500)
         })
     if (packageToUninstall !== undefined) {
         await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)
         displayFinalCliCommand('removeHardhatPlugin', packageToUninstall.name)
     }
-    await sleep(5000)
+    await waitForReadability()
 }
 
 const serveMockContractCreatorSelector = async () => {
