@@ -27,7 +27,7 @@ import {
     DefaultHardhatPluginsList,
     getAddressBookConfig
 } from './config.ts'
-import MockContractsList from './mockContracts.ts'
+import MockContractsList from './mockContracts/index.ts'
 import detectPackage from './packageInstaller.ts'
 import {
     IChain,
@@ -49,6 +49,10 @@ import {
     runCommand,
     sleep
 } from './utils.ts'
+
+// Entry added on top of the mock contract selection to create every mock contract
+// (and their deployment/test scripts) in a single pass.
+const ALL_MOCK_CONTRACTS = 'All mock contracts'
 
 const serveNetworkSelector = async (
     env: any,
@@ -619,9 +623,9 @@ const serveMockContractCreatorSelector = async () => {
             return file.name
         })
         let mockContractFirstSelected: string = ''
-        let mockContractToAdd:
+        let mockContractsToAdd:
             | {
-                  mockContract: string
+                  mockContracts: string[]
                   mockDeploymentScript: string
                   mockTestScript: string
                   mockTestContractFoundry: string
@@ -633,46 +637,54 @@ const serveMockContractCreatorSelector = async () => {
                     type: 'list',
                     name: 'mockContract',
                     message: 'Select a mock contract',
-                    choices: mockContractsList
+                    choices: [ALL_MOCK_CONTRACTS, ...mockContractsList]
                 }
             ])
             .then(async (mockContractSelected: { mockContract: string }) => {
                 mockContractFirstSelected = mockContractSelected.mockContract
             })
         if (mockContractFirstSelected) {
-            const mockContractFirstSelectedDetail = MockContractsList.filter(
-                (file: IMockContractsList) => file.name === mockContractFirstSelected
-            )[0]
+            // Selecting `ALL_MOCK_CONTRACTS` applies the answers below to every mock contract at once
+            const mockContractsSelectedDetail: IMockContractsList[] =
+                mockContractFirstSelected === ALL_MOCK_CONTRACTS
+                    ? MockContractsList
+                    : MockContractsList.filter((file: IMockContractsList) => file.name === mockContractFirstSelected)
+            const subject = mockContractsSelectedDetail.length > 1 ? 'these mock contracts' : 'this mock contract'
             const mockContractDetailSelector = []
             if (
-                mockContractFirstSelectedDetail.deploymentScriptJs !== undefined ||
-                mockContractFirstSelectedDetail.deploymentScriptTs !== undefined
+                mockContractsSelectedDetail.some(
+                    (file: IMockContractsList) =>
+                        file.deploymentScriptJs !== undefined || file.deploymentScriptTs !== undefined
+                )
             )
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockDeploymentScript',
-                    message: 'Create a deployment script for this mock contract',
+                    message: 'Create a deployment script for ' + subject,
                     choices: ['yes', 'no']
                 })
             if (
-                mockContractFirstSelectedDetail.testScriptJs !== undefined ||
-                mockContractFirstSelectedDetail.testScriptTs !== undefined
+                mockContractsSelectedDetail.some(
+                    (file: IMockContractsList) => file.testScriptJs !== undefined || file.testScriptTs !== undefined
+                )
             )
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockTestScript',
-                    message: 'Create a test script for this mock contract',
+                    message: 'Create a test script for ' + subject,
                     choices: ['yes', 'no']
                 })
             if (
-                mockContractFirstSelectedDetail.testContractFoundry !== undefined &&
+                mockContractsSelectedDetail.some(
+                    (file: IMockContractsList) => file.testContractFoundry !== undefined
+                ) &&
                 fs.existsSync('contracts/test') &&
                 fs.existsSync('foundry.toml')
             )
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockTestContractFoundry',
-                    message: 'Create a Foundry test contract for this mock contract',
+                    message: 'Create a Foundry test contract for ' + subject,
                     choices: ['yes', 'no']
                 })
             await inquirer
@@ -683,8 +695,8 @@ const serveMockContractCreatorSelector = async () => {
                         mockTestScript: string
                         mockTestContractFoundry: string
                     }) => {
-                        mockContractToAdd = {
-                            mockContract: mockContractFirstSelected,
+                        mockContractsToAdd = {
+                            mockContracts: mockContractsSelectedDetail.map((file: IMockContractsList) => file.name),
                             mockDeploymentScript: mockContractSelected.mockDeploymentScript || 'no',
                             mockTestScript: mockContractSelected.mockTestScript || 'no',
                             mockTestContractFoundry: mockContractSelected.mockTestContractFoundry || 'no'
@@ -692,14 +704,16 @@ const serveMockContractCreatorSelector = async () => {
                     }
                 )
         }
-        if (mockContractToAdd !== undefined) {
-            await buildMockContract(mockContractToAdd.mockContract)
-            if (mockContractToAdd.mockDeploymentScript === 'yes')
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'deployment')
-            if (mockContractToAdd.mockTestScript === 'yes')
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'test')
-            if (mockContractToAdd.mockTestContractFoundry === 'yes')
-                await buildMockDeploymentScriptOrTest(mockContractToAdd.mockContract, 'testForge')
+        if (mockContractsToAdd !== undefined) {
+            for (const mockContract of mockContractsToAdd.mockContracts) {
+                await buildMockContract(mockContract)
+                if (mockContractsToAdd.mockDeploymentScript === 'yes')
+                    await buildMockDeploymentScriptOrTest(mockContract, 'deployment')
+                if (mockContractsToAdd.mockTestScript === 'yes')
+                    await buildMockDeploymentScriptOrTest(mockContract, 'test')
+                if (mockContractsToAdd.mockTestContractFoundry === 'yes')
+                    await buildMockDeploymentScriptOrTest(mockContract, 'testForge')
+            }
         }
     }
 }
