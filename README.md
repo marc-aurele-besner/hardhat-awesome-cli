@@ -123,6 +123,8 @@ npm link hardhat-awesome-cli
 
           </details>
 
+    -   Add foundry-test-utility (npm package for shared Forge mocks & utilities)
+
 -   Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
     -   All mock contracts (create every mock contract below, with their deployment and test scripts, at the same time)
     -   MockERC20
@@ -157,6 +159,7 @@ In 'More settings' you can also add a custom chain, create an issue or pull requ
 
 -   --add-activated-chain Add chains from the chain selection (default: "")
 -   --add-foundry Create Foundry settings, remapping and test utilities (default: "")
+-   --add-foundry-test-utility Install the foundry-test-utility npm package and add its remapping (default: "")
 -   --add-github-test-workflow Create Github test workflows (default: "")
 -   --add-hardhat-plugin Add other Hardhat plugins (default: "")
 -   --exclude-contract-file Exclude contract file from the contract selection list (default: "")

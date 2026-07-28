@@ -52,6 +52,11 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
         defaultValue: ''
     })
     .addOption({
+        name: 'addFoundryTestUtility',
+        description: 'Install the foundry-test-utility npm package and add its remapping',
+        defaultValue: ''
+    })
+    .addOption({
         name: 'addActivatedChain',
         description: 'Add chains from the chain selection',
         defaultValue: ''

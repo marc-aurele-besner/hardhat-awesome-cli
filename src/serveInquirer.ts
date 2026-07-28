@@ -11,7 +11,7 @@ import {
     buildScriptsList,
     buildTestsList
 } from './buildFilesList.ts'
-import buildFoundrySetting from './buildFoundrySetting.ts'
+import buildFoundrySetting, { installFoundryTestUtility } from './buildFoundrySetting.ts'
 import buildMockContract, { buildMockDeploymentScriptOrTest } from './buildMockContracts.ts'
 import {
     addActivatedChain,
@@ -513,6 +513,7 @@ const serveMoreSettingSelector = async (env: any) => {
                     new inquirer.Separator(),
                     'Create Github test workflows',
                     'Create Foundry settings, remapping and test utilities',
+                    'Add foundry-test-utility (npm package for shared Forge mocks & utilities)',
                     new inquirer.Separator()
                 ]
             }
@@ -531,6 +532,11 @@ const serveMoreSettingSelector = async (env: any) => {
             if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
             if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities')
                 await buildFoundrySetting()
+            if (
+                moreSettingsSelected.moreSettings ===
+                'Add foundry-test-utility (npm package for shared Forge mocks & utilities)'
+            )
+                await installFoundryTestUtility()
         })
 }
 
@@ -793,6 +799,10 @@ const serveCli = async (args: any, env: any) => {
             return buildWorkflowsFromCommand(args.addGithubTestWorkflow)
         case args.addFoundry === true || args.addFoundry === 'true' || args.addFoundry === 'yes':
             return buildFoundrySetting()
+        case args.addFoundryTestUtility === true ||
+            args.addFoundryTestUtility === 'true' ||
+            args.addFoundryTestUtility === 'yes':
+            return installFoundryTestUtility()
         case args.addActivatedChain !== '':
             return addActivatedChain(args.addActivatedChain)
         case args.removeActivatedChain !== '':
