@@ -1,6 +1,8 @@
 import { defineConfig } from 'hardhat/config'
 
-import hardhatAwesomeCli from '../../src/plugin/index.js'
+// `.ts` extension on the source path because Hardhat's config loader does not
+// rewrite `.js` suffixes to `.ts` (and we don't pre-build before tests).
+import hardhatAwesomeCli from '../../src/plugin/index.ts'
 
 export default defineConfig({
     plugins: [hardhatAwesomeCli],

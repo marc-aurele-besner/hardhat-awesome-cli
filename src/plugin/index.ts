@@ -4,7 +4,7 @@ import { definePlugin } from 'hardhat/plugins'
 import type { NewTaskDefinition } from 'hardhat/types/tasks'
 import type { HardhatPlugin } from 'hardhat/types/plugins'
 
-import { resolveUserConfigHandler } from './hook-handlers.js'
+import { resolveUserConfigHandler } from './hook-handlers.ts'
 
 /**
  * Hardhat 3 plugin entry. The plugin:
@@ -67,7 +67,7 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
         defaultValue: ''
     })
     // The action must be a lazy import so plugins stay load-order safe.
-    .setAction(() => import('./cli-action.js'))
+    .setAction(() => import('./cli-action.ts'))
     .build()
 
 const hardhatAwesomeCliPlugin: HardhatPlugin = definePlugin({
@@ -76,13 +76,13 @@ const hardhatAwesomeCliPlugin: HardhatPlugin = definePlugin({
     tasks: [cliTask],
     hookHandlers: {
         config: async () => {
-            const mod = await import('./hook-handlers.js')
+            const mod = await import('./hook-handlers.ts')
             return { default: mod.default }
         }
     }
 })
 
 export default hardhatAwesomeCliPlugin
-export { resolveUserConfigHandler } from './hook-handlers.js'
-export { AwesomeAddressBook } from '../AwesomeAddressBook.js'
-export { FunctionList } from '../functionList.js'
+export { resolveUserConfigHandler } from './hook-handlers.ts'
+export { AwesomeAddressBook } from '../AwesomeAddressBook.ts'
+export { FunctionList } from '../functionList.ts'

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import serveInquirer from './serveInquirer.js'
+import serveInquirer from './serveInquirer.ts'
 
 /**
  * Standalone CLI entry. In Hardhat 2 this file also registered the plugin as

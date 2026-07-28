@@ -1,6 +1,6 @@
 import type { HardhatRuntimeEnvironment } from 'hardhat/types/hre'
 
-import serveCli from '../serveInquirer.js'
+import serveCli from '../serveInquirer.ts'
 
 /**
  * Lazy-loaded action for the `cli` task. Builds a small adapter that mimics
