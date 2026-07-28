@@ -97,6 +97,7 @@ npm link hardhat-awesome-cli
 -   Flatten all your contract or a specific contract (offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue)
 -   Run Forge test on all or single test contracts if forge setting is detected
 -   Run coverage tests (Available only if solidity-coverage is installed and available as a task)
+-   List function selectors (Print every public and external function of a contract with its 4 bytes selector, ordered by selector)
 -   Setup chains, RPC and accounts
     -   Add/Remove chains from the chain selection
     -   Set RPC Url, private key or mnemonic for all or one chain
@@ -332,6 +333,77 @@ Example:
 await addressBook.cleanContractDeployed('network', 'hardhat', true, true)
 ```
 
+### Function Selector List
+
+List every public and external function of a contract with its 4 bytes function selector (the first 4 bytes of the keccak256 hash of the canonical function signature), ordered by selector. This is what you see in a transaction `data` field or in a revert trace, so it is handy to map an unknown selector back to a function, to check for selector clashes between a proxy and its implementation, or to build a low level `call`.
+
+The contract needs to be compiled first (`npx hardhat compile`), and `hre.ethers` needs to be available (`@nomicfoundation/hardhat-ethers`).
+
+From the CLI, select `List function selectors` in the menu, then pick a contract:
+
+```commandline
+npx hardhat cli
+```
+
+```txt
+Contract:  MockERC20  has  16  public and external functions, ordered by selector
+┌─────────┬──────────────────────────────────┬──────────────┐
+│ (index) │ name                             │ selector     │
+├─────────┼──────────────────────────────────┼──────────────┤
+│ 0       │ 'allowance(address,address)'     │ '0xdd62ed3e' │
+│ 1       │ 'transfer(address,uint256)'      │ '0xa9059cbb' │
+└─────────┴──────────────────────────────────┴──────────────┘
+```
+
+You can also use it in your scripts and tests.
+
+Import:
+
+typescript
+
+```ts
+import { FunctionList } from 'hardhat-awesome-cli/plugin'
+```
+
+javascript
+
+```js
+const { FunctionList } = require('hardhat-awesome-cli/plugin')
+```
+
+Usage:
+
+```js
+
+new FunctionList(hre: HardhatRuntimeEnvironment)
+
+functionList.listSelectors(contractName: string)
+```
+
+Example:
+
+```ts
+import hre from 'hardhat'
+import { FunctionList } from 'hardhat-awesome-cli/plugin'
+
+const functionList = new FunctionList(hre)
+
+const functions = await functionList.listSelectors('MockERC20')
+
+const transfer = functions.find((fn) => fn.name === 'transfer(address,uint256)')
+```
+
+Return (also printed as a table with `console.table`):
+
+```js
+[
+    {
+        name: string // canonical signature, ex: 'transfer(address,uint256)'
+        selector: string // 4 bytes selector, ex: '0xa9059cbb'
+    }
+]
+```
+
 <details>
     <summary>## 💪 Done</summary>
 - Run test on all or single test file (from all your file in test/)
@@ -359,6 +431,7 @@ await addressBook.cleanContractDeployed('network', 'hardhat', true, true)
     - hre.addressBook.{ saveContract, retrieveContract, retrieveContractObject, retrieveOZAdminProxyContract, retrieveContractHistory }
 - Flatten your contracts (All contracts, or specific contracts) save in contractsFlatten/ and offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue
 - Write some test on the package using mocha
+- List all public and external function selectors of a contract (from the CLI menu or with the FunctionList helper)
 - Add optional flag to "cli" command to access some functionality
 </details>
 
