@@ -3,7 +3,7 @@ import path from 'path'
 
 import { DefaultGithubWorkflowsList } from './config.ts'
 import detectPackage from './packageInstaller.ts'
-import { IDefaultGithubWorkflowsList } from './types.ts'
+import type { IDefaultGithubWorkflowsList } from './types.ts'
 
 export const buildWorkflowsFromCommand = async (workflowToAdd: string) => {
     const toAdd = DefaultGithubWorkflowsList.find((workflow) => workflow.file === workflowToAdd)

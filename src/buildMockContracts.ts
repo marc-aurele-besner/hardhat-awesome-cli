@@ -3,7 +3,7 @@ import path from 'path'
 
 import MockContractsList from './mockContracts.ts'
 import detectPackage from './packageInstaller.ts'
-import { IMockContractsList } from './types.ts'
+import type { IMockContractsList } from './types.ts'
 import { sleep } from './utils.ts'
 
 const buildMockContract = async (contractName: string) => {

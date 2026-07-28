@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import { buildExcludedFile } from './buildExcludedFile.ts'
 import { getAddressBookConfig } from './config.ts'
-import { IChain, IExcludedFiles, IFileList, IFileSetting } from './types.ts'
+import type { IChain, IExcludedFiles, IFileList, IFileSetting } from './types.ts'
 
 export const buildActivatedChainList = async () => {
     const chainList: IChain[] = []

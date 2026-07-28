@@ -3,7 +3,7 @@ import fs from 'fs'
 import { exit } from 'process'
 
 import { getAddressBookConfig } from './config.ts'
-import { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types.ts'
+import type { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types.ts'
 
 let contractsAddressDeployed: IContractAddressDeployed[] = []
 let contractsAddressDeployedHistory: IContractAddressDeployed[] = []

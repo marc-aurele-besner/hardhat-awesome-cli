@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import { getAddressBookConfig } from './config.ts'
-import { TAddressBookFields } from './types.ts'
+import type { TAddressBookFields } from './types.ts'
 
 interface IAddressDetails {
     name: string
