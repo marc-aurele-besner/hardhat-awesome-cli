@@ -169,6 +169,20 @@ In 'More settings' you can also add a custom chain, create an issue or pull requ
 -   --remove-activated-chain Remove chains from the chain selection (default: "")
 -   --remove-hardhat-plugin Remove other Hardhat plugins (default: "")
 
+### Equivalent CLI command per menu selection
+
+When a menu selection maps to one of the CLI flags above (add/remove Hardhat plugins, add/remove activated chains, create GitHub workflows, install Foundry settings, install the Foundry test utility, …), the CLI prints the equivalent `npx hardhat cli --<flag> <value>` command line after the change is applied. This lets you skip the interactive prompts next time around, or wire the same action into a CI script.
+
+```commandline
+Equivalent CLI command:  npx hardhat cli --addHardhatPlugin @nomiclabs/hardhat-ethers
+```
+
+Boolean flags (no value) are rendered without an argument:
+
+```commandline
+Equivalent CLI command:  npx hardhat cli --addFoundry
+```
+
 ## Helper tools
 
 Tools that you can use in your scripts and tests to make your life easier
@@ -436,6 +450,7 @@ Return (also printed as a table with `console.table`):
 - Write some test on the package using mocha
 - List all public and external function selectors of a contract (from the CLI menu or with the FunctionList helper)
 - Add optional flag to "cli" command to access some functionality
+- Print the equivalent `npx hardhat cli --flag value` command line for each settings menu selection that maps to a CLI flag
 </details>
 
 ## Directory Tree

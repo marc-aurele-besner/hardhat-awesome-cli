@@ -39,6 +39,7 @@ import {
     IMockContractsList
 } from './types.ts'
 import {
+    displayFinalCliCommand,
     inquirerFileContractsAddressDeployed,
     inquirerFileContractsAddressDeployedHistory,
     inquirerFlattenContracts,
@@ -321,8 +322,10 @@ const serveSettingSelector = async (env: any) => {
                         fullChainList.map(async (chain: string) => {
                             if (chainListSelected.chainList.includes(chain)) {
                                 await addActivatedChain(chain)
+                                displayFinalCliCommand('addActivatedChain', chain)
                             } else {
                                 await removeActivatedChain(chain)
+                                displayFinalCliCommand('removeActivatedChain', chain)
                             }
                         })
                         console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
@@ -490,6 +493,7 @@ const serveWorkflowBuilder = async () => {
         })
     if (workflowToAdd !== undefined) {
         await buildWorkflows(workflowToAdd)
+        displayFinalCliCommand('addGithubTestWorkflow', workflowToAdd.file)
         await sleep(2000)
     }
 }
@@ -530,13 +534,17 @@ const serveMoreSettingSelector = async (env: any) => {
             if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
             if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
             if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
-            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities')
+            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities') {
                 await buildFoundrySetting()
+                displayFinalCliCommand('addFoundry')
+            }
             if (
                 moreSettingsSelected.moreSettings ===
                 'Add foundry-test-utility (npm package for shared Forge mocks & utilities)'
-            )
+            ) {
                 await installFoundryTestUtility()
+                displayFinalCliCommand('addFoundryTestUtility')
+            }
         })
 }
 
@@ -575,6 +583,7 @@ const servePackageInstaller = async () => {
         })
     if (packageToInstall !== undefined) {
         await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
+        displayFinalCliCommand('addHardhatPlugin', packageToInstall.name)
         await sleep(5000)
     }
 }
@@ -603,8 +612,10 @@ const servePackageUninstaller = async () => {
             })
             await sleep(1500)
         })
-    if (packageToUninstall !== undefined)
+    if (packageToUninstall !== undefined) {
         await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)
+        displayFinalCliCommand('removeHardhatPlugin', packageToUninstall.name)
+    }
     await sleep(5000)
 }
 
