@@ -13,7 +13,7 @@
         "./plugin": "./dist/src/plugin/index.js"
     },
     "bin": {
-        "hardhat-awesome-cli": "./src/index.ts"
+        "hardhat-awesome-cli": "./dist/src/index.js"
     },
     "bugs": {
         "url": "https://github.com/marc-aurele-besner/hardhat-awesome-cli/issues"
