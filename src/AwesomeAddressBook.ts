@@ -1,7 +1,7 @@
 import fs from 'fs'
 
-import { getAddressBookConfig } from './config'
-import { TAddressBookFields } from './types'
+import { getAddressBookConfig } from './config.ts'
+import type { TAddressBookFields } from './types.ts'
 
 interface IAddressDetails {
     name: string
@@ -16,11 +16,31 @@ interface IAddressDetails {
     extra?: any
 }
 
+/**
+ * Tracks deployed contract addresses per network.
+ *
+ * Hardhat 3 no longer supports extending the HardhatRuntimeEnvironment with
+ * new fields, so this class is constructed with the bits of HRE it actually
+ * needs (the user's raw config and the current network name) instead of the
+ * whole HRE. See {@link createAddressBookFromHre} for the convenience that
+ * pulls those out of the live HRE, and the plugin entry point for the
+ * factory pattern used at task-action time.
+ */
 export class AwesomeAddressBook {
-    private readonly _env: any
+    private readonly _userConfig: any
+    private readonly _networkName: string
 
-    constructor(hre: any) {
-        this._env = hre
+    constructor(userConfig: any, networkName: string = 'hardhat') {
+        this._userConfig = userConfig
+        this._networkName = networkName
+    }
+
+    public get networkName(): string {
+        return this._networkName
+    }
+
+    public get userConfig(): any {
+        return this._userConfig
     }
 
     public formatSaveContract(
@@ -63,9 +83,9 @@ export class AwesomeAddressBook {
     ) {
         if (
             !forceAdd &&
-            this._env.network.name !== 'hardhat' &&
-            this._env.network.name !== 'localhost' &&
-            this._env.network.name !== 'anvil'
+            this._networkName !== 'hardhat' &&
+            this._networkName !== 'localhost' &&
+            this._networkName !== 'anvil'
         )
             return
         const contractToAdd: IAddressDetails = this.formatSaveContract(
@@ -81,7 +101,7 @@ export class AwesomeAddressBook {
         )
         let contractsAddressDeployed = []
         let contractsAddressDeployedHistory = []
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         // Add folder if not exist
         if (!fs.existsSync(addressBookConfig.savePath)) fs.mkdirSync(addressBookConfig.savePath)
         // Add or edit contract address if deploy on same network
@@ -146,7 +166,7 @@ export class AwesomeAddressBook {
 
     public retrieveContract(contractName: string, deployedNetwork: string) {
         let returnContractAddress = ''
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
             const rawdata: any = fs.readFileSync(
                 addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
@@ -167,7 +187,7 @@ export class AwesomeAddressBook {
     }
 
     public retrieveContractObject(contractName: string, deployedNetwork: string) {
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
             const rawdata: any = fs.readFileSync(
                 addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed
@@ -189,7 +209,7 @@ export class AwesomeAddressBook {
 
     public retrieveOZAdminProxyContract(chainId: number) {
         let returnContractAddress = ''
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         let ozFileName = ''
         switch (chainId) {
             case 1:
@@ -213,7 +233,7 @@ export class AwesomeAddressBook {
     }
 
     public retrieveContractHistory(deployedNetwork: string) {
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         const returnContractAddress: IAddressDetails[] = []
         if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployedHistory)) {
             const rawdata: any = fs.readFileSync(
@@ -237,7 +257,7 @@ export class AwesomeAddressBook {
         applyToPrimary: boolean = true,
         applyToHistory: boolean = true
     ) {
-        const addressBookConfig = getAddressBookConfig(this._env.userConfig)
+        const addressBookConfig = getAddressBookConfig(this._userConfig)
         if (applyToPrimary)
             if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAddressDeployed)) {
                 const rawdata: any = fs.readFileSync(

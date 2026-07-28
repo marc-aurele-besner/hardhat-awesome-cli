@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { DefaultFoundryTestUtilsList } from './config'
+import { DefaultFoundryTestUtilsList } from './config.ts'
 
 const buildFoundrySetting = async () => {
     if (!fs.existsSync('foundry.toml')) {

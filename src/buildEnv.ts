@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { getAddressBookConfig } from './config'
+import { getAddressBookConfig } from './config.ts'
 
 const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, createIfNotExist: boolean) => {
     if (fs.existsSync(ignoreFile)) {

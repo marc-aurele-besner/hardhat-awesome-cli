@@ -1,10 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 
-import MockContractsList from './mockContracts'
-import detectPackage from './packageInstaller'
-import { IMockContractsList } from './types'
-import { sleep } from './utils'
+import MockContractsList from './mockContracts.ts'
+import detectPackage from './packageInstaller.ts'
+import type { IMockContractsList } from './types.ts'
+import { sleep } from './utils.ts'
 
 const buildMockContract = async (contractName: string) => {
     if (require && require.main) {

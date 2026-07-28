@@ -1,29 +1,34 @@
 // tslint:disable-next-line no-implicit-dependencies
-import { assert, expect } from 'chai'
+import { expect } from 'chai'
 import fs from 'fs'
-import path from 'path'
 
-import { useEnvironment } from './helpers'
-
-interface IAddressDetails {
-    name: string
-    address: string
-    network: string
-    deployer: string
-    deploymentDate: string
-    blockHash?: string
-    blockNumber?: number
-    tag?: string
-    extra?: any
-}
+import { AwesomeAddressBook } from '../src/AwesomeAddressBook'
+import { useAddressBookEnvironment } from './helpers'
 
 describe('Integration tests', function () {
     describe('AwesomeAddressBook', function () {
-        useEnvironment('hardhat-cli')
+        const userConfig = {
+            addressBook: {
+                savePath: './',
+                openzeppelinPath: '.openzeppelin',
+                contractsFlattenPath: 'contractsFlatten',
+                contractsFlattenPrefix: 'flat_',
+                fileHardhatAwesomeCLI: 'hardhat-awesome-cli.json',
+                fileEnvHardhatAwesomeCLI: '.env.hardhat-awesome-cli',
+                fileContractsAddressDeployed: 'contractsAddressDeployed.json',
+                fileContractsAddressDeployedHistory: 'contractsAddressDeployedHistory.json'
+            }
+        }
+
+        useAddressBookEnvironment('hardhat-cli', userConfig)
+
+        beforeEach(function () {
+            this.addressBook = new AwesomeAddressBook(this.env.userConfig, 'hardhat')
+        })
 
         it('saveContract()', function () {
             expect(
-                this.hre.addressBook.saveContract(
+                this.addressBook.saveContract(
                     'MockERC20',
                     '0x0000000000000000000000000000000000000000',
                     'hardhat',
@@ -34,7 +39,7 @@ describe('Integration tests', function () {
 
         it('saveContract() wit extra arguments', function () {
             expect(
-                this.hre.addressBook.saveContract(
+                this.addressBook.saveContract(
                     'MockERC20',
                     '0x0000000000000000000000000000000000000000',
                     'hardhat',
@@ -47,7 +52,7 @@ describe('Integration tests', function () {
         })
 
         it('2x saveContract() wit extra arguments', function () {
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'hardhat',
@@ -56,7 +61,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-B',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -65,16 +70,16 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000000'
             )
-            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
+            expect(this.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000001'
             )
         })
 
         it('4x saveContract() (2 different contracts twice, replacing 1st entry)', function () {
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'hardhat',
@@ -83,7 +88,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-B',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -92,7 +97,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -101,7 +106,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-B',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -110,7 +115,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000001'
             )
             const data = fs.readFileSync('./contractsAddressDeployed.json')
@@ -119,7 +124,7 @@ describe('Integration tests', function () {
 
         it('saveContract() wit extra arguments, then clean then from log', function () {
             expect(
-                this.hre.addressBook.saveContract(
+                this.addressBook.saveContract(
                     'MockERC20',
                     '0x0000000000000000000000000000000000000000',
                     'hardhat',
@@ -129,13 +134,13 @@ describe('Integration tests', function () {
                     1
                 )
             ).to.be.equal(undefined)
-            this.hre.addressBook.cleanContractDeployed('name', 'MockERC20', true, true)
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
+            this.addressBook.cleanContractDeployed('name', 'MockERC20', true, true)
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
         })
 
         it('saveContract() wit extra arguments, and extra record, then clean then from log', function () {
             expect(
-                this.hre.addressBook.saveContract(
+                this.addressBook.saveContract(
                     'MockERC20',
                     '0x0000000000000000000000000000000000000000',
                     'hardhat',
@@ -145,7 +150,7 @@ describe('Integration tests', function () {
                     1
                 )
             ).to.be.equal(undefined)
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-test',
                 '0x0000000000000000000000000000000000000001',
                 'testnet',
@@ -154,12 +159,12 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
+            this.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
         })
 
         it('3x saveContract() wit extra arguments, then clean then from log', function () {
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'testnet',
@@ -168,7 +173,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'hardhat',
@@ -177,7 +182,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-B',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -186,13 +191,13 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
-            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal('')
+            this.addressBook.cleanContractDeployed('network', 'hardhat', true, true)
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal('')
+            expect(this.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal('')
         })
 
         it('3x saveContract() wit extra arguments, then clean then from lo only one', function () {
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'testnet',
@@ -201,7 +206,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000000',
                 'hardhat',
@@ -210,7 +215,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-B',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -219,18 +224,18 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000002',
                 2
             )
-            this.hre.addressBook.cleanContractDeployed('network', 'testnet', true, true)
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'testnet')).to.be.equal('')
-            expect(this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+            this.addressBook.cleanContractDeployed('network', 'testnet', true, true)
+            expect(this.addressBook.retrieveContract('MockERC20', 'testnet')).to.be.equal('')
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000000'
             )
-            expect(this.hre.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
+            expect(this.addressBook.retrieveContract('MockERC20-B', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000001'
             )
         })
 
-        it('retrieveContract()', async function () {
-            this.hre.addressBook.saveContract(
+        it('retrieveContract()', function () {
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -239,13 +244,13 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            expect(await this.hre.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
+            expect(this.addressBook.retrieveContract('MockERC20', 'hardhat')).to.be.equal(
                 '0x0000000000000000000000000000000000000001'
             )
         })
 
-        it('retrieveContractObject()', async function () {
-            this.hre.addressBook.saveContract(
+        it('retrieveContractObject()', function () {
+            this.addressBook.saveContract(
                 'MockERC20',
                 '0x0000000000000000000000000000000000000001',
                 'hardhat',
@@ -254,7 +259,7 @@ describe('Integration tests', function () {
                 '0x0000000000000000000000000000000000000001',
                 1
             )
-            this.hre.addressBook.saveContract(
+            this.addressBook.saveContract(
                 'MockERC20-retrieveContractObject2',
                 '0x0000000000000000000000000000000000000002',
                 'hardhat',
@@ -264,8 +269,8 @@ describe('Integration tests', function () {
                 1
             )
             // Wait 1 second to ensure the timestamp is different
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            const retrieveContractObject: IAddressDetails | null = await this.hre.addressBook.retrieveContractObject(
+            // (kept for parity with the original Hardhat 2 test)
+            const retrieveContractObject: any = this.addressBook.retrieveContractObject(
                 'MockERC20',
                 'hardhat'
             )

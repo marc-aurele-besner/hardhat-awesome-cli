@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
-import { DefaultGithubWorkflowsList } from './config'
-import detectPackage from './packageInstaller'
-import { IDefaultGithubWorkflowsList } from './types'
+import { DefaultGithubWorkflowsList } from './config.ts'
+import detectPackage from './packageInstaller.ts'
+import type { IDefaultGithubWorkflowsList } from './types.ts'
 
 export const buildWorkflowsFromCommand = async (workflowToAdd: string) => {
     const toAdd = DefaultGithubWorkflowsList.find((workflow) => workflow.file === workflowToAdd)

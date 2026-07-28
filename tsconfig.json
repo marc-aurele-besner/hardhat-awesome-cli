@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
-        "target": "ES2017",
-        "module": "CommonJS",
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
@@ -11,7 +12,6 @@
         "types": ["node", "mocha"],
         "esModuleInterop": true
     },
-    // "files": [], // Any hardhat plugin's main .d.ts has to be added here
     "exclude": ["dist", "node_modules"],
     "include": ["./test", "./src"]
 }

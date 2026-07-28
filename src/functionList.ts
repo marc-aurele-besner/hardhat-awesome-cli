@@ -1,4 +1,4 @@
-import { listAllFunctionSelectors } from './utils'
+import { listAllFunctionSelectors } from './utils.ts'
 
 export class FunctionList {
     private readonly _env: any

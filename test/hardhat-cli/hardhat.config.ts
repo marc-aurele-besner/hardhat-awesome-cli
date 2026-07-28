@@ -1,14 +1,12 @@
-// We load the plugin here.
-import { HardhatUserConfig } from 'hardhat/types'
+import { defineConfig } from 'hardhat/config'
 
-import '../../src/index'
+// `.ts` extension on the source path because Hardhat's config loader does not
+// rewrite `.js` suffixes to `.ts` (and we don't pre-build before tests).
+import hardhatAwesomeCli from '../../src/plugin/index.ts'
 
-const config: HardhatUserConfig = {
-    solidity: '0.8.0',
-    defaultNetwork: 'hardhat',
+export default defineConfig({
+    plugins: [hardhatAwesomeCli],
     paths: {
         cli: 'cli'
     }
-}
-
-export default config
+})
