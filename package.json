@@ -53,7 +53,7 @@
         "@types/node": "^24.0.0",
         "awesome-readme": "^0.0.8",
         "chai": "^6.0.0",
-        "eslint": "^9.0.0",
+        "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "globals": "^17.0.0",
         "hardhat": "^3.0.0",
