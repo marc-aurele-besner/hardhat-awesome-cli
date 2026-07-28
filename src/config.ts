@@ -227,13 +227,13 @@ export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
     {
         title: 'Yarn - Hardhat - Test & Coverage',
         file: 'hardhat-yarn',
-        group: 'npm',
+        group: 'yarn',
         requirement: ['solidity-coverage']
     },
     {
         title: 'Yarn - Foundry - Forge Test',
         file: 'foundry-yarn',
-        group: 'npm'
+        group: 'yarn'
     }
 ]
 
