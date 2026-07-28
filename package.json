@@ -5,8 +5,13 @@
     "repository": "https://github.com/marc-aurele-besner/hardhat-awesome-cli.git",
     "author": "Marc-Aurele Besner <82244926+marc-aurele-besner@users.noreply.github.com>",
     "license": "MIT",
+    "type": "module",
     "main": "dist/src/index",
     "typings": "dist/src/index",
+    "exports": {
+        ".": "./dist/src/index.js",
+        "./plugin": "./dist/src/plugin/index.js"
+    },
     "bin": {
         "hardhat-awesome-cli": "./src/index.ts"
     },
@@ -55,7 +60,7 @@
         "typescript": "^7.0.0"
     },
     "peerDependencies": {
-        "hardhat": "^2.13.0"
+        "hardhat": "^3.0.0"
     },
     "dependencies": {
         "dotenv": "^17.0.0",
