@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { runCommand, sleep } from './utils'
+import { runCommand, sleep } from './utils.ts'
 
 const importPackageHardhatConfigFile = async (packageName: string, addToConfig: boolean, removeFromConfig: boolean) => {
     let hardhatConfigFilePath: string = ''

@@ -1,8 +1,8 @@
 import fs from 'fs'
 
-import { buildAllScriptsList, buildAllTestsList } from './buildFilesList'
-import { getAddressBookConfig } from './config'
-import { IExcludedFiles, IFileList } from './types'
+import { buildAllScriptsList, buildAllTestsList } from './buildFilesList.ts'
+import { getAddressBookConfig } from './config.ts'
+import { IExcludedFiles, IFileList } from './types.ts'
 
 export const buildExcludedFile = async () => {
     let fileSetting: any = []

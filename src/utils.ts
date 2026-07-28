@@ -2,8 +2,8 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import { exit } from 'process'
 
-import { getAddressBookConfig } from './config'
-import { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types'
+import { getAddressBookConfig } from './config.ts'
+import { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types.ts'
 
 let contractsAddressDeployed: IContractAddressDeployed[] = []
 let contractsAddressDeployedHistory: IContractAddressDeployed[] = []

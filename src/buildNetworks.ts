@@ -1,9 +1,9 @@
 import fs from 'fs'
 
-import { getEnvValue } from './buildEnv'
-import { buildActivatedChainList } from './buildFilesList'
-import { DefaultChainList, getAddressBookConfig } from './config'
-import { IChain } from './types'
+import { getEnvValue } from './buildEnv.ts'
+import { buildActivatedChainList } from './buildFilesList.ts'
+import { DefaultChainList, getAddressBookConfig } from './config.ts'
+import { IChain } from './types.ts'
 
 export const buildActivatedChainNetworkConfig = () => {
     let chainConfig: string = ''

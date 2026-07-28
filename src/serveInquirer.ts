@@ -1,8 +1,8 @@
 import fs from 'fs'
 import inquirer from 'inquirer'
 
-import writeToEnv, { getEnvValue } from './buildEnv'
-import { addExcludedFiles, buildExcludedFile, removeExcludedFiles } from './buildExcludedFile'
+import writeToEnv, { getEnvValue } from './buildEnv.ts'
+import { addExcludedFiles, buildExcludedFile, removeExcludedFiles } from './buildExcludedFile.ts'
 import {
     buildActivatedChainList,
     buildAllContractsList,
@@ -12,25 +12,25 @@ import {
     buildContractsList,
     buildScriptsList,
     buildTestsList
-} from './buildFilesList'
-import buildFoundrySetting from './buildFoundrySetting'
-import buildMockContract, { buildMockDeploymentScriptOrTest } from './buildMockContracts'
+} from './buildFilesList.ts'
+import buildFoundrySetting from './buildFoundrySetting.ts'
+import buildMockContract, { buildMockDeploymentScriptOrTest } from './buildMockContracts.ts'
 import {
     addActivatedChain,
     addCustomChain,
     buildActivatedChainNetworkConfig,
     removeActivatedChain
-} from './buildNetworks'
-import buildWorkflows, { buildWorkflowsFromCommand } from './buildWorkflows'
+} from './buildNetworks.ts'
+import buildWorkflows, { buildWorkflowsFromCommand } from './buildWorkflows.ts'
 import {
     DefaultChainList,
     DefaultGithubWorkflowsGroup,
     DefaultGithubWorkflowsList,
     DefaultHardhatPluginsList,
     getAddressBookConfig
-} from './config'
-import MockContractsList from './mockContracts'
-import detectPackage from './packageInstaller'
+} from './config.ts'
+import MockContractsList from './mockContracts.ts'
+import detectPackage from './packageInstaller.ts'
 import {
     IChain,
     IDefaultGithubWorkflowsList,
@@ -38,7 +38,7 @@ import {
     IFileList,
     IHardhatPluginAvailableList,
     IMockContractsList
-} from './types'
+} from './types.ts'
 import {
     inquirerFileContractsAddressDeployed,
     inquirerFileContractsAddressDeployedHistory,
@@ -50,7 +50,7 @@ import {
     listAllFunctionSelectors,
     runCommand,
     sleep
-} from './utils'
+} from './utils.ts'
 
 const serveNetworkSelector = async (
     env: any,

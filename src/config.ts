@@ -1,4 +1,4 @@
-import { IChain, IDefaultGithubWorkflowsList, IHardhatPluginAvailableList } from './types'
+import { IChain, IDefaultGithubWorkflowsList, IHardhatPluginAvailableList } from './types.ts'
 
 export const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 export const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'

@@ -1,4 +1,4 @@
-import { IMockContractsList } from '../types'
+import { IMockContractsList } from '../types.ts'
 
 const MockContractsList: IMockContractsList[] = [
     {
