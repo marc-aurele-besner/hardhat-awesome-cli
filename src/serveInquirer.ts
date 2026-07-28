@@ -662,23 +662,14 @@ const serveMockContractCreatorSelector = async () => {
                     : MockContractsList.filter((file: IMockContractsList) => file.name === mockContractFirstSelected)
             const subject = mockContractsSelectedDetail.length > 1 ? 'these mock contracts' : 'this mock contract'
             const mockContractDetailSelector = []
-            if (
-                mockContractsSelectedDetail.some(
-                    (file: IMockContractsList) =>
-                        file.deploymentScriptJs !== undefined || file.deploymentScriptTs !== undefined
-                )
-            )
+            if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.deploymentScript !== undefined))
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockDeploymentScript',
                     message: 'Create a deployment script for ' + subject,
                     choices: ['yes', 'no']
                 })
-            if (
-                mockContractsSelectedDetail.some(
-                    (file: IMockContractsList) => file.testScriptJs !== undefined || file.testScriptTs !== undefined
-                )
-            )
+            if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.testScript !== undefined))
                 mockContractDetailSelector.push({
                     type: 'list',
                     name: 'mockTestScript',

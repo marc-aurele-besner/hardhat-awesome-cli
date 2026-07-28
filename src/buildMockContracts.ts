@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 
 import MockContractsList from './mockContracts/index.ts'
 import detectPackage from './packageInstaller.ts'
+import { transformTsToJs } from './utils.ts'
 import type { IMockContractsList } from './types.ts'
 
 /**
@@ -62,12 +63,33 @@ const buildMockContract = async (contractName: string) => {
     }
 }
 
+/**
+ * Pick the file extension that matches the consumer project's Hardhat config.
+ *
+ * Templates ship as TypeScript (the single source of truth, see #159). When
+ * the consumer uses `hardhat.config.js` we still want to write a `.js` file,
+ * so the JS variant is generated from the TS template at write time.
+ */
+const pickArtifactExtension = (): 'ts' | 'js' => {
+    if (fs.existsSync('hardhat.config.ts')) return 'ts'
+    if (fs.existsSync('hardhat.config.js')) return 'js'
+    // No Hardhat config present — fall back to TS, which is the canonical
+    // template language and what Hardhat 3 expects.
+    return 'ts'
+}
+
+const swapExtension = (filePath: string, target: 'ts' | 'js' | 'sol'): string => {
+    if (target === 'ts') return filePath.replace(/\.js$/, '.ts')
+    if (target === 'sol') return filePath
+    return filePath.replace(/\.ts$/, '.js')
+}
+
 export const buildMockDeploymentScriptOrTest = async (contractName: string, type: string) => {
     const packageRootPath = resolveMockContractsPath()
     if (!packageRootPath) return
     if (!MockContractsList) return
 
-    let deploymentScriptOrTestPath: string = ''
+    let templatePath: string = ''
     let finalPath: string = ''
     let scriptOrTestDir: string = ''
     const contractToMock: IMockContractsList[] = MockContractsList.filter(
@@ -77,36 +99,26 @@ export const buildMockDeploymentScriptOrTest = async (contractName: string, type
 
     if (type === 'deployment') {
         scriptOrTestDir = 'scripts'
-        if (fs.existsSync('hardhat.config.js')) {
-            if (contractToMock[0].deploymentScriptJs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
-        } else if (fs.existsSync('hardhat.config.ts')) {
-            if (contractToMock[0].deploymentScriptTs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].deploymentScriptTs
-            else if (contractToMock[0].deploymentScriptJs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].deploymentScriptJs
-        }
-        finalPath = deploymentScriptOrTestPath
+        if (contractToMock[0].deploymentScript === undefined) return
+        templatePath = contractToMock[0].deploymentScript
     } else if (type === 'test') {
         scriptOrTestDir = 'test'
-        if (fs.existsSync('hardhat.config.js')) {
-            if (contractToMock[0].testScriptJs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].testScriptJs
-        } else if (fs.existsSync('hardhat.config.ts')) {
-            if (contractToMock[0].testScriptTs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].testScriptTs
-            else if (contractToMock[0].testScriptJs !== undefined)
-                deploymentScriptOrTestPath = contractToMock[0].testScriptJs
-        }
-        finalPath = deploymentScriptOrTestPath
+        if (contractToMock[0].testScript === undefined) return
+        templatePath = contractToMock[0].testScript
     } else if (type === 'testForge') {
         scriptOrTestDir = 'contracts/test'
-        if (contractToMock[0]?.testContractFoundry !== undefined)
-            deploymentScriptOrTestPath = contractToMock[0].testContractFoundry
-        finalPath = deploymentScriptOrTestPath.replace('testForge/', 'contracts/test/')
+        if (contractToMock[0]?.testContractFoundry === undefined) return
+        templatePath = contractToMock[0].testContractFoundry
+        finalPath = templatePath.replace('testForge/', 'contracts/test/')
     }
 
-    if (!deploymentScriptOrTestPath || !finalPath) return
+    if (!templatePath) return
+
+    const targetExtension = pickArtifactExtension()
+    // Foundry test contracts are Solidity (`.sol`) — never affected by the
+    // TS/JS choice. Everything else follows the user's Hardhat config.
+    const writeExtension: 'ts' | 'js' | 'sol' = type === 'testForge' ? 'sol' : targetExtension
+    finalPath = swapExtension(finalPath || templatePath, writeExtension)
 
     // Ensure the destination directory exists before writing. `recursive: true`
     // is a no-op when the directory is already there, so this is safe to run
@@ -120,8 +132,9 @@ export const buildMockDeploymentScriptOrTest = async (contractName: string, type
     }
 
     console.log('\x1b[32m%s\x1b[0m', 'Creating ' + type + ' for ', contractName, ' in ' + scriptOrTestDir + '/')
-    const rawData: any = fs.readFileSync(path.join(packageRootPath, deploymentScriptOrTestPath))
-    fs.writeFileSync(finalPath, rawData)
+    const rawData: string = fs.readFileSync(path.join(packageRootPath, templatePath), 'utf8')
+    const rendered = writeExtension === 'js' ? transformTsToJs(rawData) : rawData
+    fs.writeFileSync(finalPath, rendered)
 }
 
 export default buildMockContract
