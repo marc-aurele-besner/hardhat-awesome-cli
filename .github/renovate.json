@@ -1,21 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
+  "extends": ["config:recommended"],
   "labels": ["dependencies"],
   "packageRules": [
     {
-      "matchPackagePatterns": ["prettier"],
-      "labels": ["formatter"]
+      "labels": ["formatter"],
+      "matchPackageNames": ["/prettier/"]
     },
     {
-      "matchPackagePatterns": ["eslint"],
-      "labels": ["linting"]
+      "labels": ["linting"],
+      "matchPackageNames": ["/eslint/"]
     },
     {
-      "matchPackagePatterns": ["@types", "typescript"],
-      "labels": ["types"]
+      "labels": ["types"],
+      "matchPackageNames": ["/@types/", "/typescript/"]
     },
     {
       "matchDepTypes": ["optionalDependencies"],
