@@ -30,19 +30,31 @@ Or with Yarn
 yarn add hardhat-awesome-cli
 ```
 
-### 2. Import/Require this package in your hardhat.config.js/.ts
+### 2. Add the plugin to your `hardhat.config.ts`
 
-Inside inside hardhat.config.js
+> **Heads up:** Hardhat 3 dropped side-effect plugin registration. The
+> `require('hardhat-awesome-cli')` / `import 'hardhat-awesome-cli'` style from
+> Hardhat 2 no longer works — the plugin must be added to the `plugins` array
+> of `defineConfig(...)`.
 
-```js
-require('hardhat-awesome-cli')
+Add the plugin to the `plugins` array, importing the plugin entry exposed by
+the package under the `/plugin` subpath:
+
+```ts
+import { defineConfig } from 'hardhat/config'
+import hardhatAwesomeCli from 'hardhat-awesome-cli/plugin'
+
+export default defineConfig({
+    plugins: [hardhatAwesomeCli],
+})
 ```
 
-or inside hardhat.config.ts (Typescript)
-
-```js
-import 'hardhat-awesome-cli'
-```
+> **Which import path?**
+>
+> - `hardhat-awesome-cli/plugin` — the Hardhat 3 plugin (use this in
+>   `hardhat.config.ts`).
+> - `hardhat-awesome-cli` — the standalone CLI binary (`npx hardhat-awesome-cli`
+>   for running outside a Hardhat project). Not a plugin entry.
 
 ### Other option
 
@@ -65,6 +77,18 @@ in the hardhat project, you want to use this plugin
 
 ```bash
 npm link hardhat-awesome-cli
+```
+
+then in your `hardhat.config.ts`, import the plugin from the `/plugin` subpath
+the same way as for the published package:
+
+```ts
+import { defineConfig } from 'hardhat/config'
+import hardhatAwesomeCli from 'hardhat-awesome-cli/plugin'
+
+export default defineConfig({
+    plugins: [hardhatAwesomeCli],
+})
 ```
 
 </details>
