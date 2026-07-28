@@ -1,14 +1,10 @@
-// We load the plugin here.
-import { HardhatUserConfig } from 'hardhat/types'
+import { defineConfig } from 'hardhat/config'
 
-import '../../src/index'
+import hardhatAwesomeCli from '../../src/plugin/index.js'
 
-const config: HardhatUserConfig = {
-    solidity: '0.8.0',
-    defaultNetwork: 'hardhat',
+export default defineConfig({
+    plugins: [hardhatAwesomeCli],
     paths: {
         cli: 'cli'
     }
-}
-
-export default config
+})
