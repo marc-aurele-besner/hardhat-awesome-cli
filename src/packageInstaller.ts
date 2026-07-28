@@ -182,39 +182,42 @@ const detectPackage = async (
     uninstall: boolean,
     addRemoveInHardhatConfig: boolean
 ) => {
-    if (require && require.main) {
-        const nodeModulesPath = path.join(path.dirname(require.main.filename), '../../../')
-        if (fs.existsSync(nodeModulesPath + packageName)) {
-            if (uninstall) {
-                console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
-                if (fs.existsSync('package-lock.json')) {
-                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                    await runCommand('npm remove ' + packageName, '', '', false)
-                    await sleep(5000)
-                } else if (fs.existsSync('yarn-lock.json')) {
-                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                    await runCommand('yarn remove ' + packageName, '', '', false)
-                    await sleep(5000)
-                }
+    // Hardhat 2 walked up from `require.main.filename` to reach the consuming
+    // project's `node_modules`. `require` does not exist in an ES module, and the
+    // rest of this CLI already treats the current working directory as the
+    // Hardhat project root (`contracts/`, `hardhat.config.ts`, `package-lock.json`),
+    // so resolve `node_modules` from there instead.
+    const nodeModulesPath = path.join(process.cwd(), 'node_modules')
+    if (fs.existsSync(path.join(nodeModulesPath, packageName))) {
+        if (uninstall) {
+            console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
+            if (fs.existsSync('package-lock.json')) {
+                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+                await runCommand('npm remove ' + packageName, '', '', false)
+                await sleep(5000)
+            } else if (fs.existsSync('yarn-lock.json')) {
+                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+                await runCommand('yarn remove ' + packageName, '', '', false)
+                await sleep(5000)
             }
-            return true
-        } else {
-            if (install) {
-                console.log('\x1b[34m%s\x1b[0m', 'Installing package: ', '\x1b[97m\x1b[0m', packageName)
-                if (fs.existsSync('package-lock.json')) {
-                    console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
-                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                    await runCommand('npm install ' + packageName, '', ' --save-dev', false)
-                    await sleep(5000)
-                } else if (fs.existsSync('yarn-lock.json')) {
-                    console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
-                    if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                    await runCommand('yarn add ' + packageName, '', ' -D', false)
-                    await sleep(5000)
-                }
-            }
-            return false
         }
+        return true
+    } else {
+        if (install) {
+            console.log('\x1b[34m%s\x1b[0m', 'Installing package: ', '\x1b[97m\x1b[0m', packageName)
+            if (fs.existsSync('package-lock.json')) {
+                console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
+                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
+                await runCommand('npm install ' + packageName, '', ' --save-dev', false)
+                await sleep(5000)
+            } else if (fs.existsSync('yarn-lock.json')) {
+                console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
+                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
+                await runCommand('yarn add ' + packageName, '', ' -D', false)
+                await sleep(5000)
+            }
+        }
+        return false
     }
 }
 
