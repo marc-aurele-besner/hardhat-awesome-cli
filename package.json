@@ -67,7 +67,6 @@
     },
     "dependencies": {
         "dotenv": "^17.0.0",
-        "fs": "^0.0.1-security",
         "inquirer": "^14.0.0"
     }
 }
