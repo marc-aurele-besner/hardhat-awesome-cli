@@ -74,20 +74,18 @@ npm link hardhat-awesome-cli
 -   [src/](./src/)
 -   [test/](./test/)
 
--   [.eslintrc.js](./.eslintrc.js)
 -   [.mocharc.json](./.mocharc.json)
 -   [.npmignore](./.npmignore)
 -   [.prettierignore](./.prettierignore)
 -   [.prettierrc](./.prettierrc)
 -   [awesome-readme.config.js](./awesome-readme.config.js)
 -   [CONTRIBUTING.md](./CONTRIBUTING.md)
+-   [eslint.config.js](./eslint.config.js)
 -   [LICENSE](./LICENSE)
 -   [package-lock.json](./package-lock.json)
 -   [package.json](./package.json)
--   [README3.md](./README3.md)
 -   [tsconfig.json](./tsconfig.json)
 -   [tsconfig.prod.json](./tsconfig.prod.json)
--   [tslint.json](./tslint.json)
 
 ## CLI features
 
@@ -194,6 +192,7 @@ Create (if it does not exist) contractsAddressDeployed.json and contractsAddress
 You can then retrieve your contract address in your tests scripts to run test on deployed contracts on live chains for example.
 
 Import:
+
 javascript
 
 ```js
@@ -202,7 +201,7 @@ const { addressBook, network } = require('hardhat')
 
 typescript
 
-```js
+```ts
 import { addressBook, network } from 'hardhat'
 ```
 
@@ -457,43 +456,72 @@ Return (also printed as a table with `console.table`):
 
 ```txt
 hardhat-awesome-cli/
-│   .eslintrc.js/
-│   .mocharc.json/
-│   .npmignore/
-│   .prettierignore/
-│   .prettierrc/
-│   awesome-readme.config.js/
-│   CONTRIBUTING.md/
-│   LICENSE/
-│   package-lock.json/
-│   package.json/
-│   README3.md/
-│   tsconfig.json/
-│   tsconfig.prod.json/
-│   tslint.json/
-└─── src/
-└─── test/
-   │   AwesomeAddressBook.ts/
-   │   buildEnv.ts/
-   │   buildExcludedFile.ts/
-   │   buildFilesList.ts/
-   │   buildFoundrySetting.ts/
-   │   buildMockContracts.ts/
-   │   buildNetworks.ts/
-   │   buildWorkflows.ts/
-   │   config.ts/
-   │   index.ts/
-   │   packageInstaller.ts/
-   │   serveInquirer.ts/
-   │   type-extensions.ts/
-   │   types.ts/
-   │   utils.ts/
-   └─── githubWorkflows/
-   └─── mockContracts/
-   │   addressBook.test.ts/
-   │   cli.test.ts/
-   │   helpers.ts/
-   └─── hardhat-cli/
+├── .github/
+│   ├── CODEOWNERS
+│   ├── FUNDING.yml
+│   ├── issue_template.md
+│   ├── pull_request_template.md
+│   ├── renovate.json
+│   └── workflows/
+│       ├── ci.yml
+│       └── package.yml
+├── .vscode/
+│   ├── extensions.json
+│   └── settings.json
+├── src/
+│   ├── AwesomeAddressBook.ts
+│   ├── buildEnv.ts
+│   ├── buildExcludedFile.ts
+│   ├── buildFilesList.ts
+│   ├── buildFoundrySetting.ts
+│   ├── buildMockContracts.ts
+│   ├── buildNetworks.ts
+│   ├── buildWorkflows.ts
+│   ├── config.ts
+│   ├── functionList.ts
+│   ├── index.ts
+│   ├── packageInstaller.ts
+│   ├── serveInquirer.ts
+│   ├── types.ts
+│   ├── utils.ts
+│   ├── githubWorkflows/
+│   │   ├── foundry-npm.yml
+│   │   ├── foundry-yarn.yml
+│   │   ├── hardhat-npm.yml
+│   │   └── hardhat-yarn.yml
+│   ├── mockContracts/
+│   │   ├── index.ts
+│   │   ├── MockERC20.sol (+ Upgradeable / ERC721 / ERC1155 variants, MockProxyAdmin, MockTransparentUpgradeableProxy)
+│   │   ├── scripts/  # deploy scripts for every mock above
+│   │   ├── test/     # mocha test scripts for every mock above
+│   │   └── testForge/# Foundry/Forge test contracts + cheatcode utilities
+│   └── plugin/
+│       ├── cli-action.ts
+│       ├── hook-handlers.ts
+│       └── index.ts
+├── test/
+│   ├── addressBook.test.ts
+│   ├── buildFilesList.test.ts
+│   ├── buildFoundrySetting.test.ts
+│   ├── buildNetworks.test.ts
+│   ├── cli.test.ts
+│   ├── functionList.test.ts
+│   ├── helpers.ts
+│   └── hardhat-cli/
+│       └── hardhat.config.ts
+├── .mocharc.json
+├── .npmignore
+├── .prettierignore
+├── .prettierrc
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── awesome-readme.config.js
+├── eslint.config.js
+├── package-lock.json
+├── package.json
+├── tsconfig.json
+└── tsconfig.prod.json
 ```
 
 ## 🏗️ To do:
