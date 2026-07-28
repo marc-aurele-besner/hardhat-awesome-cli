@@ -133,6 +133,13 @@ npm link hardhat-awesome-cli
     -   MockERC1155Upgradeable
     -   MockProxyAdmin
     -   MockTransparentUpgradeableProxy
+
+    > Mock deployment and test scripts are authored as a single TypeScript
+    > source of truth under `src/mockContracts/scripts/` and `src/mockContracts/test/`.
+    > When the consumer project uses `hardhat.config.js`, the CLI generates the
+    > CommonJS variant from the same template at write time — no duplicate files
+    > to keep in sync.
+
 -   Get account balance
 
 ### Current chain support
@@ -495,8 +502,8 @@ hardhat-awesome-cli/
 │   ├── mockContracts/
 │   │   ├── index.ts
 │   │   ├── MockERC20.sol (+ Upgradeable / ERC721 / ERC1155 variants, MockProxyAdmin, MockTransparentUpgradeableProxy)
-│   │   ├── scripts/  # deploy scripts for every mock above
-│   │   ├── test/     # mocha test scripts for every mock above
+│   │   ├── scripts/  # deploy scripts for every mock above (TS source of truth; JS is generated on the fly for hardhat.config.js projects)
+│   │   ├── test/     # mocha test scripts for every mock above (TS source of truth; JS is generated on the fly for hardhat.config.js projects)
 │   │   └── testForge/# Foundry/Forge test contracts + cheatcode utilities
 │   └── plugin/
 │       ├── cli-action.ts
