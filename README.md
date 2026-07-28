@@ -1,4 +1,4 @@
-[![license](https://img.shields.io/github/license/jamesisaac/react-native-background-task.svg)](https://opensource.org/licenses/MIT)
+[![license](https://img.shields.io/github/license/marc-aurele-besner/hardhat-awesome-cli.svg)](https://opensource.org/licenses/MIT)
 [![npm version](https://badge.fury.io/js/hardhat-awesome-cli.svg)](https://badge.fury.io/js/hardhat-awesome-cli)
 
 # 👷 hardhat-awesome-cli
