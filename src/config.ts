@@ -86,12 +86,11 @@ export const DefaultChainList: IChain[] = [
         defaultBlockExplorer: 'https://bscscan.com'
     },
     {
-        name: 'Binance Smart Chain - Tesnet',
+        name: 'Binance Smart Chain - Testnet',
         chainName: 'binanceTestnet',
         chainId: 97,
         gas: 'auto',
         currency: 'BNB',
-        defaultRpcUrl: 'https://rpc-mainnet.matic.network',
         defaultBlockExplorer: 'https://explorer.binance.org/smart-testnet'
     },
     {
@@ -113,7 +112,7 @@ export const DefaultChainList: IChain[] = [
     },
     {
         name: 'Avalanche - Mainnet',
-        chainName: 'optimismTestnetKovan',
+        chainName: 'avalanche',
         chainId: 43114,
         gas: 'auto',
         currency: 'AVAX',
