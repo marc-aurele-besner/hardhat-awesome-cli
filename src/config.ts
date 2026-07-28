@@ -225,6 +225,11 @@ export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
         addInHardhatConfig: true
     },
     {
+        title: 'Hardhat Ledger (hardware wallet signer)',
+        name: '@nomicfoundation/hardhat-ledger',
+        addInHardhatConfig: true
+    },
+    {
         title: 'Hardhat Foundry',
         name: '@nomicfoundation/hardhat-foundry',
         addInHardhatConfig: true
