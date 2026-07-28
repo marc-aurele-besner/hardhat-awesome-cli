@@ -71,14 +71,31 @@ export const runCommand = async (
     })
 }
 
+/**
+ * List every public and external function of a compiled contract with its
+ * 4 bytes function selector, sorted by selector (ascending).
+ *
+ * Requires `hre.ethers` (`@nomicfoundation/hardhat-ethers`) to be available,
+ * and the contract to be compiled. Both ethers v6 (`fragment.selector`) and
+ * ethers v5 (`ethers.utils.id(signature)`) are supported.
+ *
+ * @param hre Hardhat Runtime Environment
+ * @param contractName Name of the contract to inspect (e.g. `MockERC20`)
+ * @returns `{ name, selector }` for each function, ordered by selector
+ */
 export const listAllFunctionSelectors = async (hre: any, contractName: string) => {
     const factory = await hre.ethers.getContractFactory(contractName)
 
     const functions: FunctionSelector[] = []
-    for (const [name] of Object.entries(factory.interface.functions)) {
+    for (const fragment of factory.interface.fragments) {
+        if (fragment.type !== 'function') continue
+        // `sighash` is the canonical signature (`transfer(address,uint256)`)
+        // in both ethers v5 and v6.
+        const name = fragment.format('sighash')
         functions.push({
             name,
-            selector: hre.ethers.utils.id(name).substring(0, 10)
+            // ethers v6 computes the selector on the fragment, ethers v5 does not.
+            selector: fragment.selector ?? hre.ethers.utils.id(name).substring(0, 10)
         })
     }
     functions.sort((a, b) => {
