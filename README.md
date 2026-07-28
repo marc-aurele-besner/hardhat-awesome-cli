@@ -123,6 +123,7 @@ npm link hardhat-awesome-cli
           </details>
 
 -   Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
+    -   All mock contracts (create every mock contract below, with their deployment and test scripts, at the same time)
     -   MockERC20
     -   MockERC721
     -   MockERC1155
