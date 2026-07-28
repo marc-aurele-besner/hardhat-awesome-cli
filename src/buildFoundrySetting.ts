@@ -2,6 +2,49 @@ import fs from 'fs'
 import path from 'path'
 
 import { DefaultFoundryTestUtilsList } from './config.ts'
+import detectPackage from './packageInstaller.ts'
+
+// Name of the companion npm package providing shared Forge test utilities and
+// mocks. See https://github.com/marc-aurele-besner/foundry-test-utility.
+export const FOUNDRY_TEST_UTILITY_PACKAGE = 'foundry-test-utility'
+
+/**
+ * Remapping used by Foundry to locate the `foundry-test-utility` package when
+ * it is installed via npm/yarn (vs. `forge install`, which lands under `libs/`).
+ */
+export const FOUNDRY_TEST_UTILITY_REMAPPING = `foundry-test-utility/contracts/=node_modules/${FOUNDRY_TEST_UTILITY_PACKAGE}/contracts`
+
+/**
+ * Append the npm-installed `foundry-test-utility` remapping to `remappings.txt`
+ * if it isn't already there. `remappings.txt` is created by `buildFoundrySetting`
+ * but the file may have been edited by hand, so we only append the new line.
+ */
+export const addFoundryTestUtilityRemapping = () => {
+    const remappingsPath = 'remappings.txt'
+    if (!fs.existsSync(remappingsPath)) return
+    const currentRemappings = fs.readFileSync(remappingsPath, 'utf8')
+    if (currentRemappings.includes(FOUNDRY_TEST_UTILITY_REMAPPING)) {
+        console.log(
+            '\x1b[33m%s\x1b[0m',
+            'The foundry-test-utility remapping already exists in remappings.txt'
+        )
+        return
+    }
+    const separator = currentRemappings.endsWith('\n') || currentRemappings.length === 0 ? '' : '\n'
+    fs.appendFileSync(remappingsPath, separator + FOUNDRY_TEST_UTILITY_REMAPPING + '\n')
+    console.log('\x1b[32m%s\x1b[0m', 'Adding foundry-test-utility remapping to remappings.txt')
+}
+
+/**
+ * Install the `foundry-test-utility` npm package as a dev dependency and add
+ * its remapping to `remappings.txt`. Safe to call repeatedly — the package
+ * installer is a no-op when the package is already present, and the remapping
+ * helper refuses to duplicate the line.
+ */
+export const installFoundryTestUtility = async () => {
+    await detectPackage(FOUNDRY_TEST_UTILITY_PACKAGE, true, false, false)
+    addFoundryTestUtilityRemapping()
+}
 
 const buildFoundrySetting = async () => {
     if (!fs.existsSync('foundry.toml')) {
@@ -82,6 +125,10 @@ block_difficulty = 0                                          # the value of blo
             })
         }
     }
+    // Pull in the shared `foundry-test-utility` package (issue #88) so users
+    // have access to the mock contracts / utilities shipped there in addition
+    // to the bundled cheatcodes copied above.
+    await installFoundryTestUtility()
 }
 
 export default buildFoundrySetting
