@@ -152,4 +152,50 @@ describe('buildMockContracts (issue #168)', function () {
             expect(fs.existsSync('test/test-Mock-ERC20.ts')).to.equal(true)
         })
     })
+
+    // Issue #159: the mock template language ships as a single TS source
+    // of truth. When the consumer project uses `hardhat.config.js`, the JS
+    // variant is generated from the TS template on the fly.
+    describe('JS output for hardhat.config.js projects (issue #159)', function () {
+        beforeEach(function () {
+            // Replace the TS config with a JS one for this describe block.
+            fs.rmSync('hardhat.config.ts')
+            fs.writeFileSync('hardhat.config.js', 'module.exports = {}\n')
+        })
+
+        it('writes a CommonJS deployment script', async function () {
+            await buildMockContract('MockERC20')
+            await buildMockDeploymentScriptOrTest('MockERC20', 'deployment')
+
+            expect(fs.existsSync('scripts/deploy-Mock-ERC20.js')).to.equal(true)
+            expect(fs.existsSync('scripts/deploy-Mock-ERC20.ts')).to.equal(false)
+            const generated = fs.readFileSync('scripts/deploy-Mock-ERC20.js', 'utf8')
+            expect(generated).to.contain("const { addressBook, ethers, network } = require('hardhat')")
+            expect(generated).to.not.match(/@ts-ignore-next-line/)
+            expect(generated).to.contain('.then(() => process.exit(0))')
+        })
+
+        it('writes a CommonJS test script', async function () {
+            await buildMockContract('MockERC20')
+            await buildMockDeploymentScriptOrTest('MockERC20', 'test')
+
+            expect(fs.existsSync('test/test-Mock-ERC20.js')).to.equal(true)
+            expect(fs.existsSync('test/test-Mock-ERC20.ts')).to.equal(false)
+            const generated = fs.readFileSync('test/test-Mock-ERC20.js', 'utf8')
+            expect(generated).to.contain("const { expect } = require('chai')")
+            expect(generated).to.contain("const { ethers } = require('hardhat')")
+            expect(generated).to.not.match(/:\s*any/)
+        })
+
+        it('does not overwrite an existing JS deployment script', async function () {
+            fs.mkdirSync('scripts')
+            const existing = path.join('scripts', 'deploy-Mock-ERC20.js')
+            fs.writeFileSync(existing, '// user edits')
+
+            await buildMockContract('MockERC20')
+            await buildMockDeploymentScriptOrTest('MockERC20', 'deployment')
+
+            expect(fs.readFileSync(existing, 'utf8')).to.equal('// user edits')
+        })
+    })
 })

@@ -24,10 +24,11 @@ export interface IMockContractsList {
     name: string
     desc: string
     dependencies: string[]
-    deploymentScriptJs?: string
-    deploymentScriptTs?: string
-    testScriptJs?: string
-    testScriptTs?: string
+    // The single TS template path. When the consumer project uses a JS
+    // `hardhat.config`, the JS output is generated from this template on
+    // the fly (see `transformTsToJs` in utils.ts).
+    deploymentScript: string
+    testScript?: string
     testContractFoundry?: string
     upgradeable?: boolean
 }

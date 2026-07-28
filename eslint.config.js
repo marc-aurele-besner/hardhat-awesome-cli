@@ -14,11 +14,7 @@ export default [
             'dist/**',
             'node_modules/**',
             'coverage/**',
-            'src/mockContracts/testForge/**',
-            // Mock contract fixtures ship as plain JS alongside their .ts
-            // counterparts; they're not part of the TS project.
-            'src/mockContracts/test/*.js',
-            'src/mockContracts/scripts/*.js'
+            'src/mockContracts/testForge/**'
         ]
     },
     js.configs.recommended,
