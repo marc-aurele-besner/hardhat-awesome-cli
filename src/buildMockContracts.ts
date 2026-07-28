@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url'
 import MockContractsList from './mockContracts/index.ts'
 import detectPackage from './packageInstaller.ts'
 import type { IMockContractsList } from './types.ts'
-import { sleep } from './utils.ts'
 
 /**
  * Locate the packaged `mockContracts` directory holding the Solidity, deployment
@@ -49,9 +48,10 @@ const buildMockContract = async (contractName: string) => {
                     }
                     if (contractToMock[0].dependencies && contractToMock[0].dependencies.length > 0) {
                         for (const dependency of contractToMock[0].dependencies) {
+                            // `detectPackage` now awaits the underlying `npm install`
+                            // itself, so there is no need for a fixed post-install sleep.
                             await detectPackage(dependency, true, false, false)
                         }
-                        await sleep(3000)
                     }
                 }
             }
@@ -115,7 +115,6 @@ export const buildMockDeploymentScriptOrTest = async (contractName: string, type
                         if (!fs.existsSync(scriptOrTestDir + '/'))
                             fs.mkdirSync(scriptOrTestDir + '/', { recursive: true })
                         const rawData: any = fs.readFileSync(packageRootPath + '/' + deploymentScriptOrTestPath)
-                        await sleep(500)
                         fs.writeFileSync(finalPath, rawData)
                     }
                 }
