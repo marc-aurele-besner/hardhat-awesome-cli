@@ -49,16 +49,21 @@ if (fs.existsSync(addressBookConfig.savePath + addressBookConfig.fileContractsAd
     } catch {}
 }
 
+export const buildCommand = (command: string, firstCommand: string, commandFlags: string) => {
+    let commandToRun = command + commandFlags
+    if (firstCommand) {
+        commandToRun = firstCommand + commandFlags + ' && ' + commandToRun
+    }
+    return commandToRun
+}
+
 export const runCommand = async (
     command: string,
     firstCommand: string,
     commandFlags: string,
     thenExit: boolean = true
 ) => {
-    let commandToRun = command + commandFlags
-    if (firstCommand) {
-        commandToRun = firstCommand + commandFlags + ' && ' + commandToRun
-    }
+    const commandToRun = buildCommand(command, firstCommand, commandFlags)
     console.log('\x1b[33m%s\x1b[0m', 'Command to run: ', '\x1b[97m\x1b[0m', commandToRun)
     console.log(`Please wait...
 `)

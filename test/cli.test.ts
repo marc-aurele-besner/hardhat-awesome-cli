@@ -1,5 +1,6 @@
 import { assert, expect } from 'chai'
 
+import { buildCommand } from '../src/utils.ts'
 import { usePathsEnvironment } from './helpers'
 
 describe('Integration tests', function () {
@@ -18,5 +19,19 @@ describe('Integration tests', function () {
         it('The path CLI is injected in paths', function () {
             expect((this.env.config.paths as any).cli).to.not.equal(undefined)
         })
+    })
+})
+
+describe('Command builder', function () {
+    it('builds a command with flags', function () {
+        expect(buildCommand('npx hardhat test test/example.ts', '', ' --network sepolia')).to.equal(
+            'npx hardhat test test/example.ts --network sepolia'
+        )
+    })
+
+    it('builds a chained command with flags on both commands', function () {
+        expect(buildCommand('npm run deploy', 'npm install', ' --network sepolia')).to.equal(
+            'npm install --network sepolia && npm run deploy --network sepolia'
+        )
     })
 })
