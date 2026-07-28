@@ -170,3 +170,56 @@ export const waitForReadability = (ms?: number): Promise<void> => {
     const effective = Math.min(Math.max(ms ?? DEFAULT_READABILITY_PAUSE_MS, 0), 5000)
     return sleep(effective).then(() => undefined)
 }
+
+/**
+ * Convert a mock-contract template written in TypeScript into the equivalent
+ * CommonJS JavaScript that ships alongside `hardhat.config.js` projects.
+ *
+ * The mock template language is small and well-controlled:
+ * - `import { a, b } from 'mod'` becomes `const { a, b } = require('mod')`
+ * - `// @ts-ignore-next-line` directives are dropped (they only exist to
+ *   silence the TS compiler over the `hardhat` module).
+ * - `: any` type annotations on `let`/`const` declarations are stripped.
+ * - `main().catch(...)` is rewritten so the script also exits cleanly on
+ *   success, matching the original hand-maintained JS templates.
+ *
+ * This keeps a single source of truth (`src/mockContracts/scripts/*.ts` and
+ * `src/mockContracts/test/*.ts`) while still serving `hardhat.config.js`
+ * consumers the language they prefer (closes #159).
+ */
+export const transformTsToJs = (source: string): string => {
+    const lines = source.split('\n')
+    const out: string[] = []
+    for (const line of lines) {
+        // Drop `// @ts-ignore-next-line` directives — they only exist to
+        // silence the TS compiler over the `hardhat` module.
+        if (/^\s*\/\/\s*@ts-ignore-next-line\s*$/.test(line)) continue
+
+        // `import { a, b } from 'mod'` → `const { a, b } = require('mod')`.
+        // We only consume the named-import form these templates use.
+        const importMatch = line.match(/^(\s*)import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]\s*$/)
+        if (importMatch) {
+            const indent = importMatch[1]
+            const names = importMatch[2]
+                .split(',')
+                .map((name) => name.trim())
+                .filter((name) => name.length > 0)
+            out.push(`${indent}const { ${names.join(', ')} } = require('${importMatch[3]}')`)
+            continue
+        }
+
+        // Strip `: any` type annotations on top-level `let`/`const`/`var`
+        // declarations. The mock templates only use `: any`, no other types.
+        const anyAnnotation = line.replace(/^(\s*(?:let|const|var)\s+[A-Za-z_$][\w$]*)\s*:\s*any\b/, '$1')
+        out.push(anyAnnotation)
+    }
+
+    let js = out.join('\n')
+
+    // Ensure the script exits cleanly on success. The TS templates use
+    // `main().catch(...)` with `process.exitCode = 1`; the JS-equivalent
+    // generated file needs an explicit `process.exit(0)` on success.
+    js = js.replace(/main\(\)\s*\.catch\s*\(/, 'main()\n    .then(() => process.exit(0))\n    .catch(')
+
+    return js
+}

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 
-import { runCommand, sleep, waitForReadability } from '../src/utils.ts'
+import { runCommand, sleep, transformTsToJs, waitForReadability } from '../src/utils.ts'
 
 describe('Command runner', function () {
     it('runCommand resolves once the child process exits', async function () {
@@ -102,5 +102,66 @@ describe('waitForReadability', function () {
         const start = Date.now()
         await waitForReadability(0)
         expect(Date.now() - start).to.be.lessThan(20)
+    })
+})
+
+describe('transformTsToJs', function () {
+    it('rewrites named imports into the equivalent CommonJS require', function () {
+        const ts = [
+            "// @ts-ignore-next-line",
+            "import { addressBook, ethers, network } from 'hardhat'",
+            "import { expect } from 'chai'",
+            '',
+            'async function main() {',
+            '    const [deployer] = await ethers.getSigners()',
+            '}',
+            '',
+            'main().catch((error) => {',
+            '    console.error(error)',
+            '    process.exitCode = 1',
+            '})'
+        ].join('\n')
+
+        const js = transformTsToJs(ts)
+
+        expect(js).to.not.match(/@ts-ignore-next-line/)
+        expect(js).to.contain("const { addressBook, ethers, network } = require('hardhat')")
+        expect(js).to.contain("const { expect } = require('chai')")
+        expect(js).to.not.match(/^\s*import\s/m)
+    })
+
+    it('strips `: any` type annotations from top-level declarations', function () {
+        const ts = ['import { ethers } from \'hardhat\'', '', 'let mockERC20: any', 'let deployer: any'].join('\n')
+        const js = transformTsToJs(ts)
+        expect(js).to.not.match(/:\s*any/)
+        expect(js).to.contain('let mockERC20')
+        expect(js).to.contain('let deployer')
+    })
+
+    it('rewrites main().catch(...) so the script exits cleanly on success', function () {
+        const ts = [
+            "import { ethers } from 'hardhat'",
+            '',
+            'async function main() {}',
+            '',
+            'main().catch((error) => {',
+            '    console.error(error)',
+            '    process.exitCode = 1',
+            '})'
+        ].join('\n')
+
+        const js = transformTsToJs(ts)
+
+        expect(js).to.contain('.then(() => process.exit(0))')
+        expect(js).to.contain('.catch(')
+    })
+
+    it('produces valid CommonJS that requires the same module specifiers', function () {
+        const ts = ["import { expect } from 'chai'", '', 'expect(1).to.equal(1)'].join('\n')
+        const js = transformTsToJs(ts)
+        // The transformed output should still reference the same module
+        // name (`chai`) and the same imported symbol (`expect`).
+        expect(js).to.contain("require('chai')")
+        expect(js).to.contain('expect(1).to.equal(1)')
     })
 })
