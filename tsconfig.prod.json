@@ -11,7 +11,8 @@
         "rootDirs": ["./src", "./test"],
         "types": ["node", "mocha"],
         "esModuleInterop": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "rewriteRelativeImportExtensions": true
     },
     "exclude": ["dist", "node_modules"],
     "include": ["./test", "./src"]
