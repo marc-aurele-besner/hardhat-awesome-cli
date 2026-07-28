@@ -214,14 +214,49 @@ export class AwesomeAddressBook {
         switch (chainId) {
             case 1:
                 ozFileName = 'mainnet'
-            case 3:
-                ozFileName = 'ropsten'
-            case 4:
-                ozFileName = 'rinkeby'
-            case 5:
-                ozFileName = 'goerli'
-            case 42:
-                ozFileName = 'kovan'
+                break
+            case 11155111:
+                ozFileName = 'sepolia'
+                break
+            case 17000:
+                ozFileName = 'holesky'
+                break
+            case 137:
+                ozFileName = 'polygon'
+                break
+            case 80002:
+                ozFileName = 'polygonAmoy'
+                break
+            case 56:
+                ozFileName = 'bsc'
+                break
+            case 97:
+                ozFileName = 'bscTestnet'
+                break
+            case 10:
+                ozFileName = 'optimism'
+                break
+            case 11155420:
+                ozFileName = 'optimismSepolia'
+                break
+            case 42161:
+                ozFileName = 'arbitrum'
+                break
+            case 421614:
+                ozFileName = 'arbitrumSepolia'
+                break
+            case 8453:
+                ozFileName = 'base'
+                break
+            case 84532:
+                ozFileName = 'baseSepolia'
+                break
+            case 43114:
+                ozFileName = 'avalanche'
+                break
+            case 43113:
+                ozFileName = 'avalancheFuji'
+                break
             default:
                 ozFileName = `unknown-${chainId}`
         }
