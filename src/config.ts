@@ -144,61 +144,168 @@ export const DefaultChainList: IChain[] = [
     }
 ]
 
+/**
+ * Plugins offered by the "Add other Hardhat plugins" menu.
+ *
+ * Every entry here installs and loads under Hardhat 3: it ships a
+ * `HardhatPlugin` as its default export and is registered through the
+ * `plugins` array of `defineConfig(...)`. The Hardhat 2 era `@nomiclabs/*`
+ * packages moved to `LegacyHardhatPluginsList` — they are no longer offered
+ * for installation, only for removal.
+ */
 export const DefaultHardhatPluginsList: IHardhatPluginAvailableList[] = [
+    {
+        title: 'Hardhat Toolbox (Mocha + Ethers)',
+        name: '@nomicfoundation/hardhat-toolbox-mocha-ethers',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Toolbox (node:test + Viem)',
+        name: '@nomicfoundation/hardhat-toolbox-viem',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Ethers',
+        name: '@nomicfoundation/hardhat-ethers',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Ethers Chai matchers',
+        name: '@nomicfoundation/hardhat-ethers-chai-matchers',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Viem',
+        name: '@nomicfoundation/hardhat-viem',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Viem assertions',
+        name: '@nomicfoundation/hardhat-viem-assertions',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Verify (contract verification, replaces hardhat-etherscan)',
+        name: '@nomicfoundation/hardhat-verify',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Network helpers',
+        name: '@nomicfoundation/hardhat-network-helpers',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Ignition (Ethers)',
+        name: '@nomicfoundation/hardhat-ignition-ethers',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Ignition (Viem)',
+        name: '@nomicfoundation/hardhat-ignition-viem',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Keystore (encrypted secrets)',
+        name: '@nomicfoundation/hardhat-keystore',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Typechain',
+        name: '@nomicfoundation/hardhat-typechain',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Mocha test runner',
+        name: '@nomicfoundation/hardhat-mocha',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat node:test test runner',
+        name: '@nomicfoundation/hardhat-node-test-runner',
+        addInHardhatConfig: true
+    },
+    {
+        title: 'Hardhat Foundry',
+        name: '@nomicfoundation/hardhat-foundry',
+        addInHardhatConfig: true
+    }
+]
+
+/**
+ * Hardhat 2 only plugins. They do not load under Hardhat 3 — either because
+ * the package was renamed (`@nomiclabs/hardhat-etherscan` became
+ * `@nomicfoundation/hardhat-verify`), superseded (Hardhat 3 has a built-in
+ * network and test runners), or simply unmaintained (waffle, ganache, solpp).
+ *
+ * They are kept out of the install menu but still listed by the uninstall
+ * menu, so a project migrating from Hardhat 2 can clean them up from the CLI.
+ */
+export const LegacyHardhatPluginsList: IHardhatPluginAvailableList[] = [
     {
         title: 'Hardhat ethers',
         name: '@nomiclabs/hardhat-ethers',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat waffle',
         name: '@nomiclabs/hardhat-waffle',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Solidity coverage',
         name: 'solidity-coverage',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat etherscan',
         name: '@nomiclabs/hardhat-etherscan',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat web3',
         name: '@nomiclabs/hardhat-web3',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat solhint',
         name: '@nomiclabs/hardhat-solhint',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat gas reporter',
         name: 'hardhat-gas-reporter',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat contract sizer',
         name: 'hardhat-contract-sizer',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat Ganache',
         name: '@nomiclabs/hardhat-ganache',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat solpp',
         name: '@nomiclabs/hardhat-solpp',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     },
     {
         title: 'Hardhat Vyper',
         name: '@nomiclabs/hardhat-vyper',
-        addInHardhatConfig: true
+        addInHardhatConfig: true,
+        hardhat2Only: true
     }
 ]
 

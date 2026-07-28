@@ -12,6 +12,11 @@ export interface IHardhatPluginAvailableList {
     title: string
     name: string
     addInHardhatConfig: boolean
+    /**
+     * Hardhat 2 era package that does not load under Hardhat 3. These are not
+     * offered for installation, only for removal (see `LegacyHardhatPluginsList`).
+     */
+    hardhat2Only?: boolean
 }
 
 export interface IFileList {
