@@ -77,6 +77,30 @@ export const runCommand = async (
 }
 
 /**
+ * Build the `npx hardhat cli --flagName value` command line that reproduces
+ * the current menu selection, so the user can skip the interactive prompts
+ * next time. When `value` is an array every entry is appended as its own
+ * `--flagName <entry>` pair so the CLI accepts the full batch.
+ */
+export const buildFinalCliCommand = (flagName: string, value: string | string[]): string => {
+    const values = Array.isArray(value) ? value : [value]
+    return ['npx hardhat cli', ...values.map((entry) => `--${flagName} ${entry}`)].join(' ')
+}
+
+/**
+ * Print the equivalent CLI command for a menu selection. Used by the
+ * settings flows (exclude files, install/uninstall plugins, create
+ * workflows, add/remove chains, ...) to teach users how to skip the
+ * interactive prompts next time. When `value` is omitted, the flag is
+ * rendered as a boolean (e.g. `--addFoundry`).
+ */
+export const displayFinalCliCommand = (flagName: string, value?: string | string[]): string => {
+    const command = value === undefined ? `npx hardhat cli --${flagName}` : buildFinalCliCommand(flagName, value)
+    console.log('\x1b[33m%s\x1b[0m', 'Equivalent CLI command: ', '\x1b[97m\x1b[0m', command)
+    return command
+}
+
+/**
  * List every public and external function of a compiled contract with its
  * 4 bytes function selector, sorted by selector (ascending).
  *
