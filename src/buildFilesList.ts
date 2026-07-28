@@ -22,181 +22,123 @@ export const buildActivatedChainList = async () => {
     return chainList
 }
 
-export const buildAllTestsList = async () => {
+const formatFileName = (file: string, isTest: boolean) => {
+    let fileName = file.replace(/\.[^/.]+$/, '')
+    if (isTest) fileName = fileName.replace(/\.test/, ' - Test')
+    const words = fileName.split(' ')
+    for (let i = 0; i < words.length; i++) {
+        if (words[i].length > 0) words[i] = words[i][0].toUpperCase() + words[i].substring(1)
+    }
+    return words.join(' ')
+}
+
+/**
+ * List the direct content of `rootDirectory/subPath`.
+ *
+ * Directories are returned with a trailing `/` on both their display name and
+ * their file path, and are flagged with the `directory` type so the selectors
+ * can open a new selection inside of them instead of treating them as a file.
+ * Directories are listed first, then files, both in alphabetical order.
+ *
+ * `filePath` is always relative to `rootDirectory`, so a nested file is
+ * returned as `subDirectory/myFile.ts` and can be passed to a command as is.
+ */
+export const buildDirectoryFilesList = (rootDirectory: string, subPath: string = '', isTest: boolean = false) => {
+    const filesList: IFileList[] = []
+    const directoriesList: IFileList[] = []
+    const currentDirectory = rootDirectory + (subPath ? '/' + subPath : '')
+    if (!fs.existsSync(currentDirectory)) return filesList
+    const files = fs.readdirSync(currentDirectory).sort((a, b) => a.localeCompare(b))
+    files.forEach((file) => {
+        const stat = fs.lstatSync(currentDirectory + '/' + file)
+        if (stat.isDirectory()) {
+            directoriesList.push({
+                name: file + '/',
+                type: 'directory',
+                filePath: (subPath ? subPath + '/' : '') + file + '/'
+            })
+        } else {
+            filesList.push({
+                name: formatFileName(file, isTest),
+                type: 'file',
+                filePath: (subPath ? subPath + '/' : '') + file
+            })
+        }
+    })
+    return [...directoriesList, ...filesList]
+}
+
+/**
+ * Recursively list every file found under `rootDirectory`, directories excluded.
+ * Used where a flat list of all selectable files is needed (excluded files settings).
+ */
+export const buildDirectoryFilesListRecursive = (
+    rootDirectory: string,
+    subPath: string = '',
+    isTest: boolean = false
+) => {
+    const filesList: IFileList[] = []
+    buildDirectoryFilesList(rootDirectory, subPath, isTest).forEach((file: IFileList) => {
+        if (file.type === 'directory')
+            filesList.push(...buildDirectoryFilesListRecursive(rootDirectory, file.filePath.slice(0, -1), isTest))
+        else filesList.push(file)
+    })
+    return filesList
+}
+
+export const buildAllTestsList = async (subPath: string = '') => {
     const testList: IFileList[] = []
     if (fs.existsSync('test')) {
-        testList.push({
-            name: 'All tests',
-            type: 'all',
-            filePath: ''
-        })
-        const files = fs.readdirSync('test')
-        files.map((file) => {
-            let fileName
-            if (fs.lstatSync('test/' + file).isFile()) {
-                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
-            } else if (fs.lstatSync('test/' + file).isDirectory()) {
-                fileName = file + '/'
-                file = file + '/'
-            } else {
-                fileName = file
-            }
-            const words = fileName.split(' ')
-            for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
-            }
-            fileName = words.join(' ')
+        if (!subPath)
             testList.push({
-                name: fileName,
-                type: 'file',
-                filePath: file
+                name: 'All tests',
+                type: 'all',
+                filePath: ''
             })
-        })
+        testList.push(...buildDirectoryFilesList('test', subPath, true))
     }
     return testList
 }
 
-export const buildAllScriptsList = async () => {
-    const scriptsList: IFileList[] = []
-    if (fs.existsSync('scripts')) {
-        const files = fs.readdirSync('scripts')
-        files.map((file) => {
-            let fileName
-            if (fs.lstatSync('scripts/' + file).isFile()) {
-                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
-            } else if (fs.lstatSync('scripts/' + file).isDirectory()) {
-                fileName = file + '/'
-                file = file + '/'
-            } else {
-                fileName = file
-            }
-            const words = fileName.split(' ')
-            for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
-            }
-            fileName = words.join(' ')
-            scriptsList.push({
-                name: fileName,
-                type: 'file',
-                filePath: file
-            })
-        })
-    }
-    return scriptsList
+export const buildAllScriptsList = async (subPath: string = '') => {
+    return buildDirectoryFilesList('scripts', subPath)
 }
 
-export const buildAllContractsList = async () => {
-    const scontractsList: IFileList[] = []
-    if (fs.existsSync('contracts')) {
-        const files = fs.readdirSync('contracts')
-        files.map((file) => {
-            let fileName
-            if (fs.lstatSync('contracts/' + file).isFile()) {
-                fileName = file.replace(/\.[^/.]+$/, '')
-            } else if (fs.lstatSync('contracts/' + file).isDirectory()) {
-                fileName = file + '/'
-                file = file + '/'
-            } else {
-                fileName = file
-            }
-            const words = fileName.split(' ')
-            for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
-            }
-            fileName = words.join(' ')
-            scontractsList.push({
-                name: fileName,
-                type: 'file',
-                filePath: file
-            })
-        })
-    }
-    return scontractsList
+export const buildAllContractsList = async (subPath: string = '') => {
+    return buildDirectoryFilesList('contracts', subPath)
 }
 
-export const buildAllForgeTestsList = async () => {
+export const buildAllForgeTestsList = async (subPath: string = '') => {
     const testList: IFileList[] = []
-    if (fs.existsSync('test')) {
-        testList.push({
-            name: 'All tests',
-            type: 'all',
-            filePath: ''
-        })
-        const files = fs.readdirSync('contracts/test')
-        files.map((file) => {
-            let fileName
-            if (fs.lstatSync('contracts/test/' + file).isFile()) {
-                fileName = file.replace(/\.[^/.]+$/, '').replace(/\.test/, ' - Test')
-            } else if (fs.lstatSync('contracts/test/' + file).isDirectory()) {
-                fileName = file + '/'
-            } else {
-                fileName = file
-            }
-            const words = fileName.split(' ')
-            for (let i = 0; i < words.length; i++) {
-                words[i] = words[i][0].toUpperCase() + words[i].substr(1)
-            }
-            fileName = words.join(' ')
+    if (fs.existsSync('contracts/test')) {
+        if (!subPath)
             testList.push({
-                name: fileName,
-                type: 'file',
-                filePath: file
+                name: 'All tests',
+                type: 'all',
+                filePath: ''
             })
-        })
+        testList.push(...buildDirectoryFilesList('contracts/test', subPath, true))
     }
     return testList
 }
 
-export const buildTestsList = async () => {
-    let allTestList: IFileList[] = await buildAllTestsList()
-    let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
-    const buildFilePath: string[] = []
-    if (excludedFiles && excludedFiles.length > 0) {
-        excludedFiles = excludedFiles.filter((test: IExcludedFiles) => test.directory === 'test')
-        if (excludedFiles && excludedFiles.length > 0) {
-            excludedFiles.map((file: IExcludedFiles) => {
-                buildFilePath.push(file.filePath)
-            })
-            allTestList = allTestList.filter((script: IFileList) => {
-                return !buildFilePath.includes(script.filePath)
-            })
-            return allTestList
-        } else return allTestList
-    } else return allTestList
+const filterExcludedFiles = (allFiles: IFileList[], excludedFiles: IExcludedFiles[], directory: string) => {
+    if (!excludedFiles || excludedFiles.length === 0) return allFiles
+    const excludedFilePath = excludedFiles
+        .filter((file: IExcludedFiles) => file.directory === directory)
+        .map((file: IExcludedFiles) => file.filePath)
+    if (excludedFilePath.length === 0) return allFiles
+    return allFiles.filter((file: IFileList) => !excludedFilePath.includes(file.filePath))
 }
 
-export const buildScriptsList = async () => {
-    let allScriptList: IFileList[] = await buildAllScriptsList()
-    let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
-    const buildFilePath: string[] = []
-    if (excludedFiles && excludedFiles.length > 0) {
-        excludedFiles = excludedFiles.filter((test: any) => test.directory === 'scripts')
-        if (excludedFiles && excludedFiles.length > 0) {
-            excludedFiles.map((file: any) => {
-                buildFilePath.push(file.filePath)
-            })
-            allScriptList = allScriptList.filter((script: IFileList) => {
-                return !buildFilePath.includes(script.filePath)
-            })
-            return allScriptList
-        } else return allScriptList
-    } else return allScriptList
+export const buildTestsList = async (subPath: string = '') => {
+    return filterExcludedFiles(await buildAllTestsList(subPath), await buildExcludedFile(), 'test')
 }
 
-export const buildContractsList = async () => {
-    let allContractsList: IFileList[] = await buildAllContractsList()
-    let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
-    const buildFilePath: string[] = []
-    if (excludedFiles !== undefined && excludedFiles.length > 0) {
-        excludedFiles = excludedFiles.filter((test: any) => test.directory === 'contracts')
-        if (excludedFiles !== undefined && excludedFiles.length > 0) {
-            excludedFiles.map((file: any) => {
-                buildFilePath.push(file.filePath)
-            })
-            allContractsList = allContractsList.filter((script: IFileList) => {
-                return !buildFilePath.includes(script.filePath)
-            })
-            return allContractsList
-        } else return allContractsList
-    } else return allContractsList
+export const buildScriptsList = async (subPath: string = '') => {
+    return filterExcludedFiles(await buildAllScriptsList(subPath), await buildExcludedFile(), 'scripts')
+}
+
+export const buildContractsList = async (subPath: string = '') => {
+    return filterExcludedFiles(await buildAllContractsList(subPath), await buildExcludedFile(), 'contracts')
 }

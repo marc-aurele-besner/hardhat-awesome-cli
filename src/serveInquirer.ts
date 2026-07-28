@@ -5,11 +5,9 @@ import writeToEnv, { getEnvValue } from './buildEnv.ts'
 import { addExcludedFiles, buildExcludedFile, removeExcludedFiles } from './buildExcludedFile.ts'
 import {
     buildActivatedChainList,
-    buildAllContractsList,
     buildAllForgeTestsList,
-    buildAllScriptsList,
-    buildAllTestsList,
     buildContractsList,
+    buildDirectoryFilesListRecursive,
     buildScriptsList,
     buildTestsList
 } from './buildFilesList.ts'
@@ -102,228 +100,161 @@ const serveNetworkSelector = async (
     if (command) await runCommand(command, firstCommand, commandFlags, true)
 }
 
-const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
-    const testFilesObject = await buildTestsList()
-    let testFilesList: string[] = []
-    if (testFilesObject !== undefined && testFilesObject.length > 0) {
-        testFilesList = testFilesObject.map((file: IFileList) => {
-            return file.name
-        })
-        if (testFilesList.length > 0) {
-            await inquirer
-                .prompt([
-                    {
-                        type: 'list',
-                        name: 'test',
-                        message: 'Select a test',
-                        choices: testFilesList
-                    }
-                ])
-                .then(async (testSelected: { test: string }) => {
-                    testFilesObject.forEach((file: IFileList) => {
-                        if (file.name === testSelected.test) {
-                            if (file.type === 'file') command = command + ' test/' + file.filePath
-                        }
-                    })
-                    if (firstCommand) command = 'npx hardhat test ' + command
-                    await serveNetworkSelector(env, command, firstCommand, '', '', false)
-                    await sleep(5000)
-                })
+const goBackChoice = '.. (go back)'
+
+type TFileSelection = IFileList | 'back' | undefined
+
+/**
+ * Prompt for a file, opening a new selection every time a directory is selected.
+ *
+ * Directories are listed with a trailing `/` and are browsed recursively until a
+ * file (or an entry like `All tests`) is picked. Nested selections offer a
+ * `.. (go back)` choice to return to the parent directory.
+ *
+ * Resolves to the selected file, its `filePath` being relative to the root
+ * directory of the list (eg. `subDirectory/myTest.test.ts`), or `undefined`
+ * when there is nothing to select.
+ */
+const serveFileListSelector = async (
+    message: string,
+    buildList: (subPath: string) => Promise<IFileList[]>,
+    subPath: string = ''
+): Promise<TFileSelection> => {
+    for (;;) {
+        const filesObject = await buildList(subPath)
+        const filesList: string[] = filesObject ? filesObject.map((file: IFileList) => file.name) : []
+        if (filesList.length === 0) {
+            if (!subPath) return undefined
+            console.log('\x1b[33m%s\x1b[0m', 'No file found in ' + subPath + ', going back')
+            return 'back'
         }
+        if (subPath) filesList.push(goBackChoice)
+        const fileSelected: { file: string } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'file',
+                message: subPath ? message + ' (' + subPath + ')' : message,
+                choices: filesList
+            }
+        ])
+        if (fileSelected.file === goBackChoice) return 'back'
+        const selected = filesObject.find((file: IFileList) => file.name === fileSelected.file)
+        if (!selected) return undefined
+        if (selected.type !== 'directory') return selected
+        const selectedInDirectory = await serveFileListSelector(message, buildList, selected.filePath.slice(0, -1))
+        if (selectedInDirectory !== 'back') return selectedInDirectory
     }
 }
 
+const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
+    const testSelected = await serveFileListSelector('Select a test', buildTestsList)
+    if (!testSelected || testSelected === 'back') return
+    if (testSelected.type === 'file') command = command + ' test/' + testSelected.filePath
+    if (firstCommand) command = 'npx hardhat test ' + command
+    await serveNetworkSelector(env, command, firstCommand, '', '', false)
+    await sleep(5000)
+}
+
 const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
-    const scriptFilesObject = await buildScriptsList()
-    const scriptFilesList: string[] = []
-    if (scriptFilesObject) {
-        scriptFilesObject.map((file: IFileList) => {
-            scriptFilesList.push(file.name)
-        })
-        if (scriptFilesObject.length > 0) {
-            await inquirer
-                .prompt([
-                    {
-                        type: 'list',
-                        name: 'script',
-                        message: 'Select a script',
-                        choices: scriptFilesList
-                    }
-                ])
-                .then(async (scriptSelected: { script: string }) => {
-                    let command = 'npx hardhat run'
-                    scriptFilesObject.forEach((file: IFileList) => {
-                        if (file.name === scriptSelected.script) {
-                            if (file.type === 'file') command = command + ' scripts/' + file.filePath
-                        }
-                    })
-                    if (ServeTestSelector) await ServeTestSelector(env, '', command)
-                    else {
-                        await serveNetworkSelector(env, command, '', '', '', false)
-                        await sleep(5000)
-                    }
-                })
-        }
+    const scriptSelected = await serveFileListSelector('Select a script', buildScriptsList)
+    if (!scriptSelected || scriptSelected === 'back') return
+    let command = 'npx hardhat run'
+    if (scriptSelected.type === 'file') command = command + ' scripts/' + scriptSelected.filePath
+    if (ServeTestSelector) await ServeTestSelector(env, '', command)
+    else {
+        await serveNetworkSelector(env, command, '', '', '', false)
+        await sleep(5000)
     }
 }
 
 const serveFlattenContractsSelector = async (env: any, command: string) => {
-    const contractsFilesObject = await buildContractsList()
-    const contractsFilesList: string[] = ['Flatten all contracts']
     const addressBookConfig = getAddressBookConfig(env.userConfig)
     let renameLicenseIdentifier = false
-    if (contractsFilesObject) {
-        contractsFilesObject.map((file: IFileList) => {
-            contractsFilesList.push(file.name)
+    const contractSelected = await serveFileListSelector('Select a contract to flatten', async (subPath: string) => {
+        const contractsFilesObject = await buildContractsList(subPath)
+        if (subPath) return contractsFilesObject
+        return [{ name: 'Flatten all contracts', type: 'all', filePath: '' }, ...contractsFilesObject]
+    })
+    if (!contractSelected || contractSelected === 'back') return
+    let contractFlattenName: string = addressBookConfig.contractsFlattenPrefix + 'All.sol'
+    if (contractSelected.type === 'file') {
+        command = command + ' contracts/' + contractSelected.filePath
+        contractFlattenName = addressBookConfig.contractsFlattenPrefix + contractSelected.filePath.replace(/\//g, '-')
+    }
+    await inquirer
+        .prompt([
+            {
+                type: 'confirm',
+                name: 'renameLicenseIdentifier',
+                message: 'Rename SPDX-License-Identifier'
+            }
+        ])
+        .then((contractsSelected: { renameLicenseIdentifier: boolean }) => {
+            renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
         })
-        if (contractsFilesList.length > 0) {
-            let contractFlattenName: string = ''
-            await inquirer
-                .prompt([
-                    {
-                        type: 'list',
-                        name: 'flatten',
-                        message: 'Select a contract to flatten',
-                        choices: contractsFilesList
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'renameLicenseIdentifier',
-                        message: 'Rename SPDX-License-Identifier'
-                    }
-                ])
-                .then(async (contractsSelected: { flatten: string; renameLicenseIdentifier: boolean }) => {
-                    renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
-                    if (!fs.existsSync(addressBookConfig.contractsFlattenPath))
-                        fs.mkdirSync(addressBookConfig.contractsFlattenPath)
-                    if (contractsSelected.flatten !== 'Flatten all contracts') {
-                        contractsFilesObject.forEach((file: IFileList) => {
-                            if (file.name === contractsSelected.flatten) {
-                                if (file.type === 'file') {
-                                    command = command + ' contracts/' + file.filePath
-                                    contractFlattenName = addressBookConfig.contractsFlattenPrefix + file.filePath
-                                }
-                            }
-                        })
-                    } else contractFlattenName = addressBookConfig.contractsFlattenPrefix + 'All.sol'
-                })
-            if (command) {
-                await runCommand(
-                    command,
-                    '',
-                    ' > ' + addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-                    renameLicenseIdentifier ? false : true
+    if (!fs.existsSync(addressBookConfig.contractsFlattenPath)) fs.mkdirSync(addressBookConfig.contractsFlattenPath)
+    if (command) {
+        await runCommand(
+            command,
+            '',
+            ' > ' + addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
+            renameLicenseIdentifier ? false : true
+        )
+        await sleep(3000)
+        if (renameLicenseIdentifier) {
+            while (
+                fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8').length === 0
+            ) {
+                await sleep(1000)
+            }
+            if (
+                fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8').length > 0
+            ) {
+                let fileContent = fs.readFileSync(
+                    addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
+                    'utf8'
                 )
-                await sleep(3000)
-                if (renameLicenseIdentifier) {
-                    while (
-                        fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8')
-                            .length === 0
-                    ) {
-                        await sleep(1000)
-                    }
-                    if (
-                        fs.readFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, 'utf8')
-                            .length > 0
-                    ) {
-                        let fileContent = fs.readFileSync(
-                            addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-                            'utf8'
-                        )
-                        if (fileContent.includes('SPDX-License-Identifier')) {
-                            fileContent = fileContent.replace(
-                                'SPDX-License-Identifier',
-                                'SPDX-License-DISABLED-Identifier'
-                            )
-                            fs.writeFileSync(
-                                addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-                                fileContent
-                            )
-                        } else
-                            console.log(
-                                'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
-                            )
-                        if (fileContent.includes('pragma solidity')) {
-                            fileContent = fileContent.replace('pragma solidity', '// pragma solidity')
-                            fs.writeFileSync(
-                                addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-                                fileContent
-                            )
-                        } else
-                            console.log(
-                                'pragma solidity not found in ' + contractFlattenName + ' file, skipping rename'
-                            )
-                    }
-                }
+                if (fileContent.includes('SPDX-License-Identifier')) {
+                    fileContent = fileContent.replace('SPDX-License-Identifier', 'SPDX-License-DISABLED-Identifier')
+                    fs.writeFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, fileContent)
+                } else
+                    console.log(
+                        'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
+                    )
+                if (fileContent.includes('pragma solidity')) {
+                    fileContent = fileContent.replace('pragma solidity', '// pragma solidity')
+                    fs.writeFileSync(addressBookConfig.contractsFlattenPath + '/' + contractFlattenName, fileContent)
+                } else console.log('pragma solidity not found in ' + contractFlattenName + ' file, skipping rename')
             }
         }
     }
 }
 
 const serveFunctionListSelector = async (env: any) => {
-    const contractsFilesObject = await buildContractsList()
-    const contractsFilesList: string[] = []
-    if (contractsFilesObject) {
-        contractsFilesObject.map((file: IFileList) => contractsFilesList.push(file.name))
-        if (contractsFilesList.length > 0)
-            await inquirer
-                .prompt([
-                    {
-                        type: 'list',
-                        name: 'contractName',
-                        message: 'Select a contract to list all functions',
-                        choices: contractsFilesList
-                    }
-                ])
-                .then(async (contractsSelected: { contractName: string }) => {
-                    const functions = await listAllFunctionSelectors(env, contractsSelected.contractName)
-                    console.log(
-                        'Contract: ',
-                        '\x1b[32m',
-                        contractsSelected.contractName,
-                        '\x1b[0m',
-                        'has ',
-                        '\x1b[32m',
-                        functions.length,
-                        '\x1b[0m',
-                        'public and external functions, ordered by selector'
-                    )
-                    console.table(functions)
-                    await sleep(5000)
-                })
-    }
+    const contractSelected = await serveFileListSelector('Select a contract to list all functions', buildContractsList)
+    if (!contractSelected || contractSelected === 'back') return
+    const functions = await listAllFunctionSelectors(env, contractSelected.name)
+    console.log(
+        'Contract: ',
+        '\x1b[32m',
+        contractSelected.name,
+        '\x1b[0m',
+        'has ',
+        '\x1b[32m',
+        functions.length,
+        '\x1b[0m',
+        'public and external functions, ordered by selector'
+    )
+    console.table(functions)
+    await sleep(5000)
 }
 
 const serveFoundryTestSelector = async (env: any, command: string) => {
-    const testFilesObject = await buildAllForgeTestsList()
-    let testFilesList: string[] = []
-    if (testFilesObject) {
-        testFilesList = testFilesObject.map((file: IFileList) => {
-            return file.name
-        })
-        if (testFilesList.length > 0) {
-            await inquirer
-                .prompt([
-                    {
-                        type: 'list',
-                        name: 'test',
-                        message: 'Select a forge test',
-                        choices: testFilesList
-                    }
-                ])
-                .then(async (testSelected: { test: string }) => {
-                    testFilesObject.forEach((file: IFileList) => {
-                        if (file.name === testSelected.test) {
-                            if (file.type === 'file') {
-                                command = command + ' --match-path contracts/test/' + file.filePath
-                            }
-                        }
-                    })
-                    await runCommand(command, '', '', true)
-                    await sleep(5000)
-                })
-        }
-    }
+    const testSelected = await serveFileListSelector('Select a forge test', buildAllForgeTestsList)
+    if (!testSelected || testSelected === 'back') return
+    if (testSelected.type === 'file') command = command + ' --match-path contracts/test/' + testSelected.filePath
+    await runCommand(command, '', '', true)
+    await sleep(5000)
 }
 
 const serveEnvBuilder = async (env: any, chainSelected: string) => {
@@ -504,9 +435,9 @@ const serveExcludeFileSelector = async (option: string) => {
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const allFilesSelection: string[] = []
     let allExcludedSelection: string[] = []
-    if (option === 'test') allFiles = await buildAllTestsList()
-    else if (option === 'scripts') allFiles = await buildAllScriptsList()
-    else if (option === 'contracts') allFiles = await buildAllContractsList()
+    if (option === 'test') allFiles = buildDirectoryFilesListRecursive('test', '', true)
+    else if (option === 'scripts') allFiles = buildDirectoryFilesListRecursive('scripts')
+    else if (option === 'contracts') allFiles = buildDirectoryFilesListRecursive('contracts')
     if (allFiles && allFiles.length > 0) {
         if (allFiles.filter((test: IFileList) => test.type === 'file').length > 0) {
             allFiles
@@ -538,7 +469,7 @@ const serveExcludeFileSelector = async (option: string) => {
             allFiles.map(async (file: IFileList) => {
                 if (activateFilesSelected.allFiles.includes(file.filePath))
                     await addExcludedFiles(option, file.name, file.filePath)
-                else await removeExcludedFiles(option, file.name)
+                else await removeExcludedFiles(option, file.filePath)
             })
             console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
         })
