@@ -185,3 +185,52 @@ export const addCustomChain = async (chainDetails: IChain) => {
         console.log('\x1b[33m%s\x1b[0m', 'Chain with same chainId already exists in your settings activated chain list')
     else await addChain(chainDetails.chainName, chainDetails)
 }
+
+/**
+ * Build the list of chains offered in the network selector from the user's
+ * activated chain list.
+ *
+ * - `noLocalNetwork` filters the `hardhat` entry out (used when editing the
+ *   RPC / accounts for a chain, where the in-memory hardhat network doesn't
+ *   apply).
+ * - When local networks are allowed, `hardhat` is always re-injected as the
+ *   default, even if the user removed it from their activated list. This
+ *   keeps the local dev network visible in later actions (tests, scripts,
+ *   deployments, account balance) even when only mainnet / testnet chains
+ *   were ticked in the setup screen. The selection is returned alongside
+ *   `activatedChainList` so the caller can resolve the chosen name back to
+ *   the matching `IChain` without an extra lookup. See issue #32.
+ * - If the user has no chains at all (fresh project), `hardhat` and
+ *   `localhost` are added as defaults so the selector is never empty.
+ */
+export const buildNetworkSelectorChoices = (
+    activatedChainList: IChain[],
+    noLocalNetwork: boolean
+): { chains: IChain[]; names: string[] } => {
+    const chains: IChain[] = []
+    activatedChainList.forEach((chain: IChain) => {
+        if (noLocalNetwork && chain.chainName === 'hardhat') return
+        chains.push(chain)
+    })
+
+    if (!noLocalNetwork && chains.length === 0) {
+        // Fresh project — neither hardhat nor localhost are activated yet, so
+        // expose both as sensible defaults.
+        const defaultHardhat = DefaultChainList.find((chain: IChain) => chain.chainName === 'hardhat')
+        const defaultLocalhost = DefaultChainList.find((chain: IChain) => chain.chainName === 'localhost')
+        if (defaultHardhat) chains.push(defaultHardhat)
+        if (defaultLocalhost) chains.push(defaultLocalhost)
+    } else if (!noLocalNetwork) {
+        // User already activated some chains but didn't pick the local hardhat
+        // network — re-inject it so it stays available for later actions
+        // (tests, scripts, deployments, account balance). See issue #32.
+        const hasHardhat = chains.some((chain: IChain) => chain.chainName === 'hardhat')
+        if (!hasHardhat) {
+            const defaultHardhat = DefaultChainList.find((chain: IChain) => chain.chainName === 'hardhat')
+            if (defaultHardhat) chains.unshift(defaultHardhat)
+        }
+    }
+
+    const names = chains.map((chain: IChain) => chain.name)
+    return { chains, names }
+}

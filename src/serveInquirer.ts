@@ -17,6 +17,7 @@ import {
     addActivatedChain,
     addCustomChain,
     buildActivatedChainNetworkConfig,
+    buildNetworkSelectorChoices,
     removeActivatedChain
 } from './buildNetworks.ts'
 import buildWorkflows, { buildWorkflowsFromCommand } from './buildWorkflows.ts'
@@ -62,27 +63,11 @@ const serveNetworkSelector = async (
     ServeEnvBuilder: any,
     noLocalNetwork: boolean
 ) => {
-    const ActivatedChainList: IChain[] = await buildActivatedChainList()
-    const BuildFullChainList: IChain[] = DefaultChainList
-    const activatedChainList: string[] = []
-    ActivatedChainList.map((chain: IChain) => {
-        if (noLocalNetwork && chain.chainName !== 'hardhat') activatedChainList.push(chain.name)
-        else if (!noLocalNetwork) activatedChainList.push(chain.name)
-    })
-    if (activatedChainList.length === 0) {
-        const addHardhat = BuildFullChainList.find((basicChain: IChain) => basicChain.chainName === 'hardhat')
-        const addHardhatLocalhost = BuildFullChainList.find(
-            (basicChain: IChain) => basicChain.chainName === 'localhost'
-        )
-        if (addHardhat) {
-            ActivatedChainList.push(addHardhat)
-            activatedChainList.push(addHardhat.name)
-        }
-        if (addHardhatLocalhost) {
-            ActivatedChainList.push(addHardhatLocalhost)
-            activatedChainList.push(addHardhatLocalhost.name)
-        }
-    }
+    const activatedChainListFromFile: IChain[] = await buildActivatedChainList()
+    const { chains: ActivatedChainList, names: activatedChainList } = buildNetworkSelectorChoices(
+        activatedChainListFromFile,
+        noLocalNetwork
+    )
     let commandFlags = ''
     await inquirer
         .prompt([
