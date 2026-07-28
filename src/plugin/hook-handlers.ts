@@ -42,4 +42,13 @@ const handlers: Partial<ConfigHooks> = {
     resolveUserConfig: resolveUserConfigHandler
 }
 
-export default handlers
+/**
+ * Hardhat 3 expects each `hookHandlers[category]` entry to be a factory
+ * that returns a *function* returning the handlers object (i.e.
+ * `() => Promise<{ ...handlers }>`). Returning the handlers object directly
+ * trips the `Plugin X doesn't export a hook factory for category Y`
+ * invariant.
+ */
+export default async function configHookHandlerFactory(): Promise<Partial<ConfigHooks>> {
+    return handlers
+}
