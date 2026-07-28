@@ -301,5 +301,41 @@ describe('Integration tests', function () {
             expect(fs.unlinkSync('contractsAddressDeployedHistory.json')).to.be.equal(undefined)
             expect(fs.existsSync('contractsAddressDeployedHistory.json')).to.be.equal(false)
         })
+
+        describe('retrieveOZAdminProxyContract', function () {
+            const ozDir = '.openzeppelin'
+            const mainnetAdmin = '0x0000000000000000000000000000000000000abc'
+            const sepoliaAdmin = '0x0000000000000000000000000000000000000def'
+
+            beforeEach(function () {
+                if (!fs.existsSync(ozDir)) fs.mkdirSync(ozDir)
+                fs.writeFileSync(
+                    `${ozDir}/mainnet.json`,
+                    JSON.stringify({ admin: { address: mainnetAdmin } })
+                )
+                fs.writeFileSync(
+                    `${ozDir}/sepolia.json`,
+                    JSON.stringify({ admin: { address: sepoliaAdmin } })
+                )
+            })
+
+            afterEach(function () {
+                if (fs.existsSync(`${ozDir}/mainnet.json`)) fs.unlinkSync(`${ozDir}/mainnet.json`)
+                if (fs.existsSync(`${ozDir}/sepolia.json`)) fs.unlinkSync(`${ozDir}/sepolia.json`)
+                if (fs.existsSync(ozDir)) fs.rmdirSync(ozDir)
+            })
+
+            it('returns the mainnet admin address for chainId 1', function () {
+                expect(this.addressBook.retrieveOZAdminProxyContract(1)).to.be.equal(mainnetAdmin)
+            })
+
+            it('returns the sepolia admin address for chainId 11155111', function () {
+                expect(this.addressBook.retrieveOZAdminProxyContract(11155111)).to.be.equal(sepoliaAdmin)
+            })
+
+            it('returns an empty string for an unknown chainId', function () {
+                expect(this.addressBook.retrieveOZAdminProxyContract(999999)).to.be.equal('')
+            })
+        })
     })
 })
