@@ -4,25 +4,38 @@ import { buildAllScriptsList, buildAllTestsList } from './buildFilesList.ts'
 import { getAddressBookConfig } from './config.ts'
 import type { IExcludedFiles, IFileList } from './types.ts'
 
-export const buildExcludedFile = async () => {
-    let fileSetting: any = []
+const readExcludedFilesFromSettings = (): IExcludedFiles[] => {
     const addressBookConfig = getAddressBookConfig()
-    if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
-        const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
-        fileSetting = JSON.parse(rawdata)
-        if (fileSetting && fileSetting.excludedFiles && fileSetting.excludedFiles.length > 0)
-            return fileSetting.excludedFiles
-    }
-    return []
+    if (!fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) return []
+    const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
+    const fileSetting = JSON.parse(rawdata)
+    if (!fileSetting || !fileSetting.excludedFiles || fileSetting.excludedFiles.length === 0) return []
+    // Normalize: older settings files do not carry a `type`, so default to
+    // 'file' for the existing entries. Directory entries written by a newer
+    // CLI pass through unchanged.
+    return fileSetting.excludedFiles.map((entry: IExcludedFiles) => ({
+        ...entry,
+        type: entry.type ?? 'file'
+    }))
 }
 
-export const addExcludedFiles = async (directory: string, name: string, filePath: string) => {
-    let fileSetting: any = []
+export const buildExcludedFile = async () => {
+    return readExcludedFilesFromSettings()
+}
+
+export const addExcludedFiles = async (
+    directory: string,
+    name: string,
+    filePath: string,
+    type: 'file' | 'directory' = 'file'
+) => {
+    let fileSetting: any = {}
     const addressBookConfig = getAddressBookConfig()
     const fileToAdd = {
         directory,
         name,
-        filePath
+        filePath,
+        type
     }
     if (fs.existsSync(addressBookConfig.fileHardhatAwesomeCLI)) {
         const rawdata: any = fs.readFileSync(addressBookConfig.fileHardhatAwesomeCLI)
@@ -88,12 +101,19 @@ export const removeExcludedFiles = async (directory: string, filePath: string) =
         fileSetting = JSON.parse(rawdata)
         if (fileSetting && fileSetting.excludedFiles) {
             if (fileSetting.excludedFiles.length > 0) {
-                fileSetting.excludedFiles
-                    .filter((file: IExcludedFiles) => file.directory === directory && file.filePath === filePath)
-                    .forEach(() => {
-                        fileSetting.excludedFiles.pop(fileToRemove)
-                        fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
-                    })
+                const matches = fileSetting.excludedFiles.filter(
+                    (file: IExcludedFiles) => file.directory === directory && file.filePath === filePath
+                )
+                if (matches.length > 0) {
+                    // Rebuild the array without the matching entry. The previous
+                    // implementation used `pop(fileToRemove)`, which always
+                    // removed the last entry regardless of the argument and
+                    // could leave stale entries on disk after a removal.
+                    fileSetting.excludedFiles = fileSetting.excludedFiles.filter(
+                        (file: IExcludedFiles) => !(file.directory === directory && file.filePath === filePath)
+                    )
+                    fs.writeFileSync(addressBookConfig.fileHardhatAwesomeCLI, JSON.stringify(fileSetting, null, 2))
+                }
             }
         }
     }

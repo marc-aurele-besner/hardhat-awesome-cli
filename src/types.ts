@@ -38,10 +38,21 @@ export interface IMockContractsList {
     upgradeable?: boolean
 }
 
+/**
+ * One entry in the `excludedFiles` array of `hardhat-awesome-cli.json`.
+ *
+ * `type` is optional for backward compatibility — older settings files only
+ * stored file entries, so we treat the missing field as `'file'`. Directory
+ * entries use the same `filePath` shape as the `IFileList` produced by
+ * `buildDirectoryFilesList`: a relative path that ends with `/` (e.g.
+ * `helpers/`). Filtering then removes every nested file whose path starts
+ * with that directory path.
+ */
 export interface IExcludedFiles {
     directory: string
     name: string
     filePath: string
+    type?: 'file' | 'directory'
 }
 
 export interface IFileSetting {

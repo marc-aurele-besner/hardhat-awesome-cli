@@ -7,7 +7,7 @@ import {
     buildActivatedChainList,
     buildAllForgeTestsList,
     buildContractsList,
-    buildDirectoryFilesListRecursive,
+    buildDirectoryFilesList,
     buildScriptsList,
     buildTestsList
 } from './buildFilesList.ts'
@@ -444,17 +444,16 @@ const serveExcludeFileSelector = async (option: string) => {
     let excludedFiles: IExcludedFiles[] = await buildExcludedFile()
     const allFilesSelection: string[] = []
     let allExcludedSelection: string[] = []
-    if (option === 'test') allFiles = buildDirectoryFilesListRecursive('test', '', true)
-    else if (option === 'scripts') allFiles = buildDirectoryFilesListRecursive('scripts')
-    else if (option === 'contracts') allFiles = buildDirectoryFilesListRecursive('contracts')
+    // Use the non-recursive listing so directories appear as options too.
+    // Selecting a directory excludes every nested file from the runnable
+    // selector list (see `filterExcludedFiles` in buildFilesList.ts).
+    if (option === 'test') allFiles = buildDirectoryFilesList('test', '', true)
+    else if (option === 'scripts') allFiles = buildDirectoryFilesList('scripts')
+    else if (option === 'contracts') allFiles = buildDirectoryFilesList('contracts')
     if (allFiles && allFiles.length > 0) {
-        if (allFiles.filter((test: IFileList) => test.type === 'file').length > 0) {
-            allFiles
-                .filter((test: IFileList) => test.type === 'file')
-                .map((file: IFileList) => {
-                    allFilesSelection.push(file.filePath)
-                })
-        }
+        allFiles.map((file: IFileList) => {
+            if (file.type === 'file' || file.type === 'directory') allFilesSelection.push(file.filePath)
+        })
     }
     if (excludedFiles && excludedFiles.length > 0) {
         excludedFiles = excludedFiles.filter((test: IExcludedFiles) => test.directory === option)
@@ -469,15 +468,16 @@ const serveExcludeFileSelector = async (option: string) => {
             {
                 type: 'checkbox',
                 name: 'allFiles',
-                message: 'Select the files you want to exclude',
+                message: 'Select the files or directories you want to exclude',
                 choices: allFilesSelection,
                 default: allExcludedSelection
             }
         ])
         .then(async (activateFilesSelected: { allFiles: string[] }) => {
             allFiles.map(async (file: IFileList) => {
+                const entryType = file.type === 'directory' ? 'directory' : 'file'
                 if (activateFilesSelected.allFiles.includes(file.filePath))
-                    await addExcludedFiles(option, file.name, file.filePath)
+                    await addExcludedFiles(option, file.name, file.filePath, entryType)
                 else await removeExcludedFiles(option, file.filePath)
             })
             console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
@@ -818,10 +818,21 @@ const serveCli = async (args: any, env: any) => {
     switch (true) {
         case args.excludeTestFile !== '':
             return removeExcludedFiles('test', args.excludeTestFile)
+        case args.excludeTestDirectory !== '':
+            return addExcludedFiles('test', args.excludeTestDirectory, args.excludeTestDirectory, 'directory')
         case args.excludeScriptFile !== '':
             return removeExcludedFiles('scripts', args.excludeScriptFile)
+        case args.excludeScriptDirectory !== '':
+            return addExcludedFiles('scripts', args.excludeScriptDirectory, args.excludeScriptDirectory, 'directory')
         case args.excludeContractFile !== '':
             return removeExcludedFiles('contracts', args.excludeContractFile)
+        case args.excludeContractDirectory !== '':
+            return addExcludedFiles(
+                'contracts',
+                args.excludeContractDirectory,
+                args.excludeContractDirectory,
+                'directory'
+            )
         case args.addHardhatPlugin !== '':
             return detectPackage(args.addHardhatPlugin, true, false, true)
         case args.removeHardhatPlugin !== '':

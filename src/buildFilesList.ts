@@ -122,13 +122,28 @@ export const buildAllForgeTestsList = async (subPath: string = '') => {
     return testList
 }
 
-const filterExcludedFiles = (allFiles: IFileList[], excludedFiles: IExcludedFiles[], directory: string) => {
+export const filterExcludedFiles = (allFiles: IFileList[], excludedFiles: IExcludedFiles[], directory: string) => {
     if (!excludedFiles || excludedFiles.length === 0) return allFiles
-    const excludedFilePath = excludedFiles
-        .filter((file: IExcludedFiles) => file.directory === directory)
+    const inScope = excludedFiles.filter((file: IExcludedFiles) => file.directory === directory)
+    if (inScope.length === 0) return allFiles
+    const excludedFilePath = inScope
+        .filter((file: IExcludedFiles) => (file.type ?? 'file') === 'file')
         .map((file: IExcludedFiles) => file.filePath)
-    if (excludedFilePath.length === 0) return allFiles
-    return allFiles.filter((file: IFileList) => !excludedFilePath.includes(file.filePath))
+    const excludedDirectoryPath = inScope
+        .filter((file: IExcludedFiles) => file.type === 'directory')
+        .map((file: IExcludedFiles) => file.filePath)
+    return allFiles.filter((file: IFileList) => {
+        if (file.type === 'directory') {
+            // A directory entry is hidden only if its own path is excluded as a
+            // directory, or if some other excluded directory contains it.
+            if (excludedFilePath.includes(file.filePath)) return false
+            if (excludedDirectoryPath.some((excludePath) => file.filePath.startsWith(excludePath))) return false
+            return true
+        }
+        if (excludedFilePath.includes(file.filePath)) return false
+        if (excludedDirectoryPath.some((excludePath) => file.filePath.startsWith(excludePath))) return false
+        return true
+    })
 }
 
 export const buildTestsList = async (subPath: string = '') => {
