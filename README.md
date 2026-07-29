@@ -131,6 +131,35 @@ export default defineConfig({
     -   Exclude script file from the scripts selection list
     -   Exclude script or contract file from the contract selection list
     -   Install/Uninstall other Hardhat plugins
+
+        The plugin list targets Hardhat 3: the CLI installs the package with
+        npm/yarn, adds `import <plugin> from '<package>'` to your
+        `hardhat.config`, and registers it in the `plugins` array of
+        `defineConfig(...)` (Hardhat 3 dropped side-effect plugin registration).
+
+          <details>
+              <summary>Plugins offered</summary>
+
+        - `@nomicfoundation/hardhat-toolbox-mocha-ethers` / `@nomicfoundation/hardhat-toolbox-viem`
+        - `@nomicfoundation/hardhat-ethers` / `@nomicfoundation/hardhat-ethers-chai-matchers`
+        - `@nomicfoundation/hardhat-viem` / `@nomicfoundation/hardhat-viem-assertions`
+        - `@nomicfoundation/hardhat-verify` (contract verification, replaces `@nomiclabs/hardhat-etherscan`)
+        - `@nomicfoundation/hardhat-network-helpers`
+        - `@nomicfoundation/hardhat-ignition-ethers` / `@nomicfoundation/hardhat-ignition-viem`
+        - `@nomicfoundation/hardhat-keystore`
+        - `@nomicfoundation/hardhat-typechain`
+        - `@nomicfoundation/hardhat-mocha` / `@nomicfoundation/hardhat-node-test-runner`
+        - `@nomicfoundation/hardhat-ledger`
+        - `@nomicfoundation/hardhat-foundry`
+
+        The Hardhat 2 era `@nomiclabs/*` packages (waffle, ganache, solpp,
+        web3, …) do not load under Hardhat 3, so they are no longer offered
+        for installation. They still show up in the uninstall menu — labelled
+        `(Hardhat 2 only)` — so a project migrating to Hardhat 3 can drop them
+        from both `package.json` and `hardhat.config`.
+
+          </details>
+
     -   Create Github test workflows (for NPM and/or Yarn and for Hardhat test&coverage and/or Foundry test)
     -   Create Foundry settings, remapping and test utilities
           <details>
@@ -206,7 +235,7 @@ In 'More settings' you can also add a custom chain, create an issue or pull requ
 When a menu selection maps to one of the CLI flags above (add/remove Hardhat plugins, add/remove activated chains, create GitHub workflows, install Foundry settings, install the Foundry test utility, …), the CLI prints the equivalent `npx hardhat cli --<flag> <value>` command line after the change is applied. This lets you skip the interactive prompts next time around, or wire the same action into a CI script.
 
 ```commandline
-Equivalent CLI command:  npx hardhat cli --addHardhatPlugin @nomiclabs/hardhat-ethers
+Equivalent CLI command:  npx hardhat cli --addHardhatPlugin @nomicfoundation/hardhat-ethers
 ```
 
 Boolean flags (no value) are rendered without an argument:

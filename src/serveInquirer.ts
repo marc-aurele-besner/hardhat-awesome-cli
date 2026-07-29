@@ -26,6 +26,7 @@ import {
     DefaultGithubWorkflowsGroup,
     DefaultGithubWorkflowsList,
     DefaultHardhatPluginsList,
+    LegacyHardhatPluginsList,
     getAddressBookConfig
 } from './config.ts'
 import MockContractsList from './mockContracts/index.ts'
@@ -586,9 +587,9 @@ const servePackageInstaller = async () => {
             }
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
-            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) packageToInstall = plugin
-            })
+            packageToInstall = DefaultHardhatPluginsList.find(
+                (plugin: IHardhatPluginAvailableList) => plugin.title === pluginssSelected.plugins
+            )
         })
     if (packageToInstall !== undefined) {
         await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
@@ -598,10 +599,15 @@ const servePackageInstaller = async () => {
 }
 
 const servePackageUninstaller = async () => {
+    // Projects migrating from Hardhat 2 still have `@nomiclabs/*` packages
+    // installed, so the uninstall menu covers the legacy list too even though
+    // those plugins are no longer offered for installation.
+    const uninstallableList: IHardhatPluginAvailableList[] = [...DefaultHardhatPluginsList, ...LegacyHardhatPluginsList]
     const hardhatPluginInstalled: string[] = (
         await Promise.all(
-            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (await detectPackage(plugin.name, false, false, false)) return plugin.title
+            uninstallableList.map(async (plugin: IHardhatPluginAvailableList) => {
+                if (await detectPackage(plugin.name, false, false, false))
+                    return plugin.hardhat2Only ? `${plugin.title} (Hardhat 2 only)` : plugin.title
                 return null
             })
         )
@@ -612,14 +618,16 @@ const servePackageUninstaller = async () => {
             {
                 type: 'list',
                 name: 'plugins',
-                message: 'Select a plugin to install',
+                message: 'Select a plugin to uninstall',
                 choices: hardhatPluginInstalled
             }
         ])
         .then(async (pluginssSelected: { plugins: string }) => {
-            DefaultHardhatPluginsList.map(async (plugin: IHardhatPluginAvailableList) => {
-                if (plugin.title === pluginssSelected.plugins) packageToUninstall = plugin
-            })
+            packageToUninstall = uninstallableList.find(
+                (plugin: IHardhatPluginAvailableList) =>
+                    (plugin.hardhat2Only ? `${plugin.title} (Hardhat 2 only)` : plugin.title) ===
+                    pluginssSelected.plugins
+            )
         })
     if (packageToUninstall !== undefined) {
         await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)

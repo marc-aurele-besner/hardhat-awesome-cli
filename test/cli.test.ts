@@ -38,8 +38,8 @@ describe('Command builder', function () {
 
 describe('Final CLI command builder', function () {
     it('builds a single-flag command with one value', function () {
-        expect(buildFinalCliCommand('addHardhatPlugin', '@nomiclabs/hardhat-ethers')).to.equal(
-            'npx hardhat cli --addHardhatPlugin @nomiclabs/hardhat-ethers'
+        expect(buildFinalCliCommand('addHardhatPlugin', '@nomicfoundation/hardhat-ethers')).to.equal(
+            'npx hardhat cli --addHardhatPlugin @nomicfoundation/hardhat-ethers'
         )
     })
 
