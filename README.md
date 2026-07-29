@@ -261,6 +261,24 @@ AWESOME_CLI_PAUSE_MS=120 npx hardhat cli
 
 Long-running work (running tests, installing or removing a plugin, flattening a contract, …) does **not** rely on these variables — it already awaits the child process exit, so the menu never resumes before the command has finished.
 
+### Secrets and `.env.hardhat-awesome-cli`
+
+The setup menu (`Setup chains, RPC and accounts` → `Set RPC Url, private key or mnemonic ...`) writes RPC URLs, private keys and mnemonics to a local file named **`.env.hardhat-awesome-cli`** at the project root. The CLI does the following to keep that file out of harm's way:
+
+-   Pre-adds `.env.hardhat-awesome-cli` to the project's `.gitignore` and `.npmignore`. If either file does not exist when the first secret is written, the CLI creates / updates it. This protects projects that copy the file in by hand before the CLI has run.
+-   Prints a yellow `Warning: writing a private key in plaintext to .env.hardhat-awesome-cli` line every time a private key or mnemonic is appended. The plaintext value is recoverable from the file, so it must never end up in version control, logs, screenshots, or chat.
+-   Masks private keys and mnemonics in the **See all config for activated chain** view — a key like `0xfeed...beef` becomes `****beef` so it never reaches the terminal, a bug report, or a screen-share. Set the environment variable `AWESOME_CLI_SHOW_SECRETS=1` to opt in to the previous unredacted behaviour.
+
+For production signers we recommend `@nomicfoundation/hardhat-ledger` (offered in the install menu) or `@nomicfoundation/hardhat-keystore` (encrypted, Hardhat-native) instead of dropping a raw private key into the env file.
+
+```commandline
+# Default: secrets are masked with `****abcd` in the rendered config
+npx hardhat cli
+
+# Reveal secrets in the rendered config for the current session only
+AWESOME_CLI_SHOW_SECRETS=1 npx hardhat cli
+```
+
 ## Helper tools
 
 Tools that you can use in your scripts and tests to make your life easier

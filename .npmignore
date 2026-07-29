@@ -2,3 +2,6 @@ test/
 
 # Work in progress
 .wip
+
+# hardhat-awesome-cli local secrets (RPC URLs, private keys, mnemonics)
+.env.hardhat-awesome-cli

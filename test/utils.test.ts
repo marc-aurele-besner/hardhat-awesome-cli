@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import fs from 'fs'
 import path from 'path'
 
-import { runCommand, sleep, transformTsToJs, waitForReadability } from '../src/utils.ts'
+import { REDACTED_SECRET, redactSecret, runCommand, sleep, transformTsToJs, waitForReadability } from '../src/utils.ts'
 
 const SRC_DIR = path.resolve(__dirname, '..', 'src')
 
@@ -225,5 +225,40 @@ describe('transformTsToJs', function () {
         // name (`chai`) and the same imported symbol (`expect`).
         expect(js).to.contain("require('chai')")
         expect(js).to.contain('expect(1).to.equal(1)')
+    })
+})
+
+describe('redactSecret', function () {
+    const originalShowSecrets = process.env.AWESOME_CLI_SHOW_SECRETS
+
+    afterEach(function () {
+        if (originalShowSecrets === undefined) delete process.env.AWESOME_CLI_SHOW_SECRETS
+        else process.env.AWESOME_CLI_SHOW_SECRETS = originalShowSecrets
+    })
+
+    it('replaces the start of a long secret with the redacted sentinel and keeps the last 4 chars', function () {
+        delete process.env.AWESOME_CLI_SHOW_SECRETS
+        const redacted = redactSecret('abcdef1234567890fedcba')
+        expect(redacted.startsWith(REDACTED_SECRET)).to.equal(true)
+        expect(redacted.endsWith('dcba')).to.equal(true)
+        expect(redacted).to.not.contain('abcdef1234567890fe')
+    })
+
+    it('fully masks short secrets that have no safe suffix', function () {
+        delete process.env.AWESOME_CLI_SHOW_SECRETS
+        expect(redactSecret('abc')).to.equal(REDACTED_SECRET)
+        expect(redactSecret('')).to.equal('')
+    })
+
+    it('returns the original value when AWESOME_CLI_SHOW_SECRETS=1', function () {
+        process.env.AWESOME_CLI_SHOW_SECRETS = '1'
+        const full = '0xfeedfacecafebeeffeedfacecafebeeffeedfacecafe'
+        expect(redactSecret(full)).to.equal(full)
+    })
+
+    it('treats non-string inputs as empty', function () {
+        delete process.env.AWESOME_CLI_SHOW_SECRETS
+        expect(redactSecret(undefined as unknown as string)).to.equal('')
+        expect(redactSecret(null as unknown as string)).to.equal('')
     })
 })

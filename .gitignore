@@ -29,6 +29,11 @@ typings/
 
 # dotenv environment variables file
 .env
+# hardhat-awesome-cli local secrets (RPC URLs, private keys, mnemonics). The
+# CLI also adds this entry the first time it writes the file, but having it
+# here protects projects where the file is dropped in manually (or generated
+# by another tool) before the CLI has run.
+.env.hardhat-awesome-cli
 
 # next.js build output
 .next

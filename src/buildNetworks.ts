@@ -4,7 +4,16 @@ import { getEnvValue } from './buildEnv.ts'
 import { buildActivatedChainList } from './buildFilesList.ts'
 import { DefaultChainList, getAddressBookConfig } from './config.ts'
 import type { IChain } from './types.ts'
+import { redactSecret } from './utils.ts'
 
+/**
+ * Build the rendered network configuration string.
+ *
+ * Private keys and mnemonics are masked by default (`****abcd`) so they are
+ * safe to print on the terminal or paste into bug reports. Set the
+ * `AWESOME_CLI_SHOW_SECRETS` environment variable to a truthy value to
+ * reproduce the previous behaviour of echoing secrets in full.
+ */
 export const buildActivatedChainNetworkConfig = () => {
     let chainConfig: string = ''
     let fileSetting: any = []
@@ -17,8 +26,12 @@ export const buildActivatedChainNetworkConfig = () => {
         if (fileSetting.activatedChain.length > 0) {
             fileSetting.activatedChain.forEach((chain: IChain) => {
                 const defaultRpcUrl = getEnvValue('rpcUrl'.toUpperCase() + '_' + chain.chainName.toUpperCase())
-                const defaultPrivateKey = getEnvValue('privateKey'.toUpperCase() + '_' + chain.chainName.toUpperCase())
-                const defaultMnemonic = getEnvValue('mnemonic'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+                const defaultPrivateKey = redactSecret(
+                    getEnvValue('privateKey'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+                )
+                const defaultMnemonic = redactSecret(
+                    getEnvValue('mnemonic'.toUpperCase() + '_' + chain.chainName.toUpperCase())
+                )
                 let buildAccounts = ''
                 if (defaultPrivateKey) {
                     buildAccounts = `"accounts": ["${defaultPrivateKey}"]`

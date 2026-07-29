@@ -57,6 +57,20 @@ const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: str
             isPrivateKey = false
         }
     }
+    if (isPrivateKey || isMnemonic) {
+        // Plaintext secrets are about to be written to disk. Make sure the
+        // user knows what is happening — the value is recoverable from the
+        // .env file, so it must stay out of version control and never be
+        // copied into a chat / ticket. See issue #176.
+        console.log(
+            '\x1b[33m%s\x1b[0m',
+            'Warning: writing a ' +
+                (isPrivateKey ? 'private key' : 'mnemonic') +
+                ' in plaintext to ' +
+                addressBookConfig.fileEnvHardhatAwesomeCLI +
+                '. Make sure this file stays out of version control.'
+        )
+    }
     let envToWrite = ''
     if (isRpcUrl) envToWrite = rpcUrlEnv + '\n'
     if (isPrivateKey) envToWrite = privateKeyEnv + '\n'
