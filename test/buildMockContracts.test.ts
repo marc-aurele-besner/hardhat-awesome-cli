@@ -236,4 +236,76 @@ describe('buildMockContracts (issue #168)', function () {
             }
         })
     })
+
+    // Issue #167 — every generated artifact (Solidity, deploy script, Hardhat
+    // test, Foundry test) must use the user-supplied contract name and
+    // constructor arguments end-to-end. The renderer rewrites the templates
+    // at write time, so the registry templates under `src/mockContracts/`
+    // stay the single source of truth.
+    describe('rename path (issue #167)', function () {
+        const renameOptions = { customName: 'MyToken', constructorArgs: ['USD Coin', 'USDC'] }
+
+        it('writes the Solidity source with the custom name and constructor args', async function () {
+            await buildMockContract('MockERC20', renameOptions)
+
+            expect(fs.existsSync('contracts/MyToken.sol')).to.equal(true)
+            const source = fs.readFileSync('contracts/MyToken.sol', 'utf8')
+            expect(source).to.contain('contract MyToken is ERC20')
+            expect(source).to.contain("ERC20('USD Coin', 'USDC')")
+            // The original `MockERC20` identifier should no longer appear.
+            expect(source).to.not.contain('MockERC20')
+        })
+
+        it('writes the deploy script with the custom name', async function () {
+            await buildMockContract('MockERC20', renameOptions)
+            await buildMockDeploymentScriptOrTest('MockERC20', 'deployment', renameOptions)
+
+            expect(fs.existsSync('scripts/deploy-my-token.ts')).to.equal(true)
+            const script = fs.readFileSync('scripts/deploy-my-token.ts', 'utf8')
+            expect(script).to.contain("getContractFactory('MyToken')")
+            expect(script).to.contain("saveContract('MyToken'")
+            expect(script).to.not.contain('MockERC20')
+        })
+
+        it('writes the Hardhat test with the custom name', async function () {
+            await buildMockContract('MockERC20', renameOptions)
+            await buildMockDeploymentScriptOrTest('MockERC20', 'test', renameOptions)
+
+            expect(fs.existsSync('test/test-my-token.ts')).to.equal(true)
+            const test = fs.readFileSync('test/test-my-token.ts', 'utf8')
+            expect(test).to.contain("describe('MyToken'")
+            expect(test).to.contain("getContractFactory('MyToken')")
+            expect(test).to.not.contain('MockERC20')
+        })
+
+        it('writes the Foundry test with the custom name', async function () {
+            await buildMockContract('MockERC20', renameOptions)
+            await buildMockDeploymentScriptOrTest('MockERC20', 'testForge', renameOptions)
+
+            expect(fs.existsSync('contracts/test/MyToken.t.sol')).to.equal(true)
+            const forgeTest = fs.readFileSync('contracts/test/MyToken.t.sol', 'utf8')
+            expect(forgeTest).to.contain('contract MyTokenTest is DSTest')
+            expect(forgeTest).to.contain('import { MyToken } from "../MyToken.sol";')
+            expect(forgeTest).to.not.contain('MockERC20')
+        })
+
+        it('leaves the registry-name files untouched when no rename is requested', async function () {
+            await buildMockContract('MockERC20')
+
+            expect(fs.existsSync('contracts/MockERC20.sol')).to.equal(true)
+            expect(fs.existsSync('contracts/MyToken.sol')).to.equal(false)
+        })
+
+        it('keeps the camelCase identifier consistent across artifacts', async function () {
+            await buildMockContract('MockERC20', renameOptions)
+            await buildMockDeploymentScriptOrTest('MockERC20', 'deployment', renameOptions)
+            await buildMockDeploymentScriptOrTest('MockERC20', 'test', renameOptions)
+
+            const deployScript = fs.readFileSync('scripts/deploy-my-token.ts', 'utf8')
+            const hardhatTest = fs.readFileSync('test/test-my-token.ts', 'utf8')
+
+            expect(deployScript).to.contain('const myToken =')
+            expect(hardhatTest).to.contain('let myToken:')
+        })
+    })
 })
