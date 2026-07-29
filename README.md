@@ -207,6 +207,30 @@ export default defineConfig({
     Hitting Enter at every interactive prompt keeps the registry defaults
     so existing users stay on the stock `MockERC20` flow.
 
+-   Create deployment scripts (issue #166) — pick an existing contract from
+    `contracts/` and the CLI scaffolds `scripts/deploy-<Name>.ts` (or `.js`
+    when the project ships a `hardhat.config.js`). The generated script
+    imports `addressBook` from `hardhat`, deploys the contract, and calls
+    `addressBook.saveContract(...)` so the address lands in
+    `contractsAddressDeployed.json` without further edits. Constructor
+    arguments are forwarded to `<Contract>.deploy(...)` so the file is
+    ready to run with `npx hardhat run scripts/deploy-<Name>.ts
+    --network <network>`.
+
+    The CLI prints the equivalent command for scripting — the same
+    generator is reachable without prompts via:
+
+    ```bash
+    npx hardhat cli --addDeploymentScript MyToken
+    ```
+
+    Constructor arguments can be supplied as `:`-separated segments after
+    the contract name, e.g.
+    `npx hardhat cli --addDeploymentScript MyToken:0xToken:42`. The `scripts/`
+    directory is created on demand if it does not exist, and the generator
+    refuses to overwrite an existing `deploy-<Name>.{ts,js}` so the
+    consumer can rename or delete the old file before re-running.
+
 -   Get account balance
 
 ### Current chain support
@@ -255,6 +279,7 @@ and yarn templates.
 ## CLI optional flags
 
 -   --add-activated-chain Add chains from the chain selection (default: "")
+-   --add-deployment-script Scaffold a deployment script for the named contract. Pass the contract name, optionally followed by ":"-separated constructor arguments, e.g. "<ContractName>:<arg1>:<arg2>". (default: "")
 -   --add-foundry Create Foundry settings, remapping and test utilities (default: "")
 -   --add-foundry-test-utility Install the foundry-test-utility npm package and add its remapping (default: "")
 -   --add-github-test-workflow Create Github test workflows (default: "")
