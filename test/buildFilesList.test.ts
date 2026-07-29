@@ -7,9 +7,10 @@ import {
     buildAllContractsList,
     buildAllTestsList,
     buildDirectoryFilesList,
-    buildDirectoryFilesListRecursive
+    buildDirectoryFilesListRecursive,
+    filterExcludedFiles
 } from '../src/buildFilesList.ts'
-import type { IFileList } from '../src/types.ts'
+import type { IExcludedFiles, IFileList } from '../src/types.ts'
 
 describe('buildFilesList', function () {
     const initialCwd = process.cwd()
@@ -78,5 +79,82 @@ describe('buildFilesList', function () {
             'nested/deeper/Deeper.test.ts'
         ])
         expect(allFiles.every((file: IFileList) => file.type === 'file')).to.equal(true)
+    })
+})
+
+describe('filterExcludedFiles', function () {
+    const sampleList: IFileList[] = [
+        { name: 'Token.test.ts', type: 'file', filePath: 'Token.test.ts' },
+        { name: 'helpers/', type: 'directory', filePath: 'helpers/' },
+        { name: 'Helper.test.ts', type: 'file', filePath: 'helpers/Helper.test.ts' },
+        { name: 'deeper/', type: 'directory', filePath: 'helpers/deeper/' },
+        { name: 'Deep.test.ts', type: 'file', filePath: 'helpers/deeper/Deep.test.ts' },
+        { name: 'other/', type: 'directory', filePath: 'other/' },
+        { name: 'Other.test.ts', type: 'file', filePath: 'other/Other.test.ts' }
+    ]
+
+    it('Returns the input unchanged when there are no exclusions', function () {
+        expect(filterExcludedFiles(sampleList, [], 'test')).to.deep.equal(sampleList)
+    })
+
+    it('Returns the input unchanged when no exclusion targets this directory', function () {
+        const excluded: IExcludedFiles[] = [{ directory: 'scripts', name: 'foo.js', filePath: 'foo.js', type: 'file' }]
+        expect(filterExcludedFiles(sampleList, excluded, 'test')).to.deep.equal(sampleList)
+    })
+
+    it('Removes a single file entry that matches an excluded file path', function () {
+        const excluded: IExcludedFiles[] = [
+            { directory: 'test', name: 'Token.test.ts', filePath: 'Token.test.ts', type: 'file' }
+        ]
+        const filtered = filterExcludedFiles(sampleList, excluded, 'test')
+        expect(filtered.map((file: IFileList) => file.filePath)).to.deep.equal([
+            'helpers/',
+            'helpers/Helper.test.ts',
+            'helpers/deeper/',
+            'helpers/deeper/Deep.test.ts',
+            'other/',
+            'other/Other.test.ts'
+        ])
+    })
+
+    it('Removes every nested file under an excluded directory', function () {
+        const excluded: IExcludedFiles[] = [
+            { directory: 'test', name: 'helpers/', filePath: 'helpers/', type: 'directory' }
+        ]
+        const filtered = filterExcludedFiles(sampleList, excluded, 'test')
+        expect(filtered.map((file: IFileList) => file.filePath)).to.deep.equal([
+            'Token.test.ts',
+            'other/',
+            'other/Other.test.ts'
+        ])
+    })
+
+    it('Hides a directory entry that itself is excluded as a directory', function () {
+        const excluded: IExcludedFiles[] = [
+            { directory: 'test', name: 'other/', filePath: 'other/', type: 'directory' }
+        ]
+        const filtered = filterExcludedFiles(sampleList, excluded, 'test')
+        expect(filtered.map((file: IFileList) => file.filePath)).to.deep.equal([
+            'Token.test.ts',
+            'helpers/',
+            'helpers/Helper.test.ts',
+            'helpers/deeper/',
+            'helpers/deeper/Deep.test.ts'
+        ])
+    })
+
+    it('Treats legacy entries without a `type` field as file entries', function () {
+        const excluded: IExcludedFiles[] = [{ directory: 'test', name: 'Token.test.ts', filePath: 'Token.test.ts' }]
+        const filtered = filterExcludedFiles(sampleList, excluded, 'test')
+        expect(filtered.map((file: IFileList) => file.filePath)).to.not.include('Token.test.ts')
+    })
+
+    it('Combines file and directory exclusions in one pass', function () {
+        const excluded: IExcludedFiles[] = [
+            { directory: 'test', name: 'Token.test.ts', filePath: 'Token.test.ts', type: 'file' },
+            { directory: 'test', name: 'helpers/', filePath: 'helpers/', type: 'directory' }
+        ]
+        const filtered = filterExcludedFiles(sampleList, excluded, 'test')
+        expect(filtered.map((file: IFileList) => file.filePath)).to.deep.equal(['other/', 'other/Other.test.ts'])
     })
 })
