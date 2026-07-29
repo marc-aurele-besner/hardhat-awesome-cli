@@ -194,6 +194,29 @@ export default defineConfig({
     > CommonJS variant from the same template at write time — no duplicate files
     > to keep in sync.
 
+    Issue #167 — after picking a mock contract, the CLI now asks for a
+    custom contract name (default: the registry name) plus optional
+    constructor name and symbol. The contract file, the deployment script,
+    the Hardhat test, and the Foundry test are all rewritten in place so
+    every reference — identifier, import path, `getContractFactory` call,
+    `describe(...)` title, `_TEST_NAME` literal — points at the custom
+    name end-to-end. A validation step rejects invalid Solidity
+    identifiers (e.g. `1Token`, `My-Token`) and names that would shadow
+    the inherited contract (`ERC20`, `ERC721Upgradeable`,
+    `Initializable`, …).
+
+    The CLI prints the equivalent command for scripting — the same rename
+    is reachable without prompts via:
+
+    ```bash
+    npx hardhat cli --addCustomMockContract "MockERC20:MyToken:MyToken:MOCK"
+    ```
+
+    The colon-separated value is
+    `<registryName>:<customName>:<constructorName>:<constructorSymbol>`.
+    Hitting Enter at every interactive prompt keeps the registry defaults
+    so existing users stay on the stock `MockERC20` flow.
+
 -   Get account balance
 
 ### Current chain support
