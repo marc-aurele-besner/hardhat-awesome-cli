@@ -557,6 +557,12 @@ Return (also printed as a table with `console.table`):
 - Print the equivalent `npx hardhat cli --flag value` command line for each settings menu selection that maps to a CLI flag
 </details>
 
+## Tests & coverage
+
+Run the mocha suite locally with `npm test`. To see what is and is not exercised, use `npm run test:coverage`, which wraps the suite with [c8](https://github.com/bcoe/c8) and writes a coverage report to `coverage/` (an `lcov.info` file plus a browsable `coverage/index.html`). The `coverage/` directory is git-ignored — each CI run on `main` and on pull requests also produces a `coverage-report` artifact, so you can download the latest run from the workflow summary page without checking anything in.
+
+Coverage is intentionally informational for now: thresholds have not been set in the npm script, so a missing test does not yet fail CI. The intent is to make gaps visible first, then tighten the floor once the menu code in `src/serveInquirer.ts` is split (see issue #155) and interactive flows gain unit tests (see issue #162).
+
 ## Directory Tree
 
 ```txt

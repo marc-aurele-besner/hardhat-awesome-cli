@@ -50,6 +50,16 @@ jobs:
         run: npm ci
       - name: Run test
         run: npm run test
+      - name: Run test coverage
+        run: npm run test:coverage
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 14
 
   smoke:
     name: Smoke test (consumer install)
