@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import { getAddressBookConfig } from './config.ts'
+import type { IHreContext } from './types.ts'
 
 const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, createIfNotExist: boolean) => {
     if (fs.existsSync(ignoreFile)) {
@@ -32,7 +33,7 @@ export const getEnvValue = (envName: string): string => {
     return ''
 }
 
-const writeToEnv = async (env: any, chainName: string, envToBuild: { rpcUrl: string; privateKeyOrMnemonic: any }) => {
+const writeToEnv = async (env: IHreContext, chainName: string, envToBuild: { rpcUrl: string; privateKeyOrMnemonic: string }) => {
     const addressBookConfig = getAddressBookConfig(env.userConfig)
     let isRpcUrl = false
     let isPrivateKey = false

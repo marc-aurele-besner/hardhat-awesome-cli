@@ -3,7 +3,7 @@ import fs from 'fs'
 import { exit } from 'process'
 
 import { getAddressBookConfig } from './config.ts'
-import type { FunctionSelector, IContractAddressDeployed, IInquirerListField } from './types.ts'
+import type { FunctionSelector, IContractAddressDeployed, IHreContext, IInquirerListField } from './types.ts'
 
 let contractsAddressDeployed: IContractAddressDeployed[] = []
 let contractsAddressDeployedHistory: IContractAddressDeployed[] = []
@@ -125,7 +125,7 @@ export const displayFinalCliCommand = (flagName: string, value?: string | string
  * @param contractName Name of the contract to inspect (e.g. `MockERC20`)
  * @returns `{ name, selector }` for each function, ordered by selector
  */
-export const listAllFunctionSelectors = async (hre: any, contractName: string) => {
+export const listAllFunctionSelectors = async (hre: IHreContext, contractName: string) => {
     const factory = await hre.ethers.getContractFactory(contractName)
 
     const functions: FunctionSelector[] = []

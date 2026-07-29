@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import serveCli from './serveInquirer.ts'
+import type { IHreContext } from './types.ts'
 
 /**
  * Standalone CLI entry. In Hardhat 2 this file also registered the plugin as
@@ -17,7 +18,7 @@ import serveCli from './serveInquirer.ts'
  */
 async function main(): Promise<void> {
     const args: Record<string, string> = {}
-    const adapter = {
+    const adapter: IHreContext = {
         userConfig: { addressBook: undefined },
         network: { name: 'hardhat' },
         config: { paths: { root: process.cwd() } },

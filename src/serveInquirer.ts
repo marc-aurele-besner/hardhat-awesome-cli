@@ -37,6 +37,8 @@ import {
     IExcludedFiles,
     IFileList,
     IHardhatPluginAvailableList,
+    IHreContext,
+    IInquirerListField,
     IMockContractsList
 } from './types.ts'
 import {
@@ -57,12 +59,80 @@ import {
 // (and their deployment/test scripts) in a single pass.
 const ALL_MOCK_CONTRACTS = 'All mock contracts'
 
+/**
+ * Concrete answer shapes for every `inquirer.prompt` call in this file. They
+ * keep the `.then(...)` callbacks honest under `strict: true` (the
+ * unparameterised `inquirer.prompt` defaults to `Record<string, any>`, which
+ * makes property-access on the answer silently `any`).
+ *
+ * Adding new prompts means adding the matching interface here so the
+ * `Answers extends Record<string, any>` constraint matches `inquirer`'s.
+ */
+interface NetworkChoiceAnswer {
+    network: string
+}
+interface SettingChoiceAnswer {
+    settings: string
+}
+interface ChainListAnswer {
+    chainList: string[]
+}
+interface CustomChainAnswer {
+    name: string
+    chainId: number
+    gas: string
+    defaultRpcUrl?: string
+}
+interface RenameLicenseAnswer {
+    renameLicenseIdentifier: boolean
+}
+interface ExcludedFilesAnswer {
+    allFiles: string[]
+}
+interface WorkflowChoiceAnswer {
+    workflowType: string
+}
+interface MoreSettingsAnswer {
+    moreSettings: string
+}
+interface PluginChoiceAnswer {
+    plugins: string
+}
+interface MockContractChoiceAnswer {
+    mockContract: string
+}
+interface FileSelectionAnswer {
+    file: string
+}
+interface MockContractDetailsAnswer {
+    mockDeploymentScript: string
+    mockTestScript: string
+    mockTestContractFoundry: string
+}
+interface MainMenuAnswer {
+    action: string
+}
+interface EnvBuilderAnswer {
+    rpcUrl: string
+    privateKeyOrMnemonic: string
+}
+
+/**
+ * Narrow type for the optional callbacks `serveNetworkSelector` accepts.
+ *
+ * Both run after a chain is picked: `GetAccountBalance` prints the deployer
+ * balance for the chosen network; `ServeEnvBuilder` opens the RPC/key editor.
+ * They are loosely typed because the menu composes them at runtime and an
+ * absence of one or the other is a valid configuration.
+ */
+type NetworkFollowup = ((env: IHreContext, networkName: string) => Promise<void>) | null | undefined
+
 const serveNetworkSelector = async (
-    env: any,
+    env: IHreContext,
     command: string,
     firstCommand: string,
-    GetAccountBalance: any,
-    ServeEnvBuilder: any,
+    GetAccountBalance: ((env: IHreContext) => Promise<void>) | null | undefined,
+    ServeEnvBuilder: NetworkFollowup,
     noLocalNetwork: boolean
 ) => {
     const activatedChainListFromFile: IChain[] = await buildActivatedChainList()
@@ -71,25 +141,22 @@ const serveNetworkSelector = async (
         noLocalNetwork
     )
     let commandFlags = ''
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'network',
-                message: 'Select a network',
-                choices: activatedChainList
-            }
-        ])
-        .then(async (networkSelected: { network: string }) => {
-            ActivatedChainList.map((chain: IChain) => {
-                if (chain.name === networkSelected.network) commandFlags = ' --network ' + chain.chainName
-            })
-            if (GetAccountBalance) await GetAccountBalance(env)
-            else if (ServeEnvBuilder) await ServeEnvBuilder(env, networkSelected.network)
-            // Brief pause so the env/account summary stays visible before the
-            // next prompt renders. Honours AWESOME_CLI_NO_PAUSE / _PAUSE_MS.
-            await waitForReadability()
-        })
+    const networkSelected: NetworkChoiceAnswer = await inquirer.prompt<NetworkChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'network',
+            message: 'Select a network',
+            choices: activatedChainList
+        }
+    ])
+    ActivatedChainList.map((chain: IChain) => {
+        if (chain.name === networkSelected.network) commandFlags = ' --network ' + chain.chainName
+    })
+    if (GetAccountBalance) await GetAccountBalance(env)
+    else if (ServeEnvBuilder) await ServeEnvBuilder(env, networkSelected.network)
+    // Brief pause so the env/account summary stays visible before the
+    // next prompt renders. Honours AWESOME_CLI_NO_PAUSE / _PAUSE_MS.
+    await waitForReadability()
     if (command) await runCommand(command, firstCommand, commandFlags, true)
 }
 
@@ -122,7 +189,7 @@ const serveFileListSelector = async (
             return 'back'
         }
         if (subPath) filesList.push(goBackChoice)
-        const fileSelected: { file: string } = await inquirer.prompt([
+        const fileSelected: FileSelectionAnswer = await inquirer.prompt<FileSelectionAnswer>([
             {
                 type: 'list',
                 name: 'file',
@@ -139,28 +206,28 @@ const serveFileListSelector = async (
     }
 }
 
-const serveTestSelector = async (env: any, command: string, firstCommand: string) => {
+const serveTestSelector = async (env: IHreContext, command: string, firstCommand: string) => {
     const testSelected = await serveFileListSelector('Select a test', buildTestsList)
     if (!testSelected || testSelected === 'back') return
     if (testSelected.type === 'file') command = command + ' test/' + testSelected.filePath
     if (firstCommand) command = 'npx hardhat test ' + command
-    await serveNetworkSelector(env, command, firstCommand, '', '', false)
+    await serveNetworkSelector(env, command, firstCommand, undefined, undefined, false)
     // `runCommand` above used `thenExit=true`, so the Node process already exited
     // when the suite finishes — no need for a sleep.
 }
 
-const serveScriptSelector = async (env: any, ServeTestSelector: any) => {
+const serveScriptSelector = async (env: IHreContext, ServeTestSelector: typeof serveTestSelector | null) => {
     const scriptSelected = await serveFileListSelector('Select a script', buildScriptsList)
     if (!scriptSelected || scriptSelected === 'back') return
     let command = 'npx hardhat run'
     if (scriptSelected.type === 'file') command = command + ' scripts/' + scriptSelected.filePath
     if (ServeTestSelector) await ServeTestSelector(env, '', command)
     else {
-        await serveNetworkSelector(env, command, '', '', '', false)
+        await serveNetworkSelector(env, command, '', undefined, undefined, false)
     }
 }
 
-const serveFlattenContractsSelector = async (env: any, command: string) => {
+const serveFlattenContractsSelector = async (env: IHreContext, command: string) => {
     const addressBookConfig = getAddressBookConfig(env.userConfig)
     let renameLicenseIdentifier = false
     const contractSelected = await serveFileListSelector('Select a contract to flatten', async (subPath: string) => {
@@ -174,17 +241,14 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
         command = command + ' contracts/' + contractSelected.filePath
         contractFlattenName = addressBookConfig.contractsFlattenPrefix + contractSelected.filePath.replace(/\//g, '-')
     }
-    await inquirer
-        .prompt([
-            {
-                type: 'confirm',
-                name: 'renameLicenseIdentifier',
-                message: 'Rename SPDX-License-Identifier'
-            }
-        ])
-        .then((contractsSelected: { renameLicenseIdentifier: boolean }) => {
-            renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
-        })
+    const contractsSelected: RenameLicenseAnswer = await inquirer.prompt<RenameLicenseAnswer>([
+        {
+            type: 'confirm',
+            name: 'renameLicenseIdentifier',
+            message: 'Rename SPDX-License-Identifier'
+        }
+    ])
+    renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
     if (!fs.existsSync(addressBookConfig.contractsFlattenPath)) fs.mkdirSync(addressBookConfig.contractsFlattenPath)
     if (command) {
         await runCommand(
@@ -225,7 +289,7 @@ const serveFlattenContractsSelector = async (env: any, command: string) => {
     }
 }
 
-const serveFunctionListSelector = async (env: any) => {
+const serveFunctionListSelector = async (env: IHreContext) => {
     const contractSelected = await serveFileListSelector('Select a contract to list all functions', buildContractsList)
     if (!contractSelected || contractSelected === 'back') return
     const functions = await listAllFunctionSelectors(env, contractSelected.name)
@@ -245,7 +309,7 @@ const serveFunctionListSelector = async (env: any) => {
     await waitForReadability()
 }
 
-const serveFoundryTestSelector = async (env: any, command: string) => {
+const serveFoundryTestSelector = async (env: IHreContext, command: string) => {
     const testSelected = await serveFileListSelector('Select a forge test', buildAllForgeTestsList)
     if (!testSelected || testSelected === 'back') return
     if (testSelected.type === 'file') command = command + ' --match-path contracts/test/' + testSelected.filePath
@@ -254,7 +318,7 @@ const serveFoundryTestSelector = async (env: any, command: string) => {
     await runCommand(command, '', '', true)
 }
 
-const serveEnvBuilder = async (env: any, chainSelected: string) => {
+const serveEnvBuilder = async (env: IHreContext, chainSelected: string) => {
     const ActivatedChainList = await buildActivatedChainList()
     if (ActivatedChainList.find((chain: IChain) => chain.name === chainSelected)) {
         const selectedChain = ActivatedChainList.find((chain: IChain) => chain.name === chainSelected) as IChain
@@ -265,178 +329,153 @@ const serveEnvBuilder = async (env: any, chainSelected: string) => {
         const defaultMnemonic = await getEnvValue(
             'mnemonic'.toUpperCase() + '_' + selectedChain.chainName.toUpperCase()
         )
-        await inquirer
-            .prompt([
-                {
-                    type: 'input',
-                    name: 'rpcUrl',
-                    message: selectedChain.name + ' RPC Url',
-                    default: defaultRpcUrl
-                },
-                {
-                    type: 'input',
-                    name: 'privateKeyOrMnemonic',
-                    message: selectedChain.name + ' private key or mnemonic',
-                    default: defaultPrivateKey || defaultMnemonic
-                }
-            ])
-            .then(async (envToBuild: { rpcUrl: string; privateKeyOrMnemonic: string }) => {
-                await writeToEnv(env, selectedChain.chainName, envToBuild)
-            })
+        const envToBuild: EnvBuilderAnswer = await inquirer.prompt<EnvBuilderAnswer>([
+            {
+                type: 'input',
+                name: 'rpcUrl',
+                message: selectedChain.name + ' RPC Url',
+                default: defaultRpcUrl
+            },
+            {
+                type: 'input',
+                name: 'privateKeyOrMnemonic',
+                message: selectedChain.name + ' private key or mnemonic',
+                default: defaultPrivateKey || defaultMnemonic
+            }
+        ])
+        await writeToEnv(env, selectedChain.chainName, envToBuild)
         await waitForReadability()
     }
 }
 
-const serveSettingSelector = async (env: any) => {
-    await inquirer
-        .prompt([
+const serveSettingSelector = async (env: IHreContext) => {
+    const settingSelected: SettingChoiceAnswer = await inquirer.prompt<SettingChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'settings',
+            message: 'Select a setting',
+            choices: [
+                'Add/Remove chains from the chain selection',
+                'Set RPC Url, private key or mnemonic for all or one chain',
+                'Add a custom chain to the current chain selection',
+                new inquirer.Separator(),
+                'See all config for activated chain'
+            ]
+        }
+    ])
+    const ActivatedChainList = await buildActivatedChainList()
+    const activatedChainList: string[] = []
+    ActivatedChainList.map((chain: IChain) => {
+        activatedChainList.push(chain.name)
+    })
+    const FullChainList = DefaultChainList
+    const fullChainList: string[] = []
+    FullChainList.map((chain: IChain) => {
+        fullChainList.push(chain.name)
+    })
+    if (settingSelected.settings === 'Add/Remove chains from the chain selection') {
+        const chainListSelected: ChainListAnswer = await inquirer.prompt<ChainListAnswer>([
             {
-                type: 'list',
-                name: 'settings',
+                type: 'checkbox',
+                name: 'chainList',
                 message: 'Select a setting',
-                choices: [
-                    'Add/Remove chains from the chain selection',
-                    'Set RPC Url, private key or mnemonic for all or one chain',
-                    'Add a custom chain to the current chain selection',
-                    new inquirer.Separator(),
-                    'See all config for activated chain'
-                ]
+                choices: fullChainList,
+                default: activatedChainList
             }
         ])
-        .then(async (settingSelected: { settings: string }) => {
-            const ActivatedChainList = await buildActivatedChainList()
-            const activatedChainList: string[] = []
-            ActivatedChainList.map((chain: IChain) => {
-                activatedChainList.push(chain.name)
-            })
-            const FullChainList = DefaultChainList
-            const fullChainList: string[] = []
-            FullChainList.map((chain: IChain) => {
-                fullChainList.push(chain.name)
-            })
-            if (settingSelected.settings === 'Add/Remove chains from the chain selection') {
-                await inquirer
-                    .prompt([
-                        {
-                            type: 'checkbox',
-                            name: 'chainList',
-                            message: 'Select a setting',
-                            choices: fullChainList,
-                            default: activatedChainList
-                        }
-                    ])
-                    .then(async (chainListSelected: { chainList: string[] }) => {
-                        fullChainList.map(async (chain: string) => {
-                            if (chainListSelected.chainList.includes(chain)) {
-                                await addActivatedChain(chain)
-                                displayFinalCliCommand('addActivatedChain', chain)
-                            } else {
-                                await removeActivatedChain(chain)
-                                displayFinalCliCommand('removeActivatedChain', chain)
-                            }
-                        })
-                        console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
-                        await waitForReadability()
-                    })
-            }
-            if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain')
-                await serveNetworkSelector(env, '', '', '', serveEnvBuilder, true)
-            if (settingSelected.settings === 'Add a custom chain to the current chain selection') {
-                await inquirer
-                    .prompt([
-                        {
-                            type: 'input',
-                            name: 'name',
-                            message: 'Chain Name'
-                        },
-                        {
-                            type: 'input',
-                            name: 'chainId',
-                            message: 'Chain Id'
-                        },
-                        {
-                            type: 'input',
-                            name: 'gas',
-                            message: 'Chain gas setting',
-                            default: 'auto'
-                        },
-                        {
-                            type: 'input',
-                            name: 'defaultRpcUrl',
-                            message: 'Chain default RPC Url'
-                        }
-                    ])
-                    .then(
-                        async (chainSelected: {
-                            name: string
-                            chainId: number
-                            gas: string
-                            defaultRpcUrl?: string
-                        }) => {
-                            const getNetworkConfig = buildActivatedChainNetworkConfig()
-                            let buildNetworkConfig: any = {}
-                            if (getNetworkConfig) {
-                                buildNetworkConfig = `{
-                                    "networks": [
-                                        {${getNetworkConfig}}
-                                    ]
-                                }`
-                                buildNetworkConfig = JSON.parse(buildNetworkConfig)
-                            }
-                            let chainName: string = ''
-                            if (buildNetworkConfig.networks[0].customChain1 !== undefined && !chainName)
-                                chainName = 'customChain1'
-                            if (buildNetworkConfig.networks[0].customChain2 !== undefined && !chainName)
-                                chainName = 'customChain2'
-                            if (buildNetworkConfig.networks[0].customChain3 !== undefined && !chainName)
-                                chainName = 'customChain3'
-                            if (buildNetworkConfig.networks[0].customChain4 !== undefined && !chainName)
-                                chainName = 'customChain4'
-                            if (buildNetworkConfig.networks[0].customChain5 !== undefined && !chainName)
-                                chainName = 'customChain5'
-                            if (buildNetworkConfig.networks[0].customChain6 !== undefined && !chainName)
-                                chainName = 'customChain6'
-                            if (buildNetworkConfig.networks[0].customChain7 !== undefined && !chainName)
-                                chainName = 'customChain7'
-                            if (buildNetworkConfig.networks[0].customChain8 !== undefined && !chainName)
-                                chainName = 'customChain8'
-                            if (chainName) {
-                                const chainToAdd: IChain = {
-                                    name: chainSelected.name,
-                                    chainName,
-                                    chainId: chainSelected.chainId,
-                                    gas: chainSelected.gas,
-                                    defaultRpcUrl: chainSelected.defaultRpcUrl
-                                }
-                                await addCustomChain(chainToAdd)
-                            }
-                        }
-                    )
-            }
-            if (settingSelected.settings === 'See all config for activated chain') {
-                const getNetworkConfig = buildActivatedChainNetworkConfig()
-                let buildNetworkConfig: any = {}
-                if (getNetworkConfig) {
-                    buildNetworkConfig = `{
-                            "networks": [
-                                {${getNetworkConfig}}
-                            ]
-                        }`
-                    buildNetworkConfig = JSON.parse(buildNetworkConfig)
-                }
-                // Always print this notice up front so users who expected to
-                // see their private key know why only a `****abcd` placeholder
-                // is rendered. Issue #176.
-                if (process.env.AWESOME_CLI_SHOW_SECRETS !== '1') {
-                    console.log(
-                        '\x1b[33m%s\x1b[0m',
-                        'Secrets (private keys, mnemonics) are masked with `****abcd`. Set ' +
-                            'AWESOME_CLI_SHOW_SECRETS=1 in your environment to see them in full.'
-                    )
-                }
-                console.table(buildNetworkConfig.networks[0])
+        fullChainList.map(async (chain: string) => {
+            if (chainListSelected.chainList.includes(chain)) {
+                await addActivatedChain(chain)
+                displayFinalCliCommand('addActivatedChain', chain)
+            } else {
+                await removeActivatedChain(chain)
+                displayFinalCliCommand('removeActivatedChain', chain)
             }
         })
+        console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
+        await waitForReadability()
+    }
+    if (settingSelected.settings === 'Set RPC Url, private key or mnemonic for all or one chain')
+        await serveNetworkSelector(env, '', '', undefined, serveEnvBuilder, true)
+    if (settingSelected.settings === 'Add a custom chain to the current chain selection') {
+        const chainSelected: CustomChainAnswer = await inquirer.prompt<CustomChainAnswer>([
+            {
+                type: 'input',
+                name: 'name',
+                message: 'Chain Name'
+            },
+            {
+                type: 'input',
+                name: 'chainId',
+                message: 'Chain Id'
+            },
+            {
+                type: 'input',
+                name: 'gas',
+                message: 'Chain gas setting',
+                default: 'auto'
+            },
+            {
+                type: 'input',
+                name: 'defaultRpcUrl',
+                message: 'Chain default RPC Url'
+            }
+        ])
+        const getNetworkConfig = buildActivatedChainNetworkConfig()
+        let buildNetworkConfig: { networks: Record<string, unknown>[] } = { networks: [{}] }
+        if (getNetworkConfig) {
+            buildNetworkConfig = JSON.parse(
+                `{
+                    "networks": [
+                        {${getNetworkConfig}}
+                    ]
+                }`
+            )
+        }
+        let chainName: string = ''
+        const firstNetwork = buildNetworkConfig.networks[0]
+        for (let i = 1; i <= 8; i++) {
+            const key = `customChain${i}`
+            if (firstNetwork[key] !== undefined && !chainName) {
+                chainName = key
+                break
+            }
+        }
+        if (chainName) {
+            const chainToAdd: IChain = {
+                name: chainSelected.name,
+                chainName,
+                chainId: chainSelected.chainId,
+                gas: chainSelected.gas,
+                defaultRpcUrl: chainSelected.defaultRpcUrl
+            }
+            await addCustomChain(chainToAdd)
+        }
+    }
+    if (settingSelected.settings === 'See all config for activated chain') {
+        const getNetworkConfig = buildActivatedChainNetworkConfig()
+        let buildNetworkConfig: { networks: Record<string, unknown>[] } = { networks: [{}] }
+        if (getNetworkConfig) {
+            buildNetworkConfig = JSON.parse(
+                `{
+                        "networks": [
+                            {${getNetworkConfig}}
+                        ]
+                    }`
+            )
+        }
+        // Always print this notice up front so users who expected to
+        // see their private key know why only a `****abcd` placeholder
+        // is rendered. Issue #176.
+        if (process.env.AWESOME_CLI_SHOW_SECRETS !== '1') {
+            console.log(
+                '\x1b[33m%s\x1b[0m',
+                'Secrets (private keys, mnemonics) are masked with `****abcd`. Set ' +
+                    'AWESOME_CLI_SHOW_SECRETS=1 in your environment to see them in full.'
+            )
+        }
+        console.table(buildNetworkConfig.networks[0])
+    }
 }
 
 const serveExcludeFileSelector = async (option: string) => {
@@ -464,7 +503,7 @@ const serveExcludeFileSelector = async (option: string) => {
         }
     }
     await inquirer
-        .prompt([
+        .prompt<ExcludedFilesAnswer>([
             {
                 type: 'checkbox',
                 name: 'allFiles',
@@ -473,7 +512,7 @@ const serveExcludeFileSelector = async (option: string) => {
                 default: allExcludedSelection
             }
         ])
-        .then(async (activateFilesSelected: { allFiles: string[] }) => {
+        .then(async (activateFilesSelected: ExcludedFilesAnswer) => {
             allFiles.map(async (file: IFileList) => {
                 const entryType = file.type === 'directory' ? 'directory' : 'file'
                 if (activateFilesSelected.allFiles.includes(file.filePath))
@@ -494,20 +533,17 @@ const serveWorkflowBuilder = async () => {
             workflowsList.push(workflow.title)
         })
     })
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'workflowType',
-                message: 'Select a workflow to create',
-                choices: workflowsList
-            }
-        ])
-        .then(async (workflowSelected: { workflowType: string }) => {
-            DefaultGithubWorkflowsList.map(async (workflow: IDefaultGithubWorkflowsList) => {
-                if (workflow.title === workflowSelected.workflowType) workflowToAdd = workflow
-            })
-        })
+    const workflowSelected: WorkflowChoiceAnswer = await inquirer.prompt<WorkflowChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'workflowType',
+            message: 'Select a workflow to create',
+            choices: workflowsList
+        }
+    ])
+    DefaultGithubWorkflowsList.map((workflow: IDefaultGithubWorkflowsList) => {
+        if (workflow.title === workflowSelected.workflowType) workflowToAdd = workflow
+    })
     if (workflowToAdd !== undefined) {
         await buildWorkflows(workflowToAdd)
         displayFinalCliCommand('addGithubTestWorkflow', workflowToAdd.file)
@@ -515,54 +551,51 @@ const serveWorkflowBuilder = async () => {
     }
 }
 
-const serveMoreSettingSelector = async (env: any) => {
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'moreSettings',
-                message: 'Select a mock contract',
-                choices: [
-                    'Exclude test file from the tests selection list',
-                    'Exclude script file from the scripts selection list',
-                    'Exclude contract file from the contract selection list',
-                    new inquirer.Separator(),
-                    'List function from a contract by function selector',
-                    new inquirer.Separator(),
-                    'Add other Hardhat plugins',
-                    'Remove other Hardhat plugins',
-                    new inquirer.Separator(),
-                    'Create Github test workflows',
-                    'Create Foundry settings, remapping and test utilities',
-                    'Add foundry-test-utility (npm package for shared Forge mocks & utilities)',
-                    new inquirer.Separator()
-                ]
-            }
-        ])
-        .then(async (moreSettingsSelected: { moreSettings: string }) => {
-            if (moreSettingsSelected.moreSettings === 'Exclude test file from the tests selection list')
-                await serveExcludeFileSelector('test')
-            if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list')
-                await serveExcludeFileSelector('scripts')
-            if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list')
-                await serveExcludeFileSelector('contracts')
-            if (moreSettingsSelected.moreSettings === 'List function from a contract by function selector')
-                await serveFunctionListSelector(env)
-            if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
-            if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
-            if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
-            if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities') {
-                await buildFoundrySetting()
-                displayFinalCliCommand('addFoundry')
-            }
-            if (
-                moreSettingsSelected.moreSettings ===
-                'Add foundry-test-utility (npm package for shared Forge mocks & utilities)'
-            ) {
-                await installFoundryTestUtility()
-                displayFinalCliCommand('addFoundryTestUtility')
-            }
-        })
+const serveMoreSettingSelector = async (env: IHreContext) => {
+    const moreSettingsSelected: MoreSettingsAnswer = await inquirer.prompt<MoreSettingsAnswer>([
+        {
+            type: 'list',
+            name: 'moreSettings',
+            message: 'Select a mock contract',
+            choices: [
+                'Exclude test file from the tests selection list',
+                'Exclude script file from the scripts selection list',
+                'Exclude contract file from the contract selection list',
+                new inquirer.Separator(),
+                'List function from a contract by function selector',
+                new inquirer.Separator(),
+                'Add other Hardhat plugins',
+                'Remove other Hardhat plugins',
+                new inquirer.Separator(),
+                'Create Github test workflows',
+                'Create Foundry settings, remapping and test utilities',
+                'Add foundry-test-utility (npm package for shared Forge mocks & utilities)',
+                new inquirer.Separator()
+            ]
+        }
+    ])
+    if (moreSettingsSelected.moreSettings === 'Exclude test file from the tests selection list')
+        await serveExcludeFileSelector('test')
+    if (moreSettingsSelected.moreSettings === 'Exclude script file from the scripts selection list')
+        await serveExcludeFileSelector('scripts')
+    if (moreSettingsSelected.moreSettings === 'Exclude contract file from the contract selection list')
+        await serveExcludeFileSelector('contracts')
+    if (moreSettingsSelected.moreSettings === 'List function from a contract by function selector')
+        await serveFunctionListSelector(env)
+    if (moreSettingsSelected.moreSettings === 'Add other Hardhat plugins') await servePackageInstaller()
+    if (moreSettingsSelected.moreSettings === 'Remove other Hardhat plugins') await servePackageUninstaller()
+    if (moreSettingsSelected.moreSettings === 'Create Github test workflows') await serveWorkflowBuilder()
+    if (moreSettingsSelected.moreSettings === 'Create Foundry settings, remapping and test utilities') {
+        await buildFoundrySetting()
+        displayFinalCliCommand('addFoundry')
+    }
+    if (
+        moreSettingsSelected.moreSettings ===
+        'Add foundry-test-utility (npm package for shared Forge mocks & utilities)'
+    ) {
+        await installFoundryTestUtility()
+        displayFinalCliCommand('addFoundryTestUtility')
+    }
 }
 
 const servePackageInstaller = async () => {
@@ -588,21 +621,22 @@ const servePackageInstaller = async () => {
     const hardhatPluginToInstall: string[] = hardhatPluginAvailableList.filter(
         (plugin: string) => !hardhatPluginToNotInclude.has(plugin)
     )
-    let packageToInstall: IHardhatPluginAvailableList | undefined
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'plugins',
-                message: 'Select a plugin to install',
-                choices: hardhatPluginToInstall
-            }
-        ])
-        .then(async (pluginssSelected: { plugins: string }) => {
-            packageToInstall = DefaultHardhatPluginsList.find(
-                (plugin: IHardhatPluginAvailableList) => plugin.title === pluginssSelected.plugins
-            )
-        })
+    if (hardhatPluginToInstall.length === 0) {
+        console.log('\x1b[32m%s\x1b[0m', 'All available plugins are already installed.')
+        await waitForReadability()
+        return
+    }
+    const pluginssSelected: PluginChoiceAnswer = await inquirer.prompt<PluginChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'plugins',
+            message: 'Select a plugin to install',
+            choices: hardhatPluginToInstall
+        }
+    ])
+    const packageToInstall: IHardhatPluginAvailableList | undefined = DefaultHardhatPluginsList.find(
+        (plugin: IHardhatPluginAvailableList) => plugin.title === pluginssSelected.plugins
+    )
     if (packageToInstall !== undefined) {
         await detectPackage(packageToInstall.name, true, false, packageToInstall.addInHardhatConfig)
         displayFinalCliCommand('addHardhatPlugin', packageToInstall.name)
@@ -624,23 +658,23 @@ const servePackageUninstaller = async () => {
             })
         )
     ).filter((title): title is string => title !== null)
-    let packageToUninstall: IHardhatPluginAvailableList | undefined
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'plugins',
-                message: 'Select a plugin to uninstall',
-                choices: hardhatPluginInstalled
-            }
-        ])
-        .then(async (pluginssSelected: { plugins: string }) => {
-            packageToUninstall = uninstallableList.find(
-                (plugin: IHardhatPluginAvailableList) =>
-                    (plugin.hardhat2Only ? `${plugin.title} (Hardhat 2 only)` : plugin.title) ===
-                    pluginssSelected.plugins
-            )
-        })
+    if (hardhatPluginInstalled.length === 0) {
+        console.log('\x1b[32m%s\x1b[0m', 'No installed plugins to remove.')
+        await waitForReadability()
+        return
+    }
+    const pluginssSelected: PluginChoiceAnswer = await inquirer.prompt<PluginChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'plugins',
+            message: 'Select a plugin to uninstall',
+            choices: hardhatPluginInstalled
+        }
+    ])
+    const packageToUninstall: IHardhatPluginAvailableList | undefined = uninstallableList.find(
+        (plugin: IHardhatPluginAvailableList) =>
+            (plugin.hardhat2Only ? `${plugin.title} (Hardhat 2 only)` : plugin.title) === pluginssSelected.plugins
+    )
     if (packageToUninstall !== undefined) {
         await detectPackage(packageToUninstall.name, false, true, packageToUninstall.addInHardhatConfig)
         displayFinalCliCommand('removeHardhatPlugin', packageToUninstall.name)
@@ -648,114 +682,134 @@ const servePackageUninstaller = async () => {
     await waitForReadability()
 }
 
+interface MockContractsToAdd {
+    mockContracts: string[]
+    mockDeploymentScript: string
+    mockTestScript: string
+    mockTestContractFoundry: string
+}
+
 const serveMockContractCreatorSelector = async () => {
-    if (MockContractsList) {
-        const mockContractsList: string[] = MockContractsList.map((file: IMockContractsList) => {
-            return file.name
+    if (!MockContractsList) return
+    const mockContractsList: string[] = MockContractsList.map((file: IMockContractsList) => file.name)
+    const mockContractSelected: MockContractChoiceAnswer = await inquirer.prompt<MockContractChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'mockContract',
+            message: 'Select a mock contract',
+            choices: [ALL_MOCK_CONTRACTS, ...mockContractsList]
+        }
+    ])
+    if (!mockContractSelected.mockContract) return
+    // Selecting `ALL_MOCK_CONTRACTS` applies the answers below to every mock contract at once
+    const mockContractsSelectedDetail: IMockContractsList[] =
+        mockContractSelected.mockContract === ALL_MOCK_CONTRACTS
+            ? MockContractsList
+            : MockContractsList.filter((file: IMockContractsList) => file.name === mockContractSelected.mockContract)
+    const subject = mockContractsSelectedDetail.length > 1 ? 'these mock contracts' : 'this mock contract'
+    const mockContractDetailSelector = []
+    if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.deploymentScript !== undefined))
+        mockContractDetailSelector.push({
+            type: 'list',
+            name: 'mockDeploymentScript',
+            message: 'Create a deployment script for ' + subject,
+            choices: ['yes', 'no']
         })
-        let mockContractFirstSelected: string = ''
-        let mockContractsToAdd:
-            | {
-                  mockContracts: string[]
-                  mockDeploymentScript: string
-                  mockTestScript: string
-                  mockTestContractFoundry: string
-              }
-            | undefined
-        await inquirer
-            .prompt([
-                {
-                    type: 'list',
-                    name: 'mockContract',
-                    message: 'Select a mock contract',
-                    choices: [ALL_MOCK_CONTRACTS, ...mockContractsList]
-                }
-            ])
-            .then(async (mockContractSelected: { mockContract: string }) => {
-                mockContractFirstSelected = mockContractSelected.mockContract
-            })
-        if (mockContractFirstSelected) {
-            // Selecting `ALL_MOCK_CONTRACTS` applies the answers below to every mock contract at once
-            const mockContractsSelectedDetail: IMockContractsList[] =
-                mockContractFirstSelected === ALL_MOCK_CONTRACTS
-                    ? MockContractsList
-                    : MockContractsList.filter((file: IMockContractsList) => file.name === mockContractFirstSelected)
-            const subject = mockContractsSelectedDetail.length > 1 ? 'these mock contracts' : 'this mock contract'
-            const mockContractDetailSelector = []
-            if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.deploymentScript !== undefined))
-                mockContractDetailSelector.push({
-                    type: 'list',
-                    name: 'mockDeploymentScript',
-                    message: 'Create a deployment script for ' + subject,
-                    choices: ['yes', 'no']
-                })
-            if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.testScript !== undefined))
-                mockContractDetailSelector.push({
-                    type: 'list',
-                    name: 'mockTestScript',
-                    message: 'Create a test script for ' + subject,
-                    choices: ['yes', 'no']
-                })
-            if (
-                mockContractsSelectedDetail.some(
-                    (file: IMockContractsList) => file.testContractFoundry !== undefined
-                ) &&
-                fs.existsSync('contracts/test') &&
-                fs.existsSync('foundry.toml')
-            )
-                mockContractDetailSelector.push({
-                    type: 'list',
-                    name: 'mockTestContractFoundry',
-                    message: 'Create a Foundry test contract for ' + subject,
-                    choices: ['yes', 'no']
-                })
-            await inquirer
-                .prompt(mockContractDetailSelector)
-                .then(
-                    async (mockContractSelected: {
-                        mockDeploymentScript: string
-                        mockTestScript: string
-                        mockTestContractFoundry: string
-                    }) => {
-                        mockContractsToAdd = {
-                            mockContracts: mockContractsSelectedDetail.map((file: IMockContractsList) => file.name),
-                            mockDeploymentScript: mockContractSelected.mockDeploymentScript || 'no',
-                            mockTestScript: mockContractSelected.mockTestScript || 'no',
-                            mockTestContractFoundry: mockContractSelected.mockTestContractFoundry || 'no'
-                        }
-                    }
-                )
+    if (mockContractsSelectedDetail.some((file: IMockContractsList) => file.testScript !== undefined))
+        mockContractDetailSelector.push({
+            type: 'list',
+            name: 'mockTestScript',
+            message: 'Create a test script for ' + subject,
+            choices: ['yes', 'no']
+        })
+    if (
+        mockContractsSelectedDetail.some((file: IMockContractsList) => file.testContractFoundry !== undefined) &&
+        fs.existsSync('contracts/test') &&
+        fs.existsSync('foundry.toml')
+    )
+        mockContractDetailSelector.push({
+            type: 'list',
+            name: 'mockTestContractFoundry',
+            message: 'Create a Foundry test contract for ' + subject,
+            choices: ['yes', 'no']
+        })
+    const mockContractsToAdd: MockContractsToAdd | undefined = await (async () => {
+        if (mockContractDetailSelector.length === 0) return undefined
+        const detail: MockContractDetailsAnswer = await inquirer.prompt<MockContractDetailsAnswer>(
+            mockContractDetailSelector
+        )
+        return {
+            mockContracts: mockContractsSelectedDetail.map((file: IMockContractsList) => file.name),
+            mockDeploymentScript: detail.mockDeploymentScript || 'no',
+            mockTestScript: detail.mockTestScript || 'no',
+            mockTestContractFoundry: detail.mockTestContractFoundry || 'no'
         }
-        if (mockContractsToAdd !== undefined) {
-            for (const mockContract of mockContractsToAdd.mockContracts) {
-                await buildMockContract(mockContract)
-                if (mockContractsToAdd.mockDeploymentScript === 'yes')
-                    await buildMockDeploymentScriptOrTest(mockContract, 'deployment')
-                if (mockContractsToAdd.mockTestScript === 'yes')
-                    await buildMockDeploymentScriptOrTest(mockContract, 'test')
-                if (mockContractsToAdd.mockTestContractFoundry === 'yes')
-                    await buildMockDeploymentScriptOrTest(mockContract, 'testForge')
-            }
-        }
+    })()
+    if (!mockContractsToAdd) return
+    for (const mockContract of mockContractsToAdd.mockContracts) {
+        await buildMockContract(mockContract)
+        if (mockContractsToAdd.mockDeploymentScript === 'yes')
+            await buildMockDeploymentScriptOrTest(mockContract, 'deployment')
+        if (mockContractsToAdd.mockTestScript === 'yes') await buildMockDeploymentScriptOrTest(mockContract, 'test')
+        if (mockContractsToAdd.mockTestContractFoundry === 'yes')
+            await buildMockDeploymentScriptOrTest(mockContract, 'testForge')
     }
 }
 
 const serveDeploymentContractCreatorSelector = async () => {}
 
-const serveAccountBalance = async (env: any) => {
-    const getAccountBalance = async (Env: any) => {
+/**
+ * Ethers-shaped object surface that the account-balance flow relies on.
+ *
+ * Kept loose (`any` on `ethers`) because Hardhat 3 ships both an ethers and a
+ * viem flavour; only the account-balance flow needs the ethers bag.
+ */
+interface IAccountBalanceEnv {
+    ethers?: any
+    network?: { name: string }
+}
+
+const serveAccountBalance = async (env: IHreContext) => {
+    const getAccountBalance = async (Env: IAccountBalanceEnv) => {
+        if (!Env.ethers) {
+            console.log('\x1b[33m%s\x1b[0m', 'Account balance requires the ethers provider.')
+            return
+        }
         const [deployer] = await Env.ethers.getSigners()
         const network = await Env.network
         // Get account balance
         const balance = await deployer.getBalance()
-        console.log('\x1b[32m%s\x1b[0m', 'Connected to network: ', '\x1b[97m%s\x1b[0m', network.name)
+        console.log('\x1b[32m%s\x1b[0m', 'Connected to network: ', '\x1b[97m%s\x1b[0m', network?.name ?? 'unknown')
         console.log('\x1b[32m%s\x1b[0m', 'Account address: ', '\x1b[97m%s\x1b[0m', deployer.address)
         console.log('\x1b[32m%s\x1b[0m', 'Account balance: ', '\x1b[97m%s\x1b[0m', balance.toString())
     }
-    await serveNetworkSelector(env, '', '', getAccountBalance, '', false)
+    await serveNetworkSelector(env, '', '', getAccountBalance, undefined, false)
 }
 
-const serveInquirer = async (env: any) => {
+/**
+ * Raw option strings accepted by the `cli` Hardhat task. All fields default
+ * to the empty string at the task-definition site; boolean-shaped flags like
+ * `--addFoundry` are compared against `'true'` / `'yes'`. Keeping the shape
+ * deliberately narrow means we never need `any` to index into `args`.
+ */
+interface ICliArgs {
+    excludeTestFile?: string
+    excludeTestDirectory?: string
+    excludeScriptFile?: string
+    excludeScriptDirectory?: string
+    excludeContractFile?: string
+    excludeContractDirectory?: string
+    addHardhatPlugin?: string
+    removeHardhatPlugin?: string
+    addGithubTestWorkflow?: string
+    addFoundry?: string
+    addFoundryTestUtility?: string
+    addActivatedChain?: string
+    removeActivatedChain?: string
+    getAccountBalance?: string
+}
+
+const serveInquirer = async (env: IHreContext) => {
     console.log(
         `
 `,
@@ -763,15 +817,19 @@ const serveInquirer = async (env: any) => {
         'Welcome to',
         '\x1b[32m',
         `
- .d8b.  db   d8b   db d88888b .d8888.  .d88b.  .88b  d88. d88888b      .o88b. db      d888888b 
-d8' '8b 88   I8I   88 88'     88'  YP .8P  Y8. 88'YbdP'88 88'         d8P  Y8 88        '88'   
-88ooo88 88   I8I   88 88ooooo '8bo.   88    88 88  88  88 88ooooo     8P      88         88    
-88~~~88 Y8   I8I   88 88~~~~~   'Y8b. 88    88 88  88  88 88~~~~~     8b      88         88    
-88   88 '8b d8'8b d8' 88.     db   8D '8b  d8' 88  88  88 88.         Y8b  d8 88booo.   .88.   
-YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y88888P Y888888P 
+ .d8b.  db   d8b   db d88888b .d8888.  .d88b.  .88b  d88. d88888b      .o88b. db      d888888b
+d8' '8b 88   I8I   88 88'     88'  YP .8P  Y8. 88'YbdP'88 88'         d8P  Y8 88        '88'
+88ooo88 88   I8I   88 88ooooo '8bo.   88    88 88  88  88 88ooooo     8P      88         88
+88~~~88 Y8   I8I   88 88~~~~~   'Y8b. 88    88 88  88  88 88~~~~~     8b      88         88
+88   88 '8b d8'8b d8' 88.     db   8D '8b  d8' 88  88  88 88.         Y8b  d8 88booo.   .88.
+YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y88888P Y888888P
 `
     )
-    const buildMainOptions: any = [inquirerRunTests, inquirerRunScripts, inquirerFlattenContracts]
+    const buildMainOptions: (string | IInquirerListField | InstanceType<typeof inquirer.Separator>)[] = [
+        inquirerRunTests,
+        inquirerRunScripts,
+        inquirerFlattenContracts
+    ]
     if (inquirerRunFoundryTest) buildMainOptions.push(inquirerRunFoundryTest)
     if (inquirerRunTests.name === 'Run tests' && inquirerRunScripts.name === 'Run scripts')
         buildMainOptions.push('Select scripts and tests to run')
@@ -790,66 +848,85 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         inquirerFileContractsAddressDeployedHistory,
         new inquirer.Separator()
     )
-    await inquirer
-        .prompt([
-            {
-                type: 'list',
-                name: 'action',
-                message: 'What do you want to do?',
-                choices: buildMainOptions
-            }
-        ])
-        .then(async (answers: { action: string }) => {
-            if (answers.action === 'Run tests') await serveTestSelector(env, 'npx hardhat test', '')
-            if (answers.action === 'Run scripts') await serveScriptSelector(env, '')
-            if (answers.action === 'Flatten contracts') await serveFlattenContractsSelector(env, 'npx hardhat flatten')
-            if (answers.action === 'Run Foundry Forge tests') await serveFoundryTestSelector(env, 'forge test')
-            if (answers.action === 'Select scripts and tests to run') await serveScriptSelector(env, serveTestSelector)
-            if (answers.action === 'Run coverage tests') await serveTestSelector(env, 'npx hardhat coverage', '')
-            if (answers.action === 'Setup chains, RPC and accounts') await serveSettingSelector(env)
-            if (answers.action === 'More settings') await serveMoreSettingSelector(env)
-            if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
-            if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
-            if (answers.action === 'Get account balance') await serveAccountBalance(env)
-        })
+    const answers: MainMenuAnswer = await inquirer.prompt<MainMenuAnswer>([
+        {
+            type: 'list',
+            name: 'action',
+            message: 'What do you want to do?',
+            choices: buildMainOptions
+        }
+    ])
+    if (answers.action === 'Run tests') await serveTestSelector(env, 'npx hardhat test', '')
+    if (answers.action === 'Run scripts') await serveScriptSelector(env, null)
+    if (answers.action === 'Flatten contracts') await serveFlattenContractsSelector(env, 'npx hardhat flatten')
+    if (answers.action === 'Run Foundry Forge tests') await serveFoundryTestSelector(env, 'forge test')
+    if (answers.action === 'Select scripts and tests to run') await serveScriptSelector(env, serveTestSelector)
+    if (answers.action === 'Run coverage tests') await serveTestSelector(env, 'npx hardhat coverage', '')
+    if (answers.action === 'Setup chains, RPC and accounts') await serveSettingSelector(env)
+    if (answers.action === 'More settings') await serveMoreSettingSelector(env)
+    if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
+    if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
+    if (answers.action === 'Get account balance') await serveAccountBalance(env)
 }
 
-const serveCli = async (args: any, env: any) => {
+/**
+ * Predicate that narrows an optional-string CLI flag to a non-empty string.
+ * The plain `value !== ''` check returns `true` even for `undefined`, so we
+ * need the explicit type guard to keep `noUncheckedIndexedAccess` happy.
+ */
+const isPresentString = (value: string | undefined): value is string =>
+    typeof value === 'string' && value !== ''
+
+/**
+ * Boolean-shaped flags (`--addFoundry`, `--getAccountBalance`, ...) are
+ * passed as strings by the task runner. Treat anything other than `''`,
+ * `'false'`, or `'no'` as affirmative to mirror the old `=== true ||
+ * === 'true' || === 'yes'` behaviour.
+ */
+const isAffirmativeString = (value: string | undefined): value is string => {
+    if (!isPresentString(value)) return false
+    return value !== 'false' && value !== 'no'
+}
+
+const serveCli = async (args: ICliArgs, env: IHreContext) => {
     switch (true) {
-        case args.excludeTestFile !== '':
+        case isPresentString(args.excludeTestFile):
             return removeExcludedFiles('test', args.excludeTestFile)
-        case args.excludeTestDirectory !== '':
+        case isPresentString(args.excludeTestDirectory):
             return addExcludedFiles('test', args.excludeTestDirectory, args.excludeTestDirectory, 'directory')
-        case args.excludeScriptFile !== '':
+        case isPresentString(args.excludeScriptFile):
             return removeExcludedFiles('scripts', args.excludeScriptFile)
-        case args.excludeScriptDirectory !== '':
-            return addExcludedFiles('scripts', args.excludeScriptDirectory, args.excludeScriptDirectory, 'directory')
-        case args.excludeContractFile !== '':
+        case isPresentString(args.excludeScriptDirectory):
+            return addExcludedFiles(
+                'scripts',
+                args.excludeScriptDirectory,
+                args.excludeScriptDirectory,
+                'directory'
+            )
+        case isPresentString(args.excludeContractFile):
             return removeExcludedFiles('contracts', args.excludeContractFile)
-        case args.excludeContractDirectory !== '':
+        case isPresentString(args.excludeContractDirectory):
             return addExcludedFiles(
                 'contracts',
                 args.excludeContractDirectory,
                 args.excludeContractDirectory,
                 'directory'
             )
-        case args.addHardhatPlugin !== '':
+        case isPresentString(args.addHardhatPlugin):
             return detectPackage(args.addHardhatPlugin, true, false, true)
-        case args.removeHardhatPlugin !== '':
+        case isPresentString(args.removeHardhatPlugin):
             return detectPackage(args.removeHardhatPlugin, false, true, true)
-        case args.addGithubTestWorkflow !== '':
+        case isPresentString(args.addGithubTestWorkflow):
             return buildWorkflowsFromCommand(args.addGithubTestWorkflow)
-        case args.addFoundry === true || args.addFoundry === 'true' || args.addFoundry === 'yes':
+        case isAffirmativeString(args.addFoundry):
             return buildFoundrySetting()
-        case args.addFoundryTestUtility === true ||
-            args.addFoundryTestUtility === 'true' ||
-            args.addFoundryTestUtility === 'yes':
+        case isAffirmativeString(args.addFoundryTestUtility):
             return installFoundryTestUtility()
-        case args.addActivatedChain !== '':
+        case isPresentString(args.addActivatedChain):
             return addActivatedChain(args.addActivatedChain)
-        case args.removeActivatedChain !== '':
+        case isPresentString(args.removeActivatedChain):
             return removeActivatedChain(args.removeActivatedChain)
-        case args.getAccountBalance === true || args.getAccountBalance === 'true' || args.getAccountBalance === 'yes':
+        case isAffirmativeString(args.getAccountBalance):
             return serveAccountBalance(env)
         default:
             return serveInquirer(env)
