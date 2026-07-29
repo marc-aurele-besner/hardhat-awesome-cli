@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import { getAddressBookConfig } from './config.ts'
-import type { TAddressBookFields } from './types.ts'
+import type { IAddressBookConfig, TAddressBookFields } from './types.ts'
 
 interface IAddressDetails {
     name: string
@@ -13,8 +13,17 @@ interface IAddressDetails {
     blockHash?: string
     blockNumber?: number
     tag?: string
-    extra?: any
+    extra?: Record<string, unknown>
 }
+
+/**
+ * The shape passed to the `AwesomeAddressBook` constructor: either the live
+ * `HardhatRuntimeEnvironment.userConfig` (which exposes `addressBook` under
+ * the user's keys) or a trimmed-down object that only carries the address
+ * book. Keeping this in `types.ts` lets the address-book class stay
+ * decoupled from the full `hardhat.config` type.
+ */
+export type AddressBookUserConfig = { addressBook?: Partial<IAddressBookConfig> }
 
 /**
  * Tracks deployed contract addresses per network.
@@ -27,10 +36,10 @@ interface IAddressDetails {
  * factory pattern used at task-action time.
  */
 export class AwesomeAddressBook {
-    private readonly _userConfig: any
+    private readonly _userConfig: AddressBookUserConfig | undefined
     private readonly _networkName: string
 
-    constructor(userConfig: any, networkName: string = 'hardhat') {
+    constructor(userConfig: AddressBookUserConfig | undefined, networkName: string = 'hardhat') {
         this._userConfig = userConfig
         this._networkName = networkName
     }
@@ -39,7 +48,7 @@ export class AwesomeAddressBook {
         return this._networkName
     }
 
-    public get userConfig(): any {
+    public get userConfig(): AddressBookUserConfig | undefined {
         return this._userConfig
     }
 
@@ -52,7 +61,7 @@ export class AwesomeAddressBook {
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
-        extra?: any
+        extra?: Record<string, unknown>
     ) {
         const contractToAdd: IAddressDetails = {
             name: contractName,
@@ -78,7 +87,7 @@ export class AwesomeAddressBook {
         blockHash?: string,
         blockNumber?: number,
         tag?: string,
-        extra?: any,
+        extra?: Record<string, unknown>,
         forceAdd = false as boolean
     ) {
         if (

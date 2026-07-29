@@ -1,4 +1,9 @@
-import type { IChain, IDefaultGithubWorkflowsList, IHardhatPluginAvailableList } from './types.ts'
+import type {
+    IAddressBookConfig,
+    IChain,
+    IDefaultGithubWorkflowsList,
+    IHardhatPluginAvailableList
+} from './types.ts'
 
 export const fileHardhatAwesomeCLI = 'hardhat-awesome-cli.json'
 export const fileEnvHardhatAwesomeCLI = '.env.hardhat-awesome-cli'
@@ -349,7 +354,7 @@ export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
     }
 ]
 
-export const addressBookDefaultConfig = {
+export const addressBookDefaultConfig: IAddressBookConfig = {
     savePath: './',
     openzeppelinPath: '.openzeppelin',
     contractsFlattenPath: 'contractsFlatten',
@@ -360,29 +365,32 @@ export const addressBookDefaultConfig = {
     fileContractsAddressDeployedHistory: 'contractsAddressDeployedHistory.json'
 }
 
+/**
+ * Resolve the user's `hardhat-awesome-cli` config with sensible defaults.
+ *
+ * Accepts any object that exposes an optional `addressBook` slice (so callers
+ * can hand the raw `hardhat.config` without us having to take a hard
+ * dependency on its full type) and returns a fully populated
+ * {@link IAddressBookConfig}. Falling back to the default config keeps the
+ * standalone CLI shim (`src/index.ts`) and the address-book flows working
+ * without any explicit setup.
+ */
 export const getAddressBookConfig = (
-    userConfig = {
-        addressBook: addressBookDefaultConfig
-    } as any
-) => {
-    if (userConfig.addressBook)
-        return {
-            savePath: userConfig.addressBook.savePath || addressBookDefaultConfig.savePath,
-            openzeppelinPath: userConfig.addressBook.openzeppelinPath || addressBookDefaultConfig.openzeppelinPath,
-            contractsFlattenPath:
-                userConfig.addressBook.contractsFlattenPath || addressBookDefaultConfig.contractsFlattenPath,
-            contractsFlattenPrefix:
-                userConfig.addressBook.contractsFlattenPrefix || addressBookDefaultConfig.contractsFlattenPrefix,
-            fileHardhatAwesomeCLI:
-                userConfig.addressBook.fileHardhatAwesomeCLI || addressBookDefaultConfig.fileHardhatAwesomeCLI,
-            fileEnvHardhatAwesomeCLI:
-                userConfig.addressBook.fileEnvHardhatAwesomeCLI || addressBookDefaultConfig.fileEnvHardhatAwesomeCLI,
-            fileContractsAddressDeployed:
-                userConfig.addressBook.fileContractsAddressDeployed ||
-                addressBookDefaultConfig.fileContractsAddressDeployed,
-            fileContractsAddressDeployedHistory:
-                userConfig.addressBook.fileContractsAddressDeployedHistory ||
-                addressBookDefaultConfig.fileContractsAddressDeployedHistory
-        }
-    return addressBookDefaultConfig
+    userConfig?: { addressBook?: Partial<IAddressBookConfig> }
+): IAddressBookConfig => {
+    const userBook = userConfig?.addressBook
+    if (!userBook) return { ...addressBookDefaultConfig }
+    return {
+        savePath: userBook.savePath ?? addressBookDefaultConfig.savePath,
+        openzeppelinPath: userBook.openzeppelinPath ?? addressBookDefaultConfig.openzeppelinPath,
+        contractsFlattenPath: userBook.contractsFlattenPath ?? addressBookDefaultConfig.contractsFlattenPath,
+        contractsFlattenPrefix: userBook.contractsFlattenPrefix ?? addressBookDefaultConfig.contractsFlattenPrefix,
+        fileHardhatAwesomeCLI: userBook.fileHardhatAwesomeCLI ?? addressBookDefaultConfig.fileHardhatAwesomeCLI,
+        fileEnvHardhatAwesomeCLI:
+            userBook.fileEnvHardhatAwesomeCLI ?? addressBookDefaultConfig.fileEnvHardhatAwesomeCLI,
+        fileContractsAddressDeployed:
+            userBook.fileContractsAddressDeployed ?? addressBookDefaultConfig.fileContractsAddressDeployed,
+        fileContractsAddressDeployedHistory:
+            userBook.fileContractsAddressDeployedHistory ?? addressBookDefaultConfig.fileContractsAddressDeployedHistory
+    }
 }
