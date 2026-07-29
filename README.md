@@ -244,6 +244,23 @@ Boolean flags (no value) are rendered without an argument:
 Equivalent CLI command:  npx hardhat cli --addFoundry
 ```
 
+### Skipping or shortening UI pauses
+
+The CLI uses two environment variables to control the brief readability pauses that sit between menu steps:
+
+-   `AWESOME_CLI_NO_PAUSE=1` — skip every short pause entirely. Recommended in CI or any non-interactive run where the menu would otherwise redraw over the previous output.
+-   `AWESOME_CLI_PAUSE_MS=<ms>` — set the default pause length (default `250`, capped at `5000`). Useful when you want a quicker menu without disabling pauses outright.
+
+```commandline
+# Quiet CI run — never pause, never block on a sleep
+AWESOME_CLI_NO_PAUSE=1 npx hardhat cli --addHardhatPlugin @nomicfoundation/hardhat-ethers
+
+# Speed up a local session — keep pauses, but cut them in half
+AWESOME_CLI_PAUSE_MS=120 npx hardhat cli
+```
+
+Long-running work (running tests, installing or removing a plugin, flattening a contract, …) does **not** rely on these variables — it already awaits the child process exit, so the menu never resumes before the command has finished.
+
 ## Helper tools
 
 Tools that you can use in your scripts and tests to make your life easier
