@@ -67,4 +67,42 @@ describe('MockTransparentUpgradeableProxy', function () {
             MockERC20UpgradeableV2.address
         )
     })
+
+    it('Should delegate calls to the logic contract (proxy returns the logic name)', async function () {
+        const proxyAsErc20 = await ethers.getContractAt('MockERC20Upgradeable', mockTransparentUpgradeableProxy.address)
+        expect(await proxyAsErc20.name()).to.equal('')
+    })
+
+    it('Should reject direct admin calls routed through the proxy', async function () {
+        const proxyAsAdmin = await ethers.getContractAt('MockProxyAdmin', mockTransparentUpgradeableProxy.address)
+        const [, user1] = await ethers.getSigners()
+
+        const MockERC20Upgradeable = await ethers.getContractFactory('MockERC20Upgradeable')
+        const newLogic = await MockERC20Upgradeable.deploy()
+        await newLogic.deployed()
+
+        let reverted = false
+        try {
+            await proxyAsAdmin.connect(user1).upgrade(mockTransparentUpgradeableProxy.address, newLogic.address)
+        } catch (e) {
+            reverted = true
+        }
+        expect(reverted).to.equal(true)
+    })
+
+    it('Should delegate upgradeAndCall and re-initialize the logic through the proxy', async function () {
+        const MockERC20Upgradeable = await ethers.getContractFactory('MockERC20Upgradeable')
+        const newLogic = await MockERC20Upgradeable.deploy()
+        await newLogic.deployed()
+
+        const factory = await ethers.getContractFactory('MockERC20Upgradeable')
+        const fragment = factory.interface.getFunction('initialize', 'string,string')
+        const callData = factory.interface.encodeFunctionData(fragment, ['V2Token', 'V2'])
+
+        await mockProxyAdmin.upgradeAndCall(mockTransparentUpgradeableProxy.address, newLogic.address, callData)
+
+        const proxyAsErc20 = await ethers.getContractAt('MockERC20Upgradeable', mockTransparentUpgradeableProxy.address)
+        expect(await proxyAsErc20.name()).to.equal('V2Token')
+        expect(await proxyAsErc20.symbol()).to.equal('V2')
+    })
 })
