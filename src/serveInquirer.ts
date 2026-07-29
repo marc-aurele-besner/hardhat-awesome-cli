@@ -29,10 +29,12 @@ import {
 import buildMockContract, { buildMockDeploymentScriptOrTest } from './buildMockContracts.ts'
 import {
     addActivatedChain,
-    addCustomChain,
     buildActivatedChainNetworkConfig,
     buildNetworkSelectorChoices,
-    removeActivatedChain
+    formatAddCustomChainFlag,
+    parseAddCustomChainFlag,
+    removeActivatedChain,
+    runAddCustomChain
 } from './buildNetworks.ts'
 import {
     formatVerifyContractFlag,
@@ -429,36 +431,18 @@ const serveSettingSelector = async (env: IHreContext) => {
                 message: 'Chain default RPC Url'
             }
         ])
-        const getNetworkConfig = buildActivatedChainNetworkConfig()
-        let buildNetworkConfig: { networks: Record<string, unknown>[] } = { networks: [{}] }
-        if (getNetworkConfig) {
-            buildNetworkConfig = JSON.parse(
-                `{
-                    "networks": [
-                        {${getNetworkConfig}}
-                    ]
-                }`
-            )
-        }
-        let chainName: string = ''
-        const firstNetwork = buildNetworkConfig.networks[0]
-        for (let i = 1; i <= 8; i++) {
-            const key = `customChain${i}`
-            if (firstNetwork[key] !== undefined && !chainName) {
-                chainName = key
-                break
-            }
-        }
-        if (chainName) {
-            const chainToAdd: IChain = {
-                name: chainSelected.name,
-                chainName,
-                chainId: chainSelected.chainId,
-                gas: chainSelected.gas,
-                defaultRpcUrl: chainSelected.defaultRpcUrl
-            }
-            await addCustomChain(chainToAdd)
-        }
+        // inquirer `input` returns strings even for numeric fields, so coerce
+        // chainId to a number before handing off to the shared runner that
+        // backs the `--addCustomChain` CLI flag. The runner picks the next
+        // free `customChain{N}` slot and prints the same conflict warnings as
+        // the menu flow used to.
+        const parsedChainId = Number(chainSelected.chainId)
+        await runAddCustomChain({
+            name: chainSelected.name,
+            chainId: parsedChainId,
+            gas: chainSelected.gas,
+            defaultRpcUrl: chainSelected.defaultRpcUrl
+        })
     }
     if (settingSelected.settings === 'See all config for activated chain') {
         const getNetworkConfig = buildActivatedChainNetworkConfig()
@@ -1256,6 +1240,7 @@ interface ICliArgs {
     addFoundry?: string
     addFoundryTestUtility?: string
     addActivatedChain?: string
+    addCustomChain?: string
     removeActivatedChain?: string
     getAccountBalance?: string
     addCustomMockContract?: string
@@ -1390,6 +1375,19 @@ const serveCli = async (args: ICliArgs, env: IHreContext) => {
             return installFoundryTestUtility()
         case isPresentString(args.addActivatedChain):
             return addActivatedChain(args.addActivatedChain)
+        case isPresentString(args.addCustomChain): {
+            const parsed = parseAddCustomChainFlag(args.addCustomChain)
+            if (!parsed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'Invalid --addCustomChain value. Expected a JSON object with at least "name" (string) and "chainId" (positive integer).'
+                )
+                return
+            }
+            const added = await runAddCustomChain(parsed)
+            if (added) displayFinalCliCommand('addCustomChain', formatAddCustomChainFlag(parsed))
+            return
+        }
         case isPresentString(args.removeActivatedChain):
             return removeActivatedChain(args.removeActivatedChain)
         case isAffirmativeString(args.getAccountBalance):

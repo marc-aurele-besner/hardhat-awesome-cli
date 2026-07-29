@@ -179,23 +179,199 @@ export const removeActivatedChain = async (chainName: string) => {
     }
 }
 
+/**
+ * Public input shape for the `--addCustomChain` CLI flag (and the helper that
+ * backs it). Only carries the user-visible fields — the internal `chainName`
+ * slot (`customChain1` … `customChain8`) is assigned automatically by
+ * {@link buildCustomChainEntry} so the menu and the flag surface stay in
+ * lock-step.
+ */
+export interface IAddCustomChainInput {
+    name: string
+    chainId: number
+    gas?: string
+    defaultRpcUrl?: string
+}
+
+/**
+ * Find the first free `customChain{N}` slot (1..8) in the activated chain
+ * list. Returns `undefined` when every slot is already taken, so the caller
+ * can warn instead of silently overwriting an existing custom chain.
+ *
+ * Slots are picked in ascending order so re-running the menu / CLI flag
+ * without a removal step produces deterministic slot assignments.
+ */
+export const findAvailableCustomChainSlot = async (): Promise<string | undefined> => {
+    const activatedChainList = await buildActivatedChainList()
+    for (let i = 1; i <= 8; i++) {
+        const candidate = `customChain${i}`
+        if (!activatedChainList.find((chain: IChain) => chain.chainName === candidate)) {
+            return candidate
+        }
+    }
+    return undefined
+}
+
+/**
+ * Build the {@link IChain} entry to persist when adding a custom chain
+ * through the menu or the `--addCustomChain` CLI flag.
+ *
+ * Picks the next free `customChain{N}` slot (1..8) automatically, so the
+ * caller only supplies user-visible fields. Returns `undefined` when:
+ *   - the input is missing or not an object
+ *   - `name` is empty after trimming
+ *   - `chainId` is missing or not a positive integer
+ *   - every `customChain{N}` slot is already in use
+ *
+ * Defaults `gas` to `'auto'` (the menu's own default) and drops
+ * `defaultRpcUrl` when blank so the persisted entry matches what a fresh
+ * menu interaction would write.
+ */
+export const buildCustomChainEntry = async (details: IAddCustomChainInput): Promise<IChain | undefined> => {
+    if (!details || typeof details !== 'object') return undefined
+    const name = typeof details.name === 'string' ? details.name.trim() : ''
+    const rawChainId = typeof details.chainId === 'number' ? details.chainId : Number(details.chainId)
+    if (!name) return undefined
+    if (!Number.isFinite(rawChainId) || !Number.isInteger(rawChainId) || rawChainId <= 0) return undefined
+    const gas = typeof details.gas === 'string' && details.gas.trim() !== '' ? details.gas.trim() : 'auto'
+    const defaultRpcUrl =
+        typeof details.defaultRpcUrl === 'string' && details.defaultRpcUrl.trim() !== ''
+            ? details.defaultRpcUrl.trim()
+            : undefined
+
+    const chainName = await findAvailableCustomChainSlot()
+    if (!chainName) return undefined
+
+    const entry: IChain = {
+        name,
+        chainName,
+        chainId: rawChainId,
+        gas
+    }
+    if (defaultRpcUrl) entry.defaultRpcUrl = defaultRpcUrl
+    return entry
+}
+
+/**
+ * Print the conflict warning that {@link runAddCustomChain} uses when the
+ * supplied chain collides with an existing entry. Kept as a small helper so
+ * the test suite can verify the exact message without re-implementing it.
+ */
+const CHAIN_CONFLICT_MESSAGES: Record<string, string> = {
+    defaultShortName: 'Chain with same Short-Name already exists in regular chain selection',
+    defaultChainId: 'Chain with same chainId already exists in regular chain selection',
+    activatedShortName: 'Chain with same Short-Name already exists in your settings activated chain list',
+    activatedChainId: 'Chain with same chainId already exists in your settings activated chain list'
+}
+
 export const addCustomChain = async (chainDetails: IChain) => {
     const FullChainList = DefaultChainList
     const ActivatedChainList = await buildActivatedChainList()
     // Verify if the chain already exists in regular full chain list
     if (FullChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName))
-        console.log('\x1b[33m%s\x1b[0m', 'Chain with same Short-Name already exists in regular chain selection')
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.defaultShortName)
     else if (FullChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId))
-        console.log('\x1b[33m%s\x1b[0m', 'Chain with same chainId already exists in regular chain selection')
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.defaultChainId)
     // Verify if the chain already exists in user setting activated chain list
     else if (ActivatedChainList.find((chain: IChain) => chain.chainName === chainDetails.chainName))
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.activatedShortName)
+    else if (ActivatedChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId))
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.activatedChainId)
+    else await addChain(chainDetails.chainName, chainDetails)
+}
+
+/**
+ * Add a custom chain to the user's activated chain list, picking the
+ * `customChain{N}` slot automatically. Returns `true` when the chain was
+ * persisted, `false` when:
+ *   - the input fails validation (missing name, non-positive chainId, …)
+ *   - every `customChain{N}` slot is already in use
+ *   - the chain collides with an existing default or activated chain
+ *
+ * The `false` return + yellow warning mirrors the existing menu behaviour so
+ * the CLI dispatcher can flag the failure without throwing, matching how
+ * `addCustomMockContract` and `addActivatedChain` already report failure to
+ * the user. Closes the "Add a custom chain to the current chain selection"
+ * menu sub-flow for non-interactive use.
+ */
+export const runAddCustomChain = async (details: IAddCustomChainInput): Promise<boolean> => {
+    const entry = await buildCustomChainEntry(details)
+    if (!entry) {
         console.log(
             '\x1b[33m%s\x1b[0m',
-            'Chain with same Short-Name already exists in your settings activated chain list'
+            'Could not build a custom chain entry. Check name, chainId, and ensure a customChain{N} slot is free.'
         )
-    else if (ActivatedChainList.find((chain: IChain) => chain.chainId === chainDetails.chainId))
-        console.log('\x1b[33m%s\x1b[0m', 'Chain with same chainId already exists in your settings activated chain list')
-    else await addChain(chainDetails.chainName, chainDetails)
+        return false
+    }
+
+    const FullChainList = DefaultChainList
+    const ActivatedChainList = await buildActivatedChainList()
+    if (FullChainList.find((chain: IChain) => chain.chainName === entry.chainName)) {
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.defaultShortName)
+        return false
+    }
+    if (FullChainList.find((chain: IChain) => chain.chainId === entry.chainId)) {
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.defaultChainId)
+        return false
+    }
+    if (ActivatedChainList.find((chain: IChain) => chain.chainName === entry.chainName)) {
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.activatedShortName)
+        return false
+    }
+    if (ActivatedChainList.find((chain: IChain) => chain.chainId === entry.chainId)) {
+        console.log('\x1b[33m%s\x1b[0m', CHAIN_CONFLICT_MESSAGES.activatedChainId)
+        return false
+    }
+
+    await addChain(entry.chainName, entry)
+    return true
+}
+
+/**
+ * Render the value consumed by `--addCustomChain` so the printed CLI command
+ * round-trips through {@link parseAddCustomChainFlag}.
+ *
+ * The flag value is a JSON object with the user-visible fields (`name`,
+ * `chainId`, optional `gas`, optional `defaultRpcUrl`). JSON is the only
+ * delimiter that survives every realistic payload (commas in names, colons
+ * in RPC URLs, …) and matches the convention `--addCustomCommand` already
+ * uses for structured settings entries.
+ */
+export const formatAddCustomChainFlag = (details: IAddCustomChainInput): string =>
+    JSON.stringify({
+        name: details.name,
+        chainId: details.chainId,
+        gas: details.gas,
+        defaultRpcUrl: details.defaultRpcUrl
+    })
+
+/**
+ * Parse the `--addCustomChain` CLI flag value.
+ *
+ * Returns `undefined` for anything that is not a valid JSON object with the
+ * required `name` / `chainId` fields so `serveCli` can warn the user instead
+ * of silently adding a malformed entry. The chainId coercion handles the
+ * `1234` vs `"1234"` ambiguity (JSON numbers are parsed as numbers; JSON
+ * strings of digits are coerced via `Number()`).
+ */
+export const parseAddCustomChainFlag = (value: string | undefined): IAddCustomChainInput | undefined => {
+    if (typeof value !== 'string' || value.trim() === '') return undefined
+    let parsed: any
+    try {
+        parsed = JSON.parse(value)
+    } catch {
+        return undefined
+    }
+    if (!parsed || typeof parsed !== 'object') return undefined
+    const name = typeof parsed.name === 'string' ? parsed.name.trim() : ''
+    if (!name) return undefined
+    const rawChainId = typeof parsed.chainId === 'number' ? parsed.chainId : Number(parsed.chainId)
+    if (!Number.isFinite(rawChainId) || !Number.isInteger(rawChainId) || rawChainId <= 0) return undefined
+    const input: IAddCustomChainInput = { name, chainId: rawChainId }
+    if (typeof parsed.gas === 'string' && parsed.gas.trim() !== '') input.gas = parsed.gas.trim()
+    if (typeof parsed.defaultRpcUrl === 'string' && parsed.defaultRpcUrl.trim() !== '')
+        input.defaultRpcUrl = parsed.defaultRpcUrl.trim()
+    return input
 }
 
 /**
