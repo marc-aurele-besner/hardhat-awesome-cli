@@ -176,7 +176,7 @@ export default defineConfig({
 
     -   Add foundry-test-utility (npm package for shared Forge mocks & utilities)
 
--   Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts (Missing test for MockProxyAdmin and MockTransparentUpgradeableProxy))
+-   Create Mock contracts + (Deployment scripts, tests scripts and Foundry(Forge) test contracts)
     -   All mock contracts (create every mock contract below, with their deployment and test scripts, at the same time)
     -   MockERC20
     -   MockERC721

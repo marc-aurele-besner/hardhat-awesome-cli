@@ -66,4 +66,54 @@ describe('MockERC20UpgradeableUpgradeable', function () {
         await mockERC20Upgradeable.connect(user1).transferFrom(deployer.address, user2.address, amount)
         expect(await mockERC20Upgradeable.balanceOf(user2.address)).to.equal(1000)
     })
+
+    it('Should track allowance after approve and reset to zero', async function () {
+        const amount = 1000
+        await mockERC20Upgradeable.mint(deployer.address, amount)
+
+        expect(await mockERC20Upgradeable.allowance(deployer.address, user1.address)).to.equal(0)
+
+        await mockERC20Upgradeable.approve(user1.address, amount)
+        expect(await mockERC20Upgradeable.allowance(deployer.address, user1.address)).to.equal(amount)
+
+        await mockERC20Upgradeable.approve(user1.address, 0)
+        expect(await mockERC20Upgradeable.allowance(deployer.address, user1.address)).to.equal(0)
+    })
+
+    it('Should revert transferFrom when allowance is exceeded', async function () {
+        const amount = 1000
+        await mockERC20Upgradeable.mint(deployer.address, amount)
+
+        await mockERC20Upgradeable.approve(user1.address, amount - 1)
+        let reverted = false
+        try {
+            await mockERC20Upgradeable.connect(user1).transferFrom(deployer.address, user2.address, amount)
+        } catch (e) {
+            reverted = true
+        }
+        expect(reverted).to.equal(true)
+    })
+
+    it('Should burnFrom a holder balance', async function () {
+        const amount = 1000
+        await mockERC20Upgradeable.mint(deployer.address, amount)
+        expect(await mockERC20Upgradeable.balanceOf(deployer.address)).to.equal(amount)
+
+        await mockERC20Upgradeable.burnFrom(deployer.address, amount)
+        expect(await mockERC20Upgradeable.balanceOf(deployer.address)).to.equal(0)
+        expect(await mockERC20Upgradeable.totalSupply()).to.equal(0)
+    })
+
+    it('Should revert burnFrom when amount is zero', async function () {
+        const amount = 1000
+        await mockERC20Upgradeable.mint(deployer.address, amount)
+
+        let reverted = false
+        try {
+            await mockERC20Upgradeable.burnFrom(deployer.address, 0)
+        } catch (e) {
+            reverted = true
+        }
+        expect(reverted).to.equal(true)
+    })
 })

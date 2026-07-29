@@ -57,13 +57,16 @@ const MockContractsList: IMockContractsList[] = [
         name: 'MockProxyAdmin',
         desc: 'Setup a Mock Proxy Admin contract to interact with the Proxy contract.',
         dependencies: ['@openzeppelin/contracts'],
-        deploymentScript: 'scripts/deploy-Mock-Proxy-Admin.ts'
+        deploymentScript: 'scripts/deploy-Mock-Proxy-Admin.ts',
+        testScript: 'test/test-Mock-Proxy-Admin.ts',
+        testContractFoundry: 'testForge/MockProxyAdmin.t.sol'
     },
     {
         name: 'MockTransparentUpgradeableProxy',
         desc: 'Setup a Mock Transparent Upgradeable Proxy contract to implement your contract logic using delegatecall.',
         dependencies: ['@openzeppelin/contracts'],
-        deploymentScript: 'scripts/deploy-Mock-Transparent-Upgradeable-Proxy.ts'
+        deploymentScript: 'scripts/deploy-Mock-Transparent-Upgradeable-Proxy.ts',
+        testContractFoundry: 'testForge/MockTransparentUpgradeableProxy.t.sol'
     }
 ]
 

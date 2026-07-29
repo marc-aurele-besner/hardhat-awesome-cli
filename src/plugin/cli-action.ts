@@ -11,10 +11,7 @@ import type { IHreContext } from '../types.ts'
  * way to keep the inquirer UI working without rewriting every downstream
  * call site.
  */
-export default async function cliAction(
-    args: Record<string, string>,
-    hre: HardhatRuntimeEnvironment
-): Promise<void> {
+export default async function cliAction(args: Record<string, string>, hre: HardhatRuntimeEnvironment): Promise<void> {
     const network = await hre.network
         .connect()
         .catch(() => undefined as unknown as Awaited<ReturnType<typeof hre.network.connect>>)
