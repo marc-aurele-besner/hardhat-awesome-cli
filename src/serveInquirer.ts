@@ -14,6 +14,11 @@ import {
 import buildFoundrySetting, { installFoundryTestUtility } from './buildFoundrySetting.ts'
 import buildDeploymentContract, { formatAddDeploymentScriptFlag, parseAddDeploymentScriptFlag } from './buildDeploymentContract.ts'
 import {
+    formatFlattenContractFlag,
+    parseFlattenContractFlag,
+    runFlattenContract
+} from './buildFlattenContracts.ts'
+import {
     addCustomCommand,
     formatAddCustomCommandFlag,
     loadCustomCommands,
@@ -259,20 +264,13 @@ const serveScriptSelector = async (env: IHreContext, ServeTestSelector: typeof s
     }
 }
 
-const serveFlattenContractsSelector = async (env: IHreContext, command: string) => {
-    const addressBookConfig = getAddressBookConfig(env.userConfig)
-    let renameLicenseIdentifier = false
+const serveFlattenContractsSelector = async (env: IHreContext) => {
     const contractSelected = await serveFileListSelector('Select a contract to flatten', async (subPath: string) => {
         const contractsFilesObject = await buildContractsList(subPath)
         if (subPath) return contractsFilesObject
         return [{ name: 'Flatten all contracts', type: 'all', filePath: '' }, ...contractsFilesObject]
     })
     if (!contractSelected || contractSelected === 'back') return
-    let contractFlattenName: string = addressBookConfig.contractsFlattenPrefix + 'All.sol'
-    if (contractSelected.type === 'file') {
-        command = command + ' contracts/' + contractSelected.filePath
-        contractFlattenName = addressBookConfig.contractsFlattenPrefix + contractSelected.filePath.replace(/\//g, '-')
-    }
     const contractsSelected: RenameLicenseAnswer = await inquirer.prompt<RenameLicenseAnswer>([
         {
             type: 'confirm',
@@ -280,45 +278,23 @@ const serveFlattenContractsSelector = async (env: IHreContext, command: string) 
             message: 'Rename SPDX-License-Identifier'
         }
     ])
-    renameLicenseIdentifier = contractsSelected.renameLicenseIdentifier
-    if (!fs.existsSync(addressBookConfig.contractsFlattenPath)) fs.mkdirSync(addressBookConfig.contractsFlattenPath)
-    if (command) {
-        await runCommand(
-            command,
-            '',
-            ' > ' + addressBookConfig.contractsFlattenPath + '/' + contractFlattenName,
-            renameLicenseIdentifier ? false : true
-        )
-        if (renameLicenseIdentifier) {
-            // `runCommand` now resolves once `npx hardhat flatten` has exited,
-            // but the redirected file may still be flushing. Poll for content
-            // with a bounded number of short attempts; bail out (and warn) if
-            // the file stays empty, instead of looping indefinitely.
-            const flattenFilePath = addressBookConfig.contractsFlattenPath + '/' + contractFlattenName
-            const maxAttempts = 10
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                if (fs.existsSync(flattenFilePath) && fs.readFileSync(flattenFilePath, 'utf8').length > 0) break
-                await waitForReadability(250)
-            }
-            if (fs.existsSync(flattenFilePath) && fs.readFileSync(flattenFilePath, 'utf8').length > 0) {
-                let fileContent = fs.readFileSync(flattenFilePath, 'utf8')
-                if (fileContent.includes('SPDX-License-Identifier')) {
-                    fileContent = fileContent.replace('SPDX-License-Identifier', 'SPDX-License-DISABLED-Identifier')
-                    fs.writeFileSync(flattenFilePath, fileContent)
-                } else
-                    console.log(
-                        'SPDX-License-Identifier not found in ' + contractFlattenName + ' file, skipping rename'
-                    )
-                if (fileContent.includes('pragma solidity')) {
-                    fileContent = fileContent.replace('pragma solidity', '// pragma solidity')
-                    fs.writeFileSync(flattenFilePath, fileContent)
-                } else console.log('pragma solidity not found in ' + contractFlattenName + ' file, skipping rename')
-            } else
-                console.log(
-                    'Flatten output file ' + contractFlattenName + ' is still empty after waiting, skipping rename'
-                )
-        }
-    }
+    // The menu lets the user pick "Flatten all contracts" (display name) or
+    // a specific file. The CLI flag value mirrors the same shape (`all` or
+    // a contract name) so we can hand either straight to `runFlattenContract`.
+    const contractName =
+        contractSelected.type === 'file' ? contractSelected.filePath.replace(/\.sol$/, '') : 'all'
+    await runFlattenContract(
+        {
+            contractName,
+            renameLicenseIdentifier: contractsSelected.renameLicenseIdentifier
+        },
+        env.userConfig
+    )
+    displayFinalCliCommand(
+        'flattenContract',
+        formatFlattenContractFlag(contractName, contractsSelected.renameLicenseIdentifier)
+    )
+    await waitForReadability()
 }
 
 const serveFunctionListSelector = async (env: IHreContext) => {
@@ -1288,6 +1264,7 @@ interface ICliArgs {
     addCustomCommand?: string
     removeCustomCommand?: string
     verifyContract?: string
+    flattenContract?: string
 }
 
 const serveInquirer = async (env: IHreContext) => {
@@ -1345,7 +1322,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
     ])
     if (answers.action === 'Run tests') await serveTestSelector(env, 'npx hardhat test', '')
     if (answers.action === 'Run scripts') await serveScriptSelector(env, null)
-    if (answers.action === 'Flatten contracts') await serveFlattenContractsSelector(env, 'npx hardhat flatten')
+    if (answers.action === 'Flatten contracts') await serveFlattenContractsSelector(env)
     if (answers.action === 'Run Foundry Forge tests') await serveFoundryTestSelector(env, 'forge test')
     if (answers.action === 'Select scripts and tests to run') await serveScriptSelector(env, serveTestSelector)
     if (answers.action === 'Run coverage tests') await serveTestSelector(env, 'npx hardhat coverage', '')
@@ -1500,6 +1477,23 @@ const serveCli = async (args: ICliArgs, env: IHreContext) => {
                 contractNameOrAddress: parsed.contractNameOrAddress,
                 constructorArgs: parsed.constructorArgs
             })
+        }
+        case isPresentString(args.flattenContract): {
+            const parsed = parseFlattenContractFlag(args.flattenContract)
+            if (!parsed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'Invalid --flattenContract value. Expected a contract name, or "all" to flatten every contract, optionally followed by ":renameLicense".'
+                )
+                return
+            }
+            return runFlattenContract(
+                {
+                    contractName: parsed.contractName,
+                    renameLicenseIdentifier: parsed.renameLicenseIdentifier
+                },
+                env.userConfig
+            )
         }
         default:
             return serveInquirer(env)

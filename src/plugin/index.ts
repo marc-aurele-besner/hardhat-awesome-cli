@@ -114,6 +114,12 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
             'Verify a deployed contract on a block explorer. Pass "<network>:<contractNameOrAddress>[:<arg1>:<arg2>:...]" — the contract name is resolved from the address book, or pass a 0x-prefixed address directly.',
         defaultValue: ''
     })
+    .addOption({
+        name: 'flattenContract',
+        description:
+            'Flatten a contract (or every contract) under contracts/. Pass a contract name (with or without the .sol extension, optionally including a sub-path), or "all" to flatten every contract. Append ":renameLicense" to also rewrite the SPDX-License-Identifier and pragma solidity in the output.',
+        defaultValue: ''
+    })
     // The action must be a lazy import so plugins stay load-order safe.
     .setAction(() => import('./cli-action.ts'))
     .build()
