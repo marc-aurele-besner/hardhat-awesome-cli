@@ -20,7 +20,32 @@ npm run build
 
 3. Document the new features, or functionality in README.md
 
-4. Increase the version numbers in package.json to the new version that this Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
+4. Add a [Changeset](https://github.com/changesets/changesets) entry that describes the change from a user's perspective. From the repo root, run `npm run changeset` and follow the prompts — this drops a Markdown file under `.changeset/` that the release workflow consumes. Use:
+
+   - `major` for breaking changes
+   - `minor` for new features
+   - `patch` for bug fixes and chores
+
+   The maintainer triages changesets on merge; you don't need to bump
+   `package.json` or `CHANGELOG.md` by hand. The release workflow opens a
+   "Version Packages" PR that does both, and publishes to npm + creates a
+   GitHub Release when it merges.
+
+## Release process (maintainers)
+
+Releases are fully automated by `.github/workflows/release.yml` (powered by
+`changesets/action`). On every push to `main`:
+
+1. If any `.changeset/*.md` files exist, the action opens or updates a
+   "Version Packages" PR that runs `changeset version` — bumping
+   `package.json`, rewriting `CHANGELOG.md`, and deleting the consumed
+   changesets.
+2. Merging that PR triggers the same action. With no changesets pending,
+   it publishes the new version to npm (`npm run build && npm publish`,
+   which uses the `prepublishOnly` hook) and creates a GitHub Release.
+
+Required repo secrets: `NPM_TOKEN` (an npm automation token with publish
+rights on `hardhat-awesome-cli`).
 
 ## Code of Conduct
 
