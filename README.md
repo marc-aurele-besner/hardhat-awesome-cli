@@ -233,6 +233,10 @@ In 'More settings' you can also add a custom chain, create an issue or pull requ
 -   --remove-activated-chain Remove chains from the chain selection (default: "")
 -   --remove-hardhat-plugin Remove other Hardhat plugins (default: "")
 
+### Safe Hardhat plugin configuration updates
+
+For a typical Hardhat 3 `defineConfig({ plugins: [...] })` configuration, adding or removing a plugin updates both its ESM import and the `plugins` array. The generated plugin-array structure is checked before it replaces the original file. If the configuration shape is missing, ambiguous, or malformed, the CLI leaves the file untouched and prints the exact import and plugin entry to add manually. Legacy side-effect `require` and `import` configurations remain supported.
+
 ### Equivalent CLI command per menu selection
 
 When a menu selection maps to one of the CLI flags above (add/remove Hardhat plugins, add/remove activated chains, create GitHub workflows, install Foundry settings, install the Foundry test utility, …), the CLI prints the equivalent `npx hardhat cli --<flag> <value>` command line after the change is applied. This lets you skip the interactive prompts next time around, or wire the same action into a CI script.

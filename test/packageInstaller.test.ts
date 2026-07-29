@@ -9,7 +9,9 @@ import {
     addPluginToHardhat3Config,
     findHardhatConfigFilePath,
     hardhatPluginImportName,
+    inspectHardhat3Config,
     isHardhat3Config,
+    mutateHardhatConfigFile,
     removePluginFromHardhat3Config
 } from '../src/packageInstaller.ts'
 import type { IHardhatPluginAvailableList } from '../src/types.ts'
@@ -133,6 +135,82 @@ describe('packageInstaller', function () {
 
             expect(removed).to.include('plugins: []')
             expect(removed).to.not.include('@nomicfoundation/hardhat-viem')
+        })
+    })
+
+    describe('inspectHardhat3Config', function () {
+        it('rejects configs without a plugins array explicitly', function () {
+            const result = inspectHardhat3Config(`export default defineConfig({ solidity: '0.8.28' })`)
+
+            expect(result).to.deep.include({ reason: 'no-plugins-array' })
+        })
+
+        it('rejects configs with multiple plugins arrays explicitly', function () {
+            const result = inspectHardhat3Config(
+                `export default defineConfig({ plugins: [], nested: { plugins: [] } })`
+            )
+
+            expect(result).to.deep.include({ reason: 'multiple-plugins-arrays' })
+        })
+
+        it('rejects an unterminated plugins array explicitly', function () {
+            const result = inspectHardhat3Config(`export default defineConfig({ plugins: [hardhatAwesomeCli })`)
+
+            expect(result).to.deep.include({ reason: 'unterminated-plugins-array' })
+        })
+    })
+
+    describe('mutateHardhatConfigFile', function () {
+        const initialCwd = process.cwd()
+        let fixtureDirectory: string
+        let configPath: string
+
+        beforeEach(function () {
+            fixtureDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'hardhat-awesome-cli-mutation-'))
+            process.chdir(fixtureDirectory)
+            configPath = path.join(fixtureDirectory, 'hardhat.config.ts')
+        })
+
+        afterEach(function () {
+            process.chdir(initialCwd)
+            fs.rmSync(fixtureDirectory, { recursive: true, force: true })
+        })
+
+        it('adds and removes a plugin in a fixture config without breaking syntax', function () {
+            const fixturePath = path.join(initialCwd, 'test/fixtures/packageInstaller/hardhat.config.ts')
+            const source = fs.readFileSync(fixturePath, 'utf8')
+            fs.writeFileSync(configPath, source)
+
+            expect(mutateHardhatConfigFile(configPath, '@nomicfoundation/hardhat-ethers', true)).to.deep.equal({
+                updated: true
+            })
+            const added = fs.readFileSync(configPath, 'utf8')
+            expect(added).to.include(`import hardhatEthers from '@nomicfoundation/hardhat-ethers'`)
+            expect(added).to.include('plugins: [hardhatAwesomeCli, hardhatEthers]')
+            const checkPath = path.join(fixtureDirectory, 'hardhat.config.mjs')
+            fs.writeFileSync(checkPath, added)
+            expect(() => execFileSync(process.execPath, ['--check', checkPath])).to.not.throw()
+
+            expect(mutateHardhatConfigFile(configPath, '@nomicfoundation/hardhat-ethers', false)).to.deep.equal({
+                updated: true
+            })
+            expect(fs.readFileSync(configPath, 'utf8')).to.equal(source)
+        })
+
+        it('leaves an unsupported config untouched and reports the reason', function () {
+            const source = `import { defineConfig } from 'hardhat/config'\nexport default defineConfig({ solidity: '0.8.28' })\n`
+            fs.writeFileSync(configPath, source)
+
+            const result = mutateHardhatConfigFile(configPath, '@nomicfoundation/hardhat-ethers', true)
+
+            expect(result.failure).to.deep.include({ reason: 'no-plugins-array' })
+            expect(fs.readFileSync(configPath, 'utf8')).to.equal(source)
+            expect(fs.existsSync(`${configPath}.hardhat-awesome-cli.ts`)).to.equal(false)
+        })
+
+        it('recognizes side-effect imports and require calls', function () {
+            expect(isHardhat3Config(`import '@nomicfoundation/hardhat-ethers'\nplugins: []`)).to.equal(true)
+            expect(isHardhat3Config(`require('@nomicfoundation/hardhat-ethers')\nplugins: []`)).to.equal(true)
         })
     })
 
