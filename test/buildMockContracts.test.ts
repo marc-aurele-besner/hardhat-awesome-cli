@@ -4,6 +4,7 @@ import os from 'os'
 import path from 'path'
 
 import buildMockContract, { buildMockDeploymentScriptOrTest } from '../src/buildMockContracts.ts'
+import MockContractsList from '../src/mockContracts/index.ts'
 
 /**
  * Tests for the mock-contract generator. Issue #168 asked that the mock
@@ -17,9 +18,14 @@ describe('buildMockContracts (issue #168)', function () {
 
     // `detectPackage` short-circuits when the dependency already lives under
     // `node_modules/`, so creating an empty placeholder keeps the install
-    // command from running during tests.
+    // command from running during tests. Both the static and the upgradeable
+    // OpenZeppelin paths are stubbed because the registry iteration test
+    // touches every entry (issue #163).
     const stubOpenZeppelinContracts = () => {
         fs.mkdirSync(path.join(fixtureDirectory, 'node_modules/@openzeppelin/contracts'), {
+            recursive: true
+        })
+        fs.mkdirSync(path.join(fixtureDirectory, 'node_modules/@openzeppelin/contracts-upgradeable'), {
             recursive: true
         })
     }
@@ -196,6 +202,38 @@ describe('buildMockContracts (issue #168)', function () {
             await buildMockDeploymentScriptOrTest('MockERC20', 'deployment')
 
             expect(fs.readFileSync(existing, 'utf8')).to.equal('// user edits')
+        })
+    })
+
+    // Issue #163 — every mock entry declared in MockContractsList must produce
+    // its .sol contract plus whatever artifact paths (deployment / test /
+    // Foundry test) the entry declares. Iterating the live registry catches
+    // drift: adding a new mock without filling in its testScript / Foundry
+    // path will fail this test on the next run.
+    describe('every registry entry is wired up (issue #163)', function () {
+        it('produces the .sol and every declared artifact path for each entry', async function () {
+            for (const entry of MockContractsList) {
+                await buildMockContract(entry.name)
+                expect(fs.existsSync(`contracts/${entry.name}.sol`), `missing contracts/${entry.name}.sol`).to.equal(true)
+
+                if (entry.deploymentScript) {
+                    const finalPath = entry.deploymentScript.replace(/\.ts$/, '.ts')
+                    await buildMockDeploymentScriptOrTest(entry.name, 'deployment')
+                    expect(fs.existsSync(finalPath), `missing deployment script ${finalPath}`).to.equal(true)
+                }
+
+                if (entry.testScript) {
+                    const finalPath = entry.testScript.replace(/\.ts$/, '.ts')
+                    await buildMockDeploymentScriptOrTest(entry.name, 'test')
+                    expect(fs.existsSync(finalPath), `missing test script ${finalPath}`).to.equal(true)
+                }
+
+                if (entry.testContractFoundry) {
+                    const finalPath = entry.testContractFoundry.replace('testForge/', 'contracts/test/')
+                    await buildMockDeploymentScriptOrTest(entry.name, 'testForge')
+                    expect(fs.existsSync(finalPath), `missing Foundry test ${finalPath}`).to.equal(true)
+                }
+            }
         })
     })
 })
