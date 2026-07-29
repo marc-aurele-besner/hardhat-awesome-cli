@@ -29,6 +29,14 @@ import {
     buildNetworkSelectorChoices,
     removeActivatedChain
 } from './buildNetworks.ts'
+import {
+    formatVerifyContractFlag,
+    isEthereumAddress,
+    listDeployedContractsForNetwork,
+    parseVerifyContractFlag,
+    resolveChainShortName,
+    runVerifyContract
+} from './buildVerifyContract.ts'
 import buildWorkflows, { buildWorkflowsFromCommand } from './buildWorkflows.ts'
 import {
     DefaultChainList,
@@ -1116,6 +1124,143 @@ const serveAccountBalance = async (env: IHreContext) => {
     await serveNetworkSelector(env, '', '', getAccountBalance, undefined, false)
 }
 
+interface VerifyContractSourceAnswer {
+    source: string
+}
+interface VerifyContractDeployedAnswer {
+    contractName: string
+}
+interface VerifyContractAddressAnswer {
+    address: string
+}
+interface VerifyContractArgsAnswer {
+    provideArgs: string
+    constructorArgs: string
+}
+
+const VERIFY_SOURCE_ADDRESS_BOOK = 'Pick a contract from the address book'
+const VERIFY_SOURCE_MANUAL = 'Enter a contract address manually'
+const VERIFY_PROVIDE_ARGS_YES = 'yes'
+const VERIFY_PROVIDE_ARGS_NO = 'no'
+
+/**
+ * Interactive "Verify a contract" flow.
+ *
+ * Steps:
+ *   1. Pick a network from the activated chain list (matches the selector
+ *      used by `serveAccountBalance` so the user already knows the layout).
+ *   2. Pick the source: address-book entry or manual address.
+ *   3. Resolve the address.
+ *   4. Optionally provide constructor arguments (comma-separated).
+ *   5. Run `npx hardhat verify <address> --network <network> [<args>...]`.
+ *
+ * The function delegates parsing, validation, and command construction to
+ * `buildVerifyContract.ts` so the CLI flag dispatcher and the menu share
+ * the same code path.
+ */
+const serveVerifyContractSelector = async (env: IHreContext) => {
+    const activatedChainListFromFile: IChain[] = await buildActivatedChainList()
+    const { chains: ActivatedChainList, names: activatedChainList } = buildNetworkSelectorChoices(
+        activatedChainListFromFile,
+        // Local hardhat networks don't have a block explorer — skipping
+        // them keeps the menu from offering a verify command that would
+        // fail at the explorer API.
+        true
+    )
+    if (ActivatedChainList.length === 0) {
+        console.log(
+            '\x1b[33m%s\x1b[0m',
+            'No network activated. Activate a chain with --addActivatedChain first or via the "Setup chains, RPC and accounts" menu before verifying a contract.'
+        )
+        return
+    }
+    const networkSelected: NetworkChoiceAnswer = await inquirer.prompt<NetworkChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'network',
+            message: 'Select the network the contract was deployed to',
+            choices: activatedChainList
+        }
+    ])
+    const selectedChain = ActivatedChainList.find((chain: IChain) => chain.name === networkSelected.network)
+    if (!selectedChain) return
+    const chainShortName = resolveChainShortName(selectedChain, ActivatedChainList)
+
+    const deployedEntries = listDeployedContractsForNetwork(chainShortName, env.userConfig)
+    const sourceChoices = [VERIFY_SOURCE_MANUAL]
+    if (deployedEntries.length > 0) sourceChoices.unshift(VERIFY_SOURCE_ADDRESS_BOOK)
+    const sourceAnswer: VerifyContractSourceAnswer = await inquirer.prompt<VerifyContractSourceAnswer>([
+        {
+            type: 'list',
+            name: 'source',
+            message: 'How do you want to identify the contract?',
+            choices: sourceChoices
+        }
+    ])
+
+    let contractNameOrAddress = ''
+    let resolvedAddress = ''
+    if (sourceAnswer.source === VERIFY_SOURCE_ADDRESS_BOOK) {
+        const contractChoices = deployedEntries.map((entry) => entry.name)
+        const picked: VerifyContractDeployedAnswer = await inquirer.prompt<VerifyContractDeployedAnswer>([
+            {
+                type: 'list',
+                name: 'contractName',
+                message: 'Select a contract from the address book',
+                choices: contractChoices
+            }
+        ])
+        contractNameOrAddress = picked.contractName
+        const resolved = deployedEntries.find((entry) => entry.name === picked.contractName)
+        resolvedAddress = resolved?.address ?? ''
+    } else {
+        const addressAnswer: VerifyContractAddressAnswer = await inquirer.prompt<VerifyContractAddressAnswer>([
+            {
+                type: 'input',
+                name: 'address',
+                message: 'Enter the deployed contract address (0x…)',
+                validate: (input: string) =>
+                    isEthereumAddress(input) || 'Please enter a valid 0x-prefixed 40-hex-character address'
+            }
+        ])
+        contractNameOrAddress = addressAnswer.address.trim()
+        resolvedAddress = contractNameOrAddress
+    }
+
+    const argsAnswer: VerifyContractArgsAnswer = await inquirer.prompt<VerifyContractArgsAnswer>([
+        {
+            type: 'list',
+            name: 'provideArgs',
+            message: 'Do you need to pass constructor arguments?',
+            choices: [VERIFY_PROVIDE_ARGS_NO, VERIFY_PROVIDE_ARGS_YES]
+        }
+    ])
+    let constructorArgs: string[] = []
+    if (argsAnswer.provideArgs === VERIFY_PROVIDE_ARGS_YES) {
+        const argsInput: VerifyContractArgsAnswer = await inquirer.prompt<VerifyContractArgsAnswer>([
+            {
+                type: 'input',
+                name: 'constructorArgs',
+                message: 'Comma-separated constructor arguments (e.g. 0xToken,42)'
+            }
+        ])
+        constructorArgs = argsInput.constructorArgs
+            .split(',')
+            .map((arg: string) => arg.trim())
+            .filter((arg: string) => arg.length > 0)
+    }
+
+    displayFinalCliCommand(
+        'verifyContract',
+        formatVerifyContractFlag(chainShortName, contractNameOrAddress, constructorArgs)
+    )
+    await runVerifyContract({
+        network: chainShortName,
+        contractNameOrAddress,
+        constructorArgs
+    })
+}
+
 /**
  * Raw option strings accepted by the `cli` Hardhat task. All fields default
  * to the empty string at the task-definition site; boolean-shaped flags like
@@ -1142,6 +1287,7 @@ interface ICliArgs {
     runCustomCommand?: string
     addCustomCommand?: string
     removeCustomCommand?: string
+    verifyContract?: string
 }
 
 const serveInquirer = async (env: IHreContext) => {
@@ -1182,6 +1328,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         // 'Deploy all contracts and run tests',
         inquirerRunMockContractCreator,
         'Create deployment scripts',
+        'Verify a contract',
         'Get account balance',
         new inquirer.Separator(),
         inquirerFileContractsAddressDeployed,
@@ -1206,6 +1353,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
     if (answers.action === 'More settings') await serveMoreSettingSelector(env)
     if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
     if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
+    if (answers.action === 'Verify a contract') await serveVerifyContractSelector(env)
     if (answers.action === 'Get account balance') await serveAccountBalance(env)
     if (answers.action === 'Run a custom command') await serveRunCustomCommandSelector()
 }
@@ -1337,6 +1485,21 @@ const serveCli = async (args: ICliArgs, env: IHreContext) => {
                 return
             }
             return displayFinalCliCommand('removeCustomCommand', args.removeCustomCommand)
+        }
+        case isPresentString(args.verifyContract): {
+            const parsed = parseVerifyContractFlag(args.verifyContract)
+            if (!parsed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'Invalid --verifyContract value. Expected "<network>:<contractNameOrAddress>[:<arg1>:<arg2>:...].'
+                )
+                return
+            }
+            return runVerifyContract({
+                network: parsed.network,
+                contractNameOrAddress: parsed.contractNameOrAddress,
+                constructorArgs: parsed.constructorArgs
+            })
         }
         default:
             return serveInquirer(env)

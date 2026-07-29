@@ -279,6 +279,31 @@ export default defineConfig({
     `name` is rejected with a yellow warning rather than silently
     overwriting the existing command.
 
+-   Verify a contract
+
+    Verifies a deployed contract on a block explorer. The interactive menu
+    walks through network selection, contract identification (from the
+    address book or a manually-pasted 0x-prefixed address), and optional
+    constructor arguments. The same flow is reachable from the CLI with a
+    single flag:
+
+    ```bash
+    # Resolve from the address book by name
+    npx hardhat cli --verifyContract ethereumSepolia:MockERC20
+
+    # Pass a 0x-prefixed address directly
+    npx hardhat cli --verifyContract ethereumSepolia:0x1234567890abcdef1234567890abcdef12345678
+
+    # Pass constructor arguments when the plugin needs them
+    npx hardhat cli --verifyContract ethereumSepolia:MockERC20:0xToken:42
+    ```
+
+    The flag value is `<network>:<contractNameOrAddress>[:<arg1>:<arg2>:...]`,
+    which mirrors the format printed by the menu and round-trips through
+    `parseVerifyContractFlag`. When no `@nomicfoundation/hardhat-verify`
+    (or `hardhat-verify`) dependency is detected in `package.json`, the CLI
+    prints a clear install hint instead of silently failing.
+
 -   Get account balance
 
 ### Current chain support
@@ -344,6 +369,7 @@ and yarn templates.
 -   --remove-custom-command Remove a custom command stored in hardhat-awesome-cli.json by name (default: "")
 -   --remove-hardhat-plugin Remove other Hardhat plugins (default: "")
 -   --run-custom-command Run a custom command stored in hardhat-awesome-cli.json by name (default: "")
+-   --verify-contract Verify a deployed contract on a block explorer. Pass "<network>:<contractNameOrAddress>[:<arg1>:<arg2>:...]" — the contract name is resolved from the address book, or pass a 0x-prefixed address directly. (default: "")
 
 ### Safe Hardhat plugin configuration updates
 
