@@ -108,6 +108,12 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
         description: 'Remove a custom command stored in hardhat-awesome-cli.json by name',
         defaultValue: ''
     })
+    .addOption({
+        name: 'verifyContract',
+        description:
+            'Verify a deployed contract on a block explorer. Pass "<network>:<contractNameOrAddress>[:<arg1>:<arg2>:...]" — the contract name is resolved from the address book, or pass a 0x-prefixed address directly.',
+        defaultValue: ''
+    })
     // The action must be a lazy import so plugins stay load-order safe.
     .setAction(() => import('./cli-action.ts'))
     .build()
