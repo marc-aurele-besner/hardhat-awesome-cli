@@ -1,0 +1,11 @@
+{
+    "name": "hha-cli-smoke-fixture",
+    "private": true,
+    "type": "module",
+    "version": "0.0.0",
+    "description": "Minimal Hardhat 3 consumer project used by the smoke test to verify the published layout of hardhat-awesome-cli loads and registers the `cli` task.",
+    "dependencies": {
+        "hardhat": "^3.0.0",
+        "hardhat-awesome-cli": "*"
+    }
+}

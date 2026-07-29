@@ -12,6 +12,10 @@
         "types": ["node", "mocha"],
         "esModuleInterop": true
     },
-    "exclude": ["dist", "node_modules"],
+    "exclude": [
+        "dist",
+        "node_modules",
+        "test/fixtures"
+    ],
     "include": ["./test", "./src"]
 }

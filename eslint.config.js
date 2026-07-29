@@ -14,7 +14,11 @@ export default [
             'dist/**',
             'node_modules/**',
             'coverage/**',
-            'src/mockContracts/testForge/**'
+            'src/mockContracts/testForge/**',
+            // The smoke fixture is a self-contained HH3 consumer project
+            // (imports the plugin from its published subpath). It's parsed
+            // by Hardhat's config loader, not by tsc or eslint.
+            'test/fixtures/**'
         ]
     },
     js.configs.recommended,
