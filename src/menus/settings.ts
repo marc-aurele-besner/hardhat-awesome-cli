@@ -49,15 +49,23 @@ export const serveSettingSelector = async (env: IHreContext) => {
                 default: activatedChainList
             }
         ])
-        fullChainList.map(async (chain: string) => {
-            if (chainListSelected.chainList.includes(chain)) {
-                await addActivatedChain(chain)
-                displayFinalCliCommand('addActivatedChain', chain)
-            } else {
-                await removeActivatedChain(chain)
-                displayFinalCliCommand('removeActivatedChain', chain)
-            }
-        })
+        // `await Promise.all(...)` so the writes actually complete before the
+        // menu prints "Settings updated!" — without it the `.map(async)`
+        // returns an array of unresolved promises and the surrounding
+        // `serveSettingSelector` resolves before the settings file is up
+        // to date. The dedicated menu test (`test/menus.settings.test.ts`)
+        // catches the regression.
+        await Promise.all(
+            fullChainList.map(async (chain: string) => {
+                if (chainListSelected.chainList.includes(chain)) {
+                    await addActivatedChain(chain)
+                    displayFinalCliCommand('addActivatedChain', chain)
+                } else {
+                    await removeActivatedChain(chain)
+                    displayFinalCliCommand('removeActivatedChain', chain)
+                }
+            })
+        )
         console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
         await waitForReadability()
     }
@@ -161,12 +169,20 @@ export const serveExcludeFileSelector = async (option: string) => {
             }
         ])
         .then(async (activateFilesSelected: ExcludedFilesAnswer) => {
-            allFiles.map(async (file: IFileList) => {
-                const entryType = file.type === 'directory' ? 'directory' : 'file'
-                if (activateFilesSelected.allFiles.includes(file.filePath))
-                    await addExcludedFiles(option, file.name, file.filePath, entryType)
-                else await removeExcludedFiles(option, file.filePath)
-            })
+            // `await Promise.all(...)` so the file writes finish before the
+            // menu returns. With the previous `map(async)` the surrounding
+            // `serveExcludeFileSelector` resolved while the writes were
+            // still pending, which made the resulting settings file race
+            // against whatever the caller did next. The new behaviour is
+            // covered by `test/menus.settings.test.ts`.
+            await Promise.all(
+                allFiles.map(async (file: IFileList) => {
+                    const entryType = file.type === 'directory' ? 'directory' : 'file'
+                    if (activateFilesSelected.allFiles.includes(file.filePath))
+                        await addExcludedFiles(option, file.name, file.filePath, entryType)
+                    else await removeExcludedFiles(option, file.filePath)
+                })
+            )
             console.log('\x1b[32m%s\x1b[0m', 'Settings updated!')
         })
 }
