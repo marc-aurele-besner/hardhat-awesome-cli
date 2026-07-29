@@ -34,10 +34,98 @@ export const hardhatPluginImportName = (packageName: string): string => {
 export const isHardhat3Config = (hardhatConfigFile: string): boolean =>
     /\bdefineConfig\s*\(/.test(hardhatConfigFile) || /\bplugins\s*:\s*\[/.test(hardhatConfigFile)
 
-const importsPackage = (hardhatConfigFile: string, packageName: string): boolean =>
-    new RegExp(`from\\s*['"]${escapeForRegExp(packageName)}['"]`).test(hardhatConfigFile)
+const importsPackage = (hardhatConfigFile: string, packageName: string): boolean => {
+    const quoted = escapeForRegExp(packageName)
+    return new RegExp(String.raw`(?:from\s*|import\s*\(\s*|import\s*|require\s*\(\s*)['"]${quoted}['"]`).test(
+        hardhatConfigFile
+    )
+}
 
 const escapeForRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+export type HardhatConfigMutationFailureReason =
+    'no-plugins-array' | 'unterminated-plugins-array' | 'multiple-plugins-arrays'
+
+export interface HardhatConfigMutationFailure {
+    reason: HardhatConfigMutationFailureReason
+    message: string
+}
+
+interface PluginsArrayLocation {
+    start: number
+    end: number
+}
+
+const findPluginsArrays = (hardhatConfigFile: string): { locations: PluginsArrayLocation[]; unterminated: boolean } => {
+    const locations: PluginsArrayLocation[] = []
+    const pattern = /\bplugins\s*:\s*\[/g
+    let match: RegExpExecArray | null
+    let unterminated = false
+
+    while ((match = pattern.exec(hardhatConfigFile)) !== null) {
+        const start = match.index + match[0].length
+        let depth = 1
+        let quote: string | null = null
+        let escaped = false
+        let foundEnd = false
+
+        for (let index = start; index < hardhatConfigFile.length; index++) {
+            const char = hardhatConfigFile[index]
+            if (quote !== null) {
+                if (escaped) escaped = false
+                else if (char === '\\') escaped = true
+                else if (char === quote) quote = null
+                continue
+            }
+            if (char === '"' || char === "'" || char === '`') {
+                quote = char
+                continue
+            }
+            if (char === '[') depth++
+            else if (char === ']') {
+                depth--
+                if (depth === 0) {
+                    locations.push({ start, end: index })
+                    pattern.lastIndex = index + 1
+                    foundEnd = true
+                    break
+                }
+            }
+        }
+        if (!foundEnd) {
+            unterminated = true
+            break
+        }
+    }
+
+    return { locations, unterminated }
+}
+
+export const inspectHardhat3Config = (
+    hardhatConfigFile: string
+): PluginsArrayLocation | HardhatConfigMutationFailure => {
+    const { locations, unterminated } = findPluginsArrays(hardhatConfigFile)
+    if (unterminated)
+        return {
+            reason: 'unterminated-plugins-array',
+            message: 'The plugins array is not terminated.'
+        }
+    if (locations.length === 0)
+        return {
+            reason: 'no-plugins-array',
+            message: 'No plugins array was found.'
+        }
+    if (locations.length > 1)
+        return {
+            reason: 'multiple-plugins-arrays',
+            message: 'Multiple plugins arrays were found.'
+        }
+    return locations[0]
+}
+
+const isMutationFailure = (
+    result: PluginsArrayLocation | HardhatConfigMutationFailure
+): result is HardhatConfigMutationFailure => 'reason' in result
 
 /**
  * Split the content of an array literal on its top-level commas only, so an
@@ -76,20 +164,9 @@ const splitTopLevelEntries = (arrayContent: string): string[] => {
  * Locate the `plugins: [ ... ]` array of the config file and return the index
  * boundaries of its content, or `undefined` when there is no such array.
  */
-const findPluginsArray = (hardhatConfigFile: string): { start: number; end: number } | undefined => {
-    const match = hardhatConfigFile.match(/\bplugins\s*:\s*\[/)
-    if (match === null || match.index === undefined) return undefined
-    const start = match.index + match[0].length
-    let depth = 1
-    for (let index = start; index < hardhatConfigFile.length; index++) {
-        const char = hardhatConfigFile[index]
-        if (char === '[') depth++
-        else if (char === ']') {
-            depth--
-            if (depth === 0) return { start, end: index }
-        }
-    }
-    return undefined
+const findPluginsArray = (hardhatConfigFile: string): PluginsArrayLocation | undefined => {
+    const result = inspectHardhat3Config(hardhatConfigFile)
+    return isMutationFailure(result) ? undefined : result
 }
 
 /**
@@ -214,6 +291,67 @@ export const findHardhatConfigFilePath = (): string => {
     return ''
 }
 
+export interface HardhatConfigFileMutationResult {
+    updated: boolean
+    failure?: HardhatConfigMutationFailure
+}
+
+export const mutateHardhatConfigFile = (
+    hardhatConfigFilePath: string,
+    packageName: string,
+    addToConfig: boolean
+): HardhatConfigFileMutationResult => {
+    const hardhatConfigFile = fs.readFileSync(hardhatConfigFilePath, 'utf8')
+    const hardhat3 = isHardhat3Config(hardhatConfigFile)
+    if (hardhat3) {
+        const inspection = inspectHardhat3Config(hardhatConfigFile)
+        if (isMutationFailure(inspection)) return { updated: false, failure: inspection }
+    }
+
+    const newHardhatConfig = addToConfig
+        ? hardhat3
+            ? addPluginToHardhat3Config(hardhatConfigFile, packageName)
+            : addPluginToHardhat2Config(hardhatConfigFile, packageName)
+        : hardhat3
+          ? removePluginFromHardhat3Config(hardhatConfigFile, packageName)
+          : removePluginFromHardhat2Config(hardhatConfigFile, packageName)
+    if (newHardhatConfig === undefined)
+        return {
+            updated: false,
+            failure: {
+                reason: 'no-plugins-array',
+                message: 'No supported plugin registration location was found.'
+            }
+        }
+    if (newHardhatConfig === hardhatConfigFile) return { updated: false }
+
+    const extension = path.extname(hardhatConfigFilePath)
+    const temporaryPath = `${hardhatConfigFilePath}.hardhat-awesome-cli${extension || '.js'}`
+    try {
+        fs.writeFileSync(temporaryPath, newHardhatConfig)
+        if (isHardhat3Config(newHardhatConfig) && isMutationFailure(inspectHardhat3Config(newHardhatConfig)))
+            throw new Error('The generated plugins array is invalid.')
+        fs.renameSync(temporaryPath, hardhatConfigFilePath)
+        return { updated: true }
+    } catch (error) {
+        fs.rmSync(temporaryPath, { force: true })
+        const message = error instanceof Error ? error.message : String(error)
+        return {
+            updated: false,
+            failure: {
+                reason: 'unterminated-plugins-array',
+                message: `The generated config did not pass syntax validation: ${message}`
+            }
+        }
+    }
+}
+
+const manualConfigSnippet = (packageName: string, hardhat3: boolean): string =>
+    hardhat3
+        ? `import ${hardhatPluginImportName(packageName)} from '${packageName}'\n` +
+          `... defineConfig({ plugins: [${hardhatPluginImportName(packageName)}] })`
+        : `require('${packageName}')`
+
 const importPackageHardhatConfigFile = async (packageName: string, addToConfig: boolean, removeFromConfig: boolean) => {
     const hardhatConfigFilePath = findHardhatConfigFilePath()
     if (!hardhatConfigFilePath) {
@@ -231,25 +369,17 @@ const importPackageHardhatConfigFile = async (packageName: string, addToConfig: 
             )
             return
         }
-        const newHardhatConfig = hardhat3
-            ? addPluginToHardhat3Config(hardhatConfigFile, packageName)
-            : addPluginToHardhat2Config(hardhatConfigFile, packageName)
-        if (newHardhatConfig === undefined) {
+        const mutation = mutateHardhatConfigFile(hardhatConfigFilePath, packageName, true)
+        if (mutation.failure !== undefined) {
             console.log(
                 '\x1b[31m%s\x1b[0m',
-                'Could not update ' + hardhatConfigFilePath + ' automatically, please add it yourself:'
+                'Could not update ' + hardhatConfigFilePath + ' automatically: ' + mutation.failure.message
             )
-            if (hardhat3)
-                console.log(
-                    '\x1b[97m%s\x1b[0m',
-                    `import ${hardhatPluginImportName(packageName)} from '${packageName}'\n` +
-                        `... defineConfig({ plugins: [${hardhatPluginImportName(packageName)}] })`
-                )
-            else console.log('\x1b[97m%s\x1b[0m', `require('${packageName}')`)
+            console.log('\x1b[97m%s\x1b[0m', manualConfigSnippet(packageName, hardhat3))
             return
         }
-        console.log('\x1b[33m%s\x1b[0m', 'Adding ' + packageName + ' to your ' + hardhatConfigFilePath + ' file')
-        fs.writeFileSync(hardhatConfigFilePath, newHardhatConfig)
+        if (mutation.updated)
+            console.log('\x1b[33m%s\x1b[0m', 'Added ' + packageName + ' to your ' + hardhatConfigFilePath + ' file')
         return
     }
 
@@ -258,11 +388,17 @@ const importPackageHardhatConfigFile = async (packageName: string, addToConfig: 
             console.log('\x1b[34m%s\x1b[0m', 'Package ' + packageName + ' not found in ' + hardhatConfigFilePath)
             return
         }
-        console.log('\x1b[33m%s\x1b[0m', 'Removing ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
-        const newHardhatConfig = hardhat3
-            ? removePluginFromHardhat3Config(hardhatConfigFile, packageName)
-            : removePluginFromHardhat2Config(hardhatConfigFile, packageName)
-        fs.writeFileSync(hardhatConfigFilePath, newHardhatConfig)
+        const mutation = mutateHardhatConfigFile(hardhatConfigFilePath, packageName, false)
+        if (mutation.failure !== undefined) {
+            console.log(
+                '\x1b[31m%s\x1b[0m',
+                'Could not update ' + hardhatConfigFilePath + ' automatically: ' + mutation.failure.message
+            )
+            console.log('\x1b[97m%s\x1b[0m', manualConfigSnippet(packageName, hardhat3))
+            return
+        }
+        if (mutation.updated)
+            console.log('\x1b[33m%s\x1b[0m', 'Removed ' + packageName + ' from your ' + hardhatConfigFilePath + ' file')
     }
 }
 
