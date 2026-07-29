@@ -8,7 +8,12 @@ async function main() {
     const mockERC20Upgradeable = await MockERC20Upgradeable.deploy()
 
     await mockERC20Upgradeable.deployed()
-    await addressBook.saveContract('MockERC20Upgradeable', mockERC20Upgradeable.address, network.name, deployer.address)
+    await addressBook.saveContract(
+        'MockERC20Upgradeable',
+        mockERC20Upgradeable.address,
+        (network as any).name,
+        deployer.address
+    )
     await mockERC20Upgradeable.initialize('MockERC20Upgradeable', 'MOCK')
 
     console.log('MockERC20Upgradeable deployed to:', mockERC20Upgradeable.address)

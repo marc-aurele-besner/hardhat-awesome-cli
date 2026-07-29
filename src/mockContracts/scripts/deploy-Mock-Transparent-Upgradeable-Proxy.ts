@@ -4,11 +4,13 @@ import { addressBook, ethers, network } from 'hardhat'
 async function main() {
     const [deployer] = await ethers.getSigners()
 
+    const networkName = (network as any).name as string
+
     let logicContract = ''
-    if (network.name !== 'hardhat' && network.name !== 'local') {
-        logicContract = await addressBook.retrieveContract('MockERC20Upgradeable', network.name)
-        if (!logicContract) logicContract = await addressBook.retrieveContract('MockERC721Upgradeable', network.name)
-        if (!logicContract) logicContract = await addressBook.retrieveContract('MockERC1155Upgradeable', network.name)
+    if (networkName !== 'hardhat' && networkName !== 'local') {
+        logicContract = await addressBook.retrieveContract('MockERC20Upgradeable', networkName)
+        if (!logicContract) logicContract = await addressBook.retrieveContract('MockERC721Upgradeable', networkName)
+        if (!logicContract) logicContract = await addressBook.retrieveContract('MockERC1155Upgradeable', networkName)
     }
     if (!logicContract) {
         const MockERC20Upgradeable = await ethers.getContractFactory('MockERC20Upgradeable')
@@ -18,7 +20,7 @@ async function main() {
         await addressBook.saveContract(
             'MockERC20Upgradeable',
             mockERC20Upgradeable.address,
-            network.name,
+            networkName,
             deployer.address
         )
         await mockERC20Upgradeable.initialize('MockERC20Upgradeable', 'MOCK')
@@ -27,15 +29,15 @@ async function main() {
         logicContract = mockERC20Upgradeable.address
     }
     let proxyAdminContract = ''
-    if (network.name !== 'hardhat' && network.name !== 'local') {
-        proxyAdminContract = await addressBook.retrieveContract('MockERC20Upgradeable', network.name)
+    if (networkName !== 'hardhat' && networkName !== 'local') {
+        proxyAdminContract = await addressBook.retrieveContract('MockERC20Upgradeable', networkName)
     }
     if (!proxyAdminContract) {
         const MockProxyAdmin = await ethers.getContractFactory('MockProxyAdmin')
         const mockProxyAdmin = await MockProxyAdmin.deploy()
 
         await mockProxyAdmin.deployed()
-        await addressBook.saveContract('MockProxyAdmin', mockProxyAdmin.address, network.name, deployer.address)
+        await addressBook.saveContract('MockProxyAdmin', mockProxyAdmin.address, networkName, deployer.address)
 
         console.log('MockProxyAdmin deployed to:', mockProxyAdmin.address)
         proxyAdminContract = mockProxyAdmin.address
@@ -52,7 +54,7 @@ async function main() {
     await addressBook.saveContract(
         'MockTransparentUpgradeableProxy',
         mockTransparentUpgradeableProxy.address,
-        network.name,
+        networkName,
         deployer.address
     )
 

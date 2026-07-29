@@ -11,7 +11,7 @@ async function main() {
     await addressBook.saveContract(
         'MockERC721Upgradeable',
         mockERC721Upgradeable.address,
-        network.name,
+        (network as any).name,
         deployer.address
     )
     await mockERC721Upgradeable.initialize('MockERC721Upgradeable', 'MOCK')

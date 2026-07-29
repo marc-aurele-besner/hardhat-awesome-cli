@@ -11,7 +11,7 @@ async function main() {
     await addressBook.saveContract(
         'MockERC1155Upgradeable',
         mockERC1155Upgradeable.address,
-        network.name,
+        (network as any).name,
         deployer.address
     )
     await mockERC1155Upgradeable.initialize('MockERC1155Upgradeable', 'MOCK', 'https://google.com')
