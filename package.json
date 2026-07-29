@@ -53,7 +53,7 @@
         "@types/inquirer": "^9.0.3",
         "@types/mocha": "^10.0.1",
         "@types/node": "^24.0.0",
-        "awesome-readme": "^0.0.8",
+        "awesome-readme": "^1.0.0",
         "c8": "^12.0.0",
         "chai": "^6.0.0",
         "eslint": "^10.0.0",
