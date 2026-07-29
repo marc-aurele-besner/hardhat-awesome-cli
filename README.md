@@ -231,6 +231,54 @@ export default defineConfig({
     refuses to overwrite an existing `deploy-<Name>.{ts,js}` so the
     consumer can rename or delete the old file before re-running.
 
+-   Run custom commands (issue #172) — define named shortcuts in
+    `hardhat-awesome-cli.json` and launch them from the top-level menu
+    (`Run a custom command`) or from the `More settings → Manage custom
+    commands` submenu (add / remove / list). Each entry is a small object:
+
+    ```json
+    {
+        "customCommands": [
+            {
+                "name": "snapshot",
+                "description": "Take a snapshot of the network state",
+                "kind": "shell",
+                "command": "echo snap > snapshot.txt"
+            },
+            {
+                "name": "compile",
+                "description": "Force a recompile",
+                "kind": "hardhat",
+                "command": "compile --force"
+            }
+        ]
+    }
+    ```
+
+    `kind: "shell"` (default) hands the value to `spawn(cmd, { shell: true })`
+    unchanged, so any shell string the user can paste in a terminal works
+    (`make snapshot`, `npm run deploy -- --network sepolia`, …).
+    `kind: "hardhat"` prefixes the value with `npx hardhat ` so the user
+    only has to type the task name and any flags.
+
+    The CLI prints the equivalent command for scripting — the same flows
+    are reachable without prompts via:
+
+    ```bash
+    # Add (pass a JSON object)
+    npx hardhat cli --addCustomCommand '{"name":"snapshot","description":"Take a snapshot","kind":"shell","command":"echo snap > snapshot.txt"}'
+
+    # Run by name
+    npx hardhat cli --runCustomCommand snapshot
+
+    # Remove by name
+    npx hardhat cli --removeCustomCommand snapshot
+    ```
+
+    Names are unique within the file — adding a second entry with the same
+    `name` is rejected with a yellow warning rather than silently
+    overwriting the existing command.
+
 -   Get account balance
 
 ### Current chain support
@@ -279,6 +327,7 @@ and yarn templates.
 ## CLI optional flags
 
 -   --add-activated-chain Add chains from the chain selection (default: "")
+-   --add-custom-command Add a custom command to hardhat-awesome-cli.json. Pass a JSON object {"name":"...","description":"...","kind":"shell|hardhat","command":"..."}. (default: "")
 -   --add-deployment-script Scaffold a deployment script for the named contract. Pass the contract name, optionally followed by ":"-separated constructor arguments, e.g. "<ContractName>:<arg1>:<arg2>". (default: "")
 -   --add-foundry Create Foundry settings, remapping and test utilities (default: "")
 -   --add-foundry-test-utility Install the foundry-test-utility npm package and add its remapping (default: "")
@@ -292,7 +341,9 @@ and yarn templates.
 -   --exclude-test-directory Exclude test directory (and every nested file) from the tests selection list. Pass the path with a trailing slash, e.g. `--exclude-test-directory helpers/`. (default: "")
 -   --get-account-balance Get account balance (default: "")
 -   --remove-activated-chain Remove chains from the chain selection (default: "")
+-   --remove-custom-command Remove a custom command stored in hardhat-awesome-cli.json by name (default: "")
 -   --remove-hardhat-plugin Remove other Hardhat plugins (default: "")
+-   --run-custom-command Run a custom command stored in hardhat-awesome-cli.json by name (default: "")
 
 ### Safe Hardhat plugin configuration updates
 

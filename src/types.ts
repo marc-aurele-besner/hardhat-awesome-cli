@@ -55,9 +55,31 @@ export interface IExcludedFiles {
     type?: 'file' | 'directory'
 }
 
+/**
+ * One entry in the `customCommands` array of `hardhat-awesome-cli.json`.
+ *
+ * `kind` controls how the CLI runs the command:
+ *   - `'shell'` (default) — the value is handed to a `shell: true` child
+ *     process as-is, so any shell string the user can paste in a terminal
+ *     works (`make snapshot`, `npm run deploy -- --network sepolia`, …).
+ *   - `'hardhat'` — the value is treated as a Hardhat task invocation and
+ *     prefixed with `npx hardhat `. Useful for wrapping the project's own
+ *     tasks without retyping the `npx hardhat` boilerplate every time.
+ *
+ * `description` is optional and only used by the menu / list view; the
+ * command runs the same regardless.
+ */
+export interface ICustomCommand {
+    name: string
+    description?: string
+    kind: 'shell' | 'hardhat'
+    command: string
+}
+
 export interface IFileSetting {
     activatedChain?: IChain[]
     excludedFiles?: IExcludedFiles[]
+    customCommands?: ICustomCommand[]
 }
 
 /**

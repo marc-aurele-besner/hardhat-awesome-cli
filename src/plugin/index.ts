@@ -92,6 +92,22 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
             'Scaffold a deployment script for the named contract. Pass the contract name, optionally followed by ":"-separated constructor arguments, e.g. "<ContractName>:<arg1>:<arg2>".',
         defaultValue: ''
     })
+    .addOption({
+        name: 'runCustomCommand',
+        description: 'Run a custom command stored in hardhat-awesome-cli.json by name',
+        defaultValue: ''
+    })
+    .addOption({
+        name: 'addCustomCommand',
+        description:
+            'Add a custom command to hardhat-awesome-cli.json. Pass a JSON object {"name":"...","description":"...","kind":"shell|hardhat","command":"..."}.',
+        defaultValue: ''
+    })
+    .addOption({
+        name: 'removeCustomCommand',
+        description: 'Remove a custom command stored in hardhat-awesome-cli.json by name',
+        defaultValue: ''
+    })
     // The action must be a lazy import so plugins stay load-order safe.
     .setAction(() => import('./cli-action.ts'))
     .build()

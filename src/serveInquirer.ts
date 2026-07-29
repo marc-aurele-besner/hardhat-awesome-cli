@@ -13,6 +13,14 @@ import {
 } from './buildFilesList.ts'
 import buildFoundrySetting, { installFoundryTestUtility } from './buildFoundrySetting.ts'
 import buildDeploymentContract, { formatAddDeploymentScriptFlag, parseAddDeploymentScriptFlag } from './buildDeploymentContract.ts'
+import {
+    addCustomCommand,
+    formatAddCustomCommandFlag,
+    loadCustomCommands,
+    parseAddCustomCommandFlag,
+    removeCustomCommand,
+    runCustomCommand
+} from './buildCustomCommands.ts'
 import buildMockContract, { buildMockDeploymentScriptOrTest } from './buildMockContracts.ts'
 import {
     addActivatedChain,
@@ -122,6 +130,15 @@ interface MainMenuAnswer {
 interface EnvBuilderAnswer {
     rpcUrl: string
     privateKeyOrMnemonic: string
+}
+interface CustomCommandChoiceAnswer {
+    customCommand: string
+}
+interface CustomCommandFormAnswer {
+    name: string
+    description: string
+    kind: 'shell' | 'hardhat'
+    command: string
 }
 
 /**
@@ -577,7 +594,8 @@ const serveMoreSettingSelector = async (env: IHreContext) => {
                 'Create Github test workflows',
                 'Create Foundry settings, remapping and test utilities',
                 'Add foundry-test-utility (npm package for shared Forge mocks & utilities)',
-                new inquirer.Separator()
+                new inquirer.Separator(),
+                'Manage custom commands'
             ]
         }
     ])
@@ -602,6 +620,9 @@ const serveMoreSettingSelector = async (env: IHreContext) => {
     ) {
         await installFoundryTestUtility()
         displayFinalCliCommand('addFoundryTestUtility')
+    }
+    if (moreSettingsSelected.moreSettings === 'Manage custom commands') {
+        await serveCustomCommandManager()
     }
 }
 
@@ -934,6 +955,140 @@ const runAddDeploymentScript = async (contractName: string, constructorArgs: str
 }
 
 /**
+ * Interactive menu for adding, listing and removing custom commands.
+ *
+ * Lives under `More settings` so the `Run a custom command` entry at the
+ * top of the menu stays focused on actually executing them. The list view
+ * just `console.table`s the current entries; the add form validates that
+ * `name` and `command` are non-empty before persisting.
+ */
+const serveCustomCommandManager = async (): Promise<void> => {
+    const action = await inquirer.prompt<CustomCommandChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'customCommand',
+            message: 'Custom commands',
+            choices: ['Add a custom command', 'Remove a custom command', 'List custom commands']
+        }
+    ])
+    if (action.customCommand === 'List custom commands') {
+        const entries = await loadCustomCommands()
+        if (entries.length === 0) {
+            console.log('\x1b[33m%s\x1b[0m', 'No custom commands defined yet.')
+        } else {
+            console.table(
+                entries.map((entry) => ({
+                    name: entry.name,
+                    kind: entry.kind,
+                    command: entry.kind === 'hardhat' ? `npx hardhat ${entry.command}` : entry.command,
+                    description: entry.description || ''
+                }))
+            )
+        }
+        await waitForReadability()
+        return
+    }
+    if (action.customCommand === 'Add a custom command') {
+        const form = await inquirer.prompt<CustomCommandFormAnswer>([
+            {
+                type: 'input',
+                name: 'name',
+                message: 'Command name (used to invoke it later)',
+                validate: (input: string) => (input.trim().length > 0 ? true : 'Name cannot be empty')
+            },
+            {
+                type: 'input',
+                name: 'description',
+                message: 'Short description (optional)'
+            },
+            {
+                type: 'list',
+                name: 'kind',
+                message: 'Command kind',
+                choices: [
+                    { name: 'shell — run as a raw shell command', value: 'shell' },
+                    { name: 'hardhat — prefixed with `npx hardhat `', value: 'hardhat' }
+                ],
+                default: 'shell'
+            },
+            {
+                type: 'input',
+                name: 'command',
+                message: 'Command to run',
+                validate: (input: string) => (input.trim().length > 0 ? true : 'Command cannot be empty')
+            }
+        ])
+        const added = await addCustomCommand({
+            name: form.name.trim(),
+            description: form.description,
+            kind: form.kind,
+            command: form.command.trim()
+        })
+        if (!added) {
+            console.log('\x1b[33m%s\x1b[0m', `A custom command named "${form.name}" already exists.`)
+            await waitForReadability()
+            return
+        }
+        displayFinalCliCommand('addCustomCommand', formatAddCustomCommandFlag({
+            name: form.name.trim(),
+            description: form.description,
+            kind: form.kind,
+            command: form.command.trim()
+        }))
+        await waitForReadability()
+        return
+    }
+    if (action.customCommand === 'Remove a custom command') {
+        const entries = await loadCustomCommands()
+        if (entries.length === 0) {
+            console.log('\x1b[33m%s\x1b[0m', 'No custom commands to remove.')
+            await waitForReadability()
+            return
+        }
+        const removeChoice = await inquirer.prompt<CustomCommandChoiceAnswer>([
+            {
+                type: 'list',
+                name: 'customCommand',
+                message: 'Select a custom command to remove',
+                choices: entries.map((entry) => entry.name)
+            }
+        ])
+        const removed = await removeCustomCommand(removeChoice.customCommand)
+        if (!removed) {
+            console.log('\x1b[33m%s\x1b[0m', `Custom command "${removeChoice.customCommand}" was not found.`)
+        } else {
+            console.log('\x1b[32m%s\x1b[0m', 'Custom command removed.')
+            displayFinalCliCommand('removeCustomCommand', removeChoice.customCommand)
+        }
+        await waitForReadability()
+    }
+}
+
+/**
+ * Interactive picker that lets the user choose and run a custom command
+ * from the top-level menu. Falls through silently when there are no
+ * commands so the top-level menu just hides the option.
+ */
+const serveRunCustomCommandSelector = async (): Promise<void> => {
+    const entries = await loadCustomCommands()
+    if (entries.length === 0) return
+    const choice = await inquirer.prompt<CustomCommandChoiceAnswer>([
+        {
+            type: 'list',
+            name: 'customCommand',
+            message: 'Select a custom command to run',
+            choices: entries.map((entry) => ({
+                name: entry.description ? `${entry.name} — ${entry.description}` : entry.name,
+                value: entry.name
+            }))
+        }
+    ])
+    const selectedEntry = entries.find((entry) => entry.name === choice.customCommand)
+    if (!selectedEntry) return
+    await runCustomCommand(selectedEntry)
+}
+
+/**
  * Ethers-shaped object surface that the account-balance flow relies on.
  *
  * Kept loose (`any` on `ethers`) because Hardhat 3 ships both an ethers and a
@@ -984,6 +1139,9 @@ interface ICliArgs {
     getAccountBalance?: string
     addCustomMockContract?: string
     addDeploymentScript?: string
+    runCustomCommand?: string
+    addCustomCommand?: string
+    removeCustomCommand?: string
 }
 
 const serveInquirer = async (env: IHreContext) => {
@@ -1012,6 +1170,11 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
         buildMainOptions.push('Select scripts and tests to run')
     const solidityCoverageDetected = await detectPackage('solidity-coverage', false, false, false)
     if (solidityCoverageDetected) buildMainOptions.push('Run coverage tests')
+    // Surface the custom-command runner only when the user actually has
+    // something to run — otherwise the menu picks up a no-op entry that
+    // does nothing but print "no commands defined".
+    const customCommands = await loadCustomCommands()
+    if (customCommands.length > 0) buildMainOptions.push('Run a custom command')
     buildMainOptions.push(
         'Setup chains, RPC and accounts',
         'More settings',
@@ -1044,6 +1207,7 @@ YP   YP  '8b8' '8d8'  Y88888P '8888Y'  'Y88P'  YP  YP  YP Y88888P      'Y88P' Y8
     if (answers.action === 'Create Mock contracts') await serveMockContractCreatorSelector()
     if (answers.action === 'Create deployment scripts') await serveDeploymentContractCreatorSelector()
     if (answers.action === 'Get account balance') await serveAccountBalance(env)
+    if (answers.action === 'Run a custom command') await serveRunCustomCommandSelector()
 }
 
 /**
@@ -1131,6 +1295,48 @@ const serveCli = async (args: ICliArgs, env: IHreContext) => {
                 return
             }
             return runAddDeploymentScript(parsed.contractName, parsed.constructorArgs)
+        }
+        case isPresentString(args.runCustomCommand): {
+            const entries = await loadCustomCommands()
+            const target = entries.find((entry) => entry.name === args.runCustomCommand)
+            if (!target) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    `Custom command "${args.runCustomCommand}" was not found in hardhat-awesome-cli.json.`
+                )
+                return
+            }
+            return runCustomCommand(target)
+        }
+        case isPresentString(args.addCustomCommand): {
+            const parsed = parseAddCustomCommandFlag(args.addCustomCommand)
+            if (!parsed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'Invalid --addCustomCommand value. Expected a JSON object {"name":"...","description":"...","kind":"shell|hardhat","command":"..."}.'
+                )
+                return
+            }
+            const added = await addCustomCommand(parsed)
+            if (!added) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    `A custom command named "${parsed.name}" already exists, or the entry was invalid.`
+                )
+                return
+            }
+            return displayFinalCliCommand('addCustomCommand', formatAddCustomCommandFlag(parsed))
+        }
+        case isPresentString(args.removeCustomCommand): {
+            const removed = await removeCustomCommand(args.removeCustomCommand)
+            if (!removed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    `Custom command "${args.removeCustomCommand}" was not found in hardhat-awesome-cli.json.`
+                )
+                return
+            }
+            return displayFinalCliCommand('removeCustomCommand', args.removeCustomCommand)
         }
         default:
             return serveInquirer(env)
