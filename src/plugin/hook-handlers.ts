@@ -1,10 +1,6 @@
 import path from 'path'
 
-import type {
-    ConfigurationVariableResolver,
-    HardhatConfig,
-    HardhatUserConfig
-} from 'hardhat/types/config'
+import type { ConfigurationVariableResolver, HardhatConfig, HardhatUserConfig } from 'hardhat/types/config'
 import type { ConfigHooks } from 'hardhat/types/hooks'
 
 /**
