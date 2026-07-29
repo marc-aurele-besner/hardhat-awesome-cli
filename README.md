@@ -106,7 +106,7 @@ export default defineConfig({
 -   Run tests (run all test files or a specific file under `test/`)
 -   Run scripts (run a specific script or every file under `scripts/`)
 -   Select scripts and tests to run (pick a script to execute and run all tests or one test after it)
--   Flatten all your contract or a specific contract (offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue)
+-   Flatten all your contract or a specific contract (offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue). The CLI flag `--flattenContract` mirrors the same flow without prompts (see [Flatten contracts flag](#flatten-contracts-flag)).
 -   Run Forge test on all or single test contracts if forge setting is detected
 -   Run coverage tests (Available only if solidity-coverage is installed and available as a task)
 -   List function selectors (Print every public and external function of a contract with its 4 bytes selector, ordered by selector)
@@ -306,6 +306,33 @@ export default defineConfig({
 
 -   Get account balance
 
+#### Flatten contracts flag
+
+The `Flatten contracts` menu entry writes a flattened copy of one or every
+contract under `contracts/` to `contractsFlatten/`, optionally rewriting
+the `SPDX-License-Identifier` and `pragma solidity` headers so the file
+passes the "duplicate license" sanity check. The same flow is reachable
+from the CLI with a single flag:
+
+```bash
+# Flatten a specific contract (bare name or relative path under contracts/)
+npx hardhat cli --flattenContract MyToken
+npx hardhat cli --flattenContract utils/Helper.sol
+
+# Flatten every contract under contracts/
+npx hardhat cli --flattenContract all
+
+# Also rewrite the SPDX-License-Identifier and pragma solidity in the output
+npx hardhat cli --flattenContract MyToken:renameLicense
+npx hardhat cli --flattenContract all:renameLicense
+```
+
+The flag value is `<contractName>[:renameLicense]` and round-trips through
+`parseFlattenContractFlag`. Bare contract names are resolved against
+`contracts/` (a recursive basename match for files nested in sub-directories),
+so the flag matches the menu flow without forcing the consumer to pass the
+full path.
+
 ### Current chain support
 
 -   Hardhat local (default local network)
@@ -364,6 +391,7 @@ and yarn templates.
 -   --exclude-script-directory Exclude script directory (and every nested file) from the scripts selection list. Pass the path with a trailing slash, e.g. `--exclude-script-directory helpers/`. (default: "")
 -   --exclude-test-file Exclude test file from the tests selection list (default: "")
 -   --exclude-test-directory Exclude test directory (and every nested file) from the tests selection list. Pass the path with a trailing slash, e.g. `--exclude-test-directory helpers/`. (default: "")
+-   --flatten-contract Flatten a contract (or every contract) under contracts/. Pass a contract name (with or without the .sol extension, optionally including a sub-path), or "all" to flatten every contract. Append ":renameLicense" to also rewrite the SPDX-License-Identifier and pragma solidity in the output. (default: "")
 -   --get-account-balance Get account balance (default: "")
 -   --remove-activated-chain Remove chains from the chain selection (default: "")
 -   --remove-custom-command Remove a custom command stored in hardhat-awesome-cli.json by name (default: "")
