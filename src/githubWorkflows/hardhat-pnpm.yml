@@ -1,0 +1,26 @@
+name: Run Hardhat Test with pnpm
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test_hardhat_pnpm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: pnpm Frozen Install
+        run: pnpm install --frozen-lockfile
+      - name: Hardhat Compile
+        run: pnpm hardhat compile
+      - name: Hardhat Test
+        run: pnpm hardhat test
+      - name: Hardhat Coverage Result
+        run: pnpm hardhat coverage

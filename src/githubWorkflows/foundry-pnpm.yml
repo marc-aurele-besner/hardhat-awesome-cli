@@ -1,0 +1,24 @@
+name: Run Foundry Test with pnpm
+
+on: [push]
+
+jobs:
+  test_foundry_pnpm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: pnpm Install
+        run: pnpm install --frozen-lockfile
+      - name: Run Forge Test
+        run: forge test

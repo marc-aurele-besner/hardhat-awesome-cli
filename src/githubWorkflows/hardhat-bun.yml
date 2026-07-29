@@ -1,0 +1,25 @@
+name: Run Hardhat Test with Bun
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test_hardhat_bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - name: Bun Frozen Install
+        run: bun install --frozen-lockfile
+      - name: Hardhat Compile
+        run: bunx hardhat compile
+      - name: Hardhat Test
+        run: bunx hardhat test
+      - name: Hardhat Coverage Result
+        run: bunx hardhat coverage

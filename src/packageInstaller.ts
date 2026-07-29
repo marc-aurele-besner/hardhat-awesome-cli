@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
+import { getPackageManagerCommands, lockfileDetectionLabel } from './packageManager.ts'
 import { runCommand } from './utils.ts'
 
 /**
@@ -417,29 +418,21 @@ const detectPackage = async (
     if (fs.existsSync(path.join(nodeModulesPath, packageName))) {
         if (uninstall) {
             console.log('\x1b[34m%s\x1b[0m', 'Uninstalling package: ', '\x1b[97m\x1b[0m', packageName)
-            if (fs.existsSync('package-lock.json')) {
-                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                // Wait for `npm remove` to actually finish; previously this
-                // relied on a 5s sleep which was both slow and unreliable.
-                await runCommand('npm remove ' + packageName, '', '', false)
-            } else if (fs.existsSync('yarn-lock.json')) {
-                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
-                await runCommand('yarn remove ' + packageName, '', '', false)
-            }
+            const { manager, commands } = getPackageManagerCommands()
+            console.log('\x1b[33m%s\x1b[0m', lockfileDetectionLabel(manager))
+            if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, false, true)
+            // Wait for the package manager to actually finish; previously this
+            // relied on a 5s sleep which was both slow and unreliable.
+            await runCommand(commands.remove(packageName), '', '', false)
         }
         return true
     } else {
         if (install) {
             console.log('\x1b[34m%s\x1b[0m', 'Installing package: ', '\x1b[97m\x1b[0m', packageName)
-            if (fs.existsSync('package-lock.json')) {
-                console.log('\x1b[33m%s\x1b[0m', 'Detected package-lock.json, installing with npm')
-                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                await runCommand('npm install ' + packageName, '', ' --save-dev', false)
-            } else if (fs.existsSync('yarn-lock.json')) {
-                console.log('\x1b[33m%s\x1b[0m', 'Detected yarn-lock.json, installing with yarn')
-                if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
-                await runCommand('yarn add ' + packageName, '', ' -D', false)
-            }
+            const { manager, commands } = getPackageManagerCommands()
+            console.log('\x1b[33m%s\x1b[0m', lockfileDetectionLabel(manager))
+            if (addRemoveInHardhatConfig) await importPackageHardhatConfigFile(packageName, true, false)
+            await runCommand(commands.installDev(packageName), '', '', false)
         }
         return false
     }
