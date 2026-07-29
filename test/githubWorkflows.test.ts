@@ -34,20 +34,48 @@ describe('DefaultGithubWorkflowsList group metadata', function () {
         })
     })
 
-    it('Has one npm and one yarn entry per tooling (Hardhat / Foundry)', function () {
+    it('Tags pnpm workflows with group "pnpm"', function () {
+        const pnpmWorkflows = DefaultGithubWorkflowsList.filter(
+            (workflow: IDefaultGithubWorkflowsList) => workflow.group === 'pnpm'
+        )
+        expect(pnpmWorkflows.length).to.equal(2)
+        expect(pnpmWorkflows.map((workflow) => workflow.file)).to.have.members(['hardhat-pnpm', 'foundry-pnpm'])
+    })
+
+    it('Tags bun workflows with group "bun"', function () {
+        const bunWorkflows = DefaultGithubWorkflowsList.filter(
+            (workflow: IDefaultGithubWorkflowsList) => workflow.group === 'bun'
+        )
+        expect(bunWorkflows.length).to.equal(2)
+        expect(bunWorkflows.map((workflow) => workflow.file)).to.have.members(['hardhat-bun', 'foundry-bun'])
+    })
+
+    it('Has one entry per (group, tooling) combination', function () {
         // Guards against the original bug where every entry was tagged npm,
         // which made serveWorkflowBuilder list both yarn items under "npm".
+        // After pnpm + bun were added, each tooling also ships a variant.
         const groupCounts = DefaultGithubWorkflowsList.reduce<Record<string, number>>((counts, workflow) => {
             counts[workflow.group] = (counts[workflow.group] ?? 0) + 1
             return counts
         }, {})
         expect(groupCounts.npm).to.equal(2)
         expect(groupCounts.yarn).to.equal(2)
+        expect(groupCounts.pnpm).to.equal(2)
+        expect(groupCounts.bun).to.equal(2)
     })
 })
 
 describe('Generated GitHub workflow YAMLs', function () {
-    const yamlFiles = ['hardhat-npm.yml', 'hardhat-yarn.yml', 'foundry-npm.yml', 'foundry-yarn.yml']
+    const yamlFiles = [
+        'hardhat-npm.yml',
+        'hardhat-yarn.yml',
+        'hardhat-pnpm.yml',
+        'hardhat-bun.yml',
+        'foundry-npm.yml',
+        'foundry-yarn.yml',
+        'foundry-pnpm.yml',
+        'foundry-bun.yml'
+    ]
 
     yamlFiles.forEach((fileName: string) => {
         describe(fileName, function () {
@@ -70,6 +98,12 @@ describe('Generated GitHub workflow YAMLs', function () {
             it('Mentions the install command that matches its group', function () {
                 if (fileName.includes('yarn')) {
                     expect(content).to.include('yarn')
+                    expect(content).to.not.match(/npm ci\b/)
+                } else if (fileName.includes('pnpm')) {
+                    expect(content).to.include('pnpm')
+                    expect(content).to.not.match(/npm ci\b/)
+                } else if (fileName.includes('bun')) {
+                    expect(content).to.include('bun')
                     expect(content).to.not.match(/npm ci\b/)
                 } else {
                     expect(content).to.match(/npm (ci|install)/)
