@@ -60,6 +60,48 @@ export interface IFileSetting {
     excludedFiles?: IExcludedFiles[]
 }
 
+/**
+ * Shape of the per-project `hardhat-awesome-cli.json` file as written by
+ * `getAddressBookConfig`. Each field falls back to a default from
+ * `addressBookDefaultConfig` when omitted. Keeping this in `types.ts` (rather
+ * than re-declaring it inline in `config.ts`) lets the address-book IO and
+ * the HRE adapter both consume it without losing strictness.
+ */
+export interface IAddressBookConfig {
+    savePath: string
+    openzeppelinPath: string
+    contractsFlattenPath: string
+    contractsFlattenPrefix: string
+    fileHardhatAwesomeCLI: string
+    fileEnvHardhatAwesomeCLI: string
+    fileContractsAddressDeployed: string
+    fileContractsAddressDeployedHistory: string
+}
+
+/**
+ * Minimal subset of the Hardhat Runtime Environment that the inquirer UI
+ * actually touches. Hardhat 3 dropped HRE extension, so callers that used to
+ * hand the full HRE to plugin tasks now build a tiny adapter that conforms
+ * to this shape. See `src/plugin/cli-action.ts` for the production adapter
+ * and `src/index.ts` for the standalone CLI shim.
+ *
+ * Marked optional so places that only need a subset (e.g. address-book IO
+ * without an ethers provider) can pass `{ userConfig }` and ignore the rest.
+ */
+export interface IHreContext {
+    userConfig?: { addressBook?: Partial<IAddressBookConfig> }
+    network?: { name: string }
+    config?: { paths?: { root?: string } }
+    paths?: Record<string, string>
+    /**
+     * Optional ethers v6 provider bag. The address-book flows don't touch
+     * it; only the env-builder and account-balance menus do. Typed loosely
+     * to stay compatible with both `@nomicfoundation/hardhat-ethers` and
+     * `@nomicfoundation/hardhat-toolbox-viem` style projects.
+     */
+    ethers?: any
+}
+
 export interface IInquirerListField {
     name: string
     disabled?: string
