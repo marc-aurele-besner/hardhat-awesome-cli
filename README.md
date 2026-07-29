@@ -95,21 +95,11 @@ export default defineConfig({
 
 ## Directories
 
--   [src/](./src/)
--   [test/](./test/)
-
--   [.mocharc.json](./.mocharc.json)
--   [.npmignore](./.npmignore)
--   [.prettierignore](./.prettierignore)
--   [.prettierrc](./.prettierrc)
--   [awesome-readme.config.js](./awesome-readme.config.js)
--   [CONTRIBUTING.md](./CONTRIBUTING.md)
--   [eslint.config.js](./eslint.config.js)
--   [LICENSE](./LICENSE)
--   [package-lock.json](./package-lock.json)
--   [package.json](./package.json)
--   [tsconfig.json](./tsconfig.json)
--   [tsconfig.prod.json](./tsconfig.prod.json)
+> See the [Directory Tree](#directory-tree) below for the full layout of the
+> repo. The CLI source is split between [`src/`](./src/) (menus, helpers,
+> plugin entry) and [`src/mockContracts/`](./src/mockContracts/) (template
+> Solidity, deploy scripts and tests used by `npx hardhat cli`). Tests live in
+> [`test/`](./test/).
 
 ## CLI features
 
