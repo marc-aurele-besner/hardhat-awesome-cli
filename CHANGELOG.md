@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- 8021ec7: Add a `CHANGELOG.md` and adopt [Changesets](https://github.com/changesets/changesets) for version bumps, GitHub Releases, and npm publishing. Contributors now ship a `.changeset/*.md` entry on each PR; the release workflow opens a "Version Packages" PR automatically and publishes on merge to `main`. See `CONTRIBUTING.md` for the new flow.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
