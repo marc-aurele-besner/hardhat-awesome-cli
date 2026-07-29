@@ -1,6 +1,68 @@
 import { expect } from 'chai'
+import fs from 'fs'
+import path from 'path'
 
 import { runCommand, sleep, transformTsToJs, waitForReadability } from '../src/utils.ts'
+
+const SRC_DIR = path.resolve(__dirname, '..', 'src')
+
+/**
+ * Walk `src/` and return every TypeScript source file. The guard tests below
+ * scan each file for fixed-duration `sleep(N)` calls; we mirror that intent
+ * here so a future file under a different name still gets checked.
+ */
+const listSourceFiles = (directory: string): string[] => {
+    const entries = fs.readdirSync(directory, { withFileTypes: true })
+    const files: string[] = []
+    for (const entry of entries) {
+        const fullPath = path.join(directory, entry.name)
+        if (entry.isDirectory()) {
+            if (entry.name === 'node_modules' || entry.name === 'dist') continue
+            files.push(...listSourceFiles(fullPath))
+        } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name) && !/\.test\.ts$/.test(entry.name)) {
+            files.push(fullPath)
+        }
+    }
+    return files
+}
+
+/**
+ * Source-level guard for issue #157: prevent a regression of the fixed
+ * `sleep(5000)` style "wait long enough and hope" pattern. Any multi-second
+ * `sleep(N)` call shows up in `details` so the failure points at the exact
+ * offending line(s).
+ *
+ * The single matching `sleep(...)` site is the legacy `sleep = setTimeout(...)`
+ * helper itself (`src/utils.ts`); everything else should use `waitForReadability`
+ * for human-facing pauses and `await runCommand` for child-process completion.
+ */
+describe('no mandatory multi-second sleeps in src/', function () {
+    it('does not call sleep(N) with N >= 1000 anywhere in src/', function () {
+        const offenders: { file: string; line: number; text: string }[] = []
+        // `sleep\s*\(\s*([0-9]+)\s*\)` would miss `sleep (1000)` so tolerate
+        // optional whitespace; capture the literal numeric duration.
+        const sleepCallRegex = /\bsleep\s*\(\s*([0-9]+)\s*\)/
+        for (const file of listSourceFiles(SRC_DIR)) {
+            const lines = fs.readFileSync(file, 'utf8').split('\n')
+            for (let index = 0; index < lines.length; index++) {
+                const line = lines[index]
+                // Skip the legacy helper itself (`src/utils.ts` defines
+                // `export const sleep = (ms: number) => …`).
+                if (/export\s+const\s+sleep\s*=/.test(line)) continue
+                // Permit the doc / changelog comments that *mention* sleep
+                // in prose — only enforce on lines that actually look like
+                // a call site (no leading whitespace-`//`).
+                if (/^\s*\/\//.test(line)) continue
+                const match = line.match(sleepCallRegex)
+                if (match === null) continue
+                const duration = Number(match[1])
+                if (duration >= 1000) offenders.push({ file, line: index + 1, text: line.trim() })
+            }
+        }
+
+        expect(offenders, JSON.stringify(offenders, null, 2)).to.deep.equal([])
+    })
+})
 
 describe('Command runner', function () {
     it('runCommand resolves once the child process exits', async function () {
