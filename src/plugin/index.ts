@@ -22,13 +22,28 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
         defaultValue: ''
     })
     .addOption({
+        name: 'excludeTestDirectory',
+        description: 'Exclude test directory (and every nested file) from the tests selection list',
+        defaultValue: ''
+    })
+    .addOption({
         name: 'excludeScriptFile',
         description: 'Exclude script file from the scripts selection list',
         defaultValue: ''
     })
     .addOption({
+        name: 'excludeScriptDirectory',
+        description: 'Exclude script directory (and every nested file) from the scripts selection list',
+        defaultValue: ''
+    })
+    .addOption({
         name: 'excludeContractFile',
         description: 'Exclude contract file from the contract selection list',
+        defaultValue: ''
+    })
+    .addOption({
+        name: 'excludeContractDirectory',
+        description: 'Exclude contract directory (and every nested file) from the contract selection list',
         defaultValue: ''
     })
     .addOption({
