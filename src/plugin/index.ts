@@ -86,6 +86,12 @@ const cliTask: NewTaskDefinition = task('cli', 'Easy command line interface to u
         description: 'Get account balance',
         defaultValue: ''
     })
+    .addOption({
+        name: 'addDeploymentScript',
+        description:
+            'Scaffold a deployment script for the named contract. Pass the contract name, optionally followed by ":"-separated constructor arguments, e.g. "<ContractName>:<arg1>:<arg2>".',
+        defaultValue: ''
+    })
     // The action must be a lazy import so plugins stay load-order safe.
     .setAction(() => import('./cli-action.ts'))
     .build()
