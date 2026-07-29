@@ -90,7 +90,6 @@ export const buildActivatedChainNetworkConfig = () => {
                 }
                 return chainConfig
             })
-            // await sleep(100)
             const fihainConfig = `${chainConfig.slice(0, -1)}`
             return fihainConfig
         }

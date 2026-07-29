@@ -561,8 +561,10 @@ const servePackageInstaller = async () => {
             return plugin.title
         }
     )
-    // Resolve every detection up-front: previously this used `Array.map(async)`
-    // and a `sleep(500)` to mask the race between the spawned probes and the
+    // Probe every plugin in parallel and wait for each detection to finish
+    // before reading the result, so the menu sees a consistent snapshot of
+    // what is installed. Previously this used `Array.map(async)` and a
+    // `sleep(500)` to mask the race between the spawned probes and the
     // subsequent read, which was both slow and flaky.
     const hardhatPluginInstalled: string[] = (
         await Promise.all(
