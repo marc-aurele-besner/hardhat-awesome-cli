@@ -20,13 +20,13 @@ const addEnvFileInGitiignore = async (ignoreFile: string, envFile: string, creat
     }
 }
 
-export const getEnvValue = (envName: string) => {
+export const getEnvValue = (envName: string): string => {
     const addressBookConfig = getAddressBookConfig()
     if (fs.existsSync(addressBookConfig.fileEnvHardhatAwesomeCLI)) {
         const allEnv = require('dotenv').config({ path: addressBookConfig.fileEnvHardhatAwesomeCLI })
-        const oldEnv = Object.entries(allEnv.parsed)
+        const oldEnv = Object.entries(allEnv.parsed as Record<string, string>)
         for (const [key, value] of oldEnv) {
-            if (key && value && key === envName) return getEnvValue
+            if (key && value && key === envName) return value
         }
     }
     return ''

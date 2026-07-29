@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import serveInquirer from './serveInquirer.ts'
+import serveCli from './serveInquirer.ts'
 
 /**
  * Standalone CLI entry. In Hardhat 2 this file also registered the plugin as
@@ -10,8 +10,13 @@ import serveInquirer from './serveInquirer.ts'
  * (see `src/plugin/index.ts`). This entry now only handles the standalone
  * case where the user runs `npx hardhat-awesome-cli` outside a Hardhat
  * project.
+ *
+ * `serveCli` requires `(args, env)` — we hand it an empty `args` object so
+ * the function falls through to `serveInquirer(env)` and shows the main
+ * menu, matching the Hardhat 2 behaviour for an unconfigured invocation.
  */
 async function main(): Promise<void> {
+    const args: Record<string, string> = {}
     const adapter = {
         userConfig: { addressBook: undefined },
         network: { name: 'hardhat' },
@@ -19,7 +24,7 @@ async function main(): Promise<void> {
         paths: {},
         ethers: undefined
     }
-    await serveInquirer(adapter)
+    await serveCli(args, adapter)
 }
 
 main().catch((err) => {

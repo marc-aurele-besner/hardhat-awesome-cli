@@ -8,7 +8,7 @@ async function main() {
     const mockProxyAdmin = await MockProxyAdmin.deploy()
 
     await mockProxyAdmin.deployed()
-    await addressBook.saveContract('MockProxyAdmin', mockProxyAdmin.address, network.name, deployer.address)
+    await addressBook.saveContract('MockProxyAdmin', mockProxyAdmin.address, (network as any).name, deployer.address)
 
     console.log('MockProxyAdmin deployed to:', mockProxyAdmin.address)
 }

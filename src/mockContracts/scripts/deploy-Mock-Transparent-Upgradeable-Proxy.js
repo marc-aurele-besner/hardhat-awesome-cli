@@ -29,7 +29,7 @@ async function main() {
     }
     let proxyAdminContract = ''
     if (hre.network.name !== 'hardhat' && hre.network.name !== 'local') {
-        proxyAdminContract = await addressBook.retrieveContract('MockERC20Upgradeable', hre.network.name)
+        proxyAdminContract = await hre.addressBook.retrieveContract('MockERC20Upgradeable', hre.network.name)
     }
     if (!proxyAdminContract) {
         const MockProxyAdmin = await hre.ethers.getContractFactory('MockProxyAdmin')

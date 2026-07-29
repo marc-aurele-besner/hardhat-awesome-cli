@@ -8,7 +8,7 @@ async function main() {
     const mockERC721 = await MockERC721.deploy()
 
     await mockERC721.deployed()
-    await addressBook.saveContract('MockERC721', mockERC721.address, network.name, deployer.address)
+    await addressBook.saveContract('MockERC721', mockERC721.address, (network as any).name, deployer.address)
 
     console.log('MockERC721 deployed to:', mockERC721.address)
 }

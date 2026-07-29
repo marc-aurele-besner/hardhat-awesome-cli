@@ -1,8 +1,11 @@
+/* global user1, user2 */
 const { expect } = require('chai')
 const { ethers } = require('hardhat')
 
 let mockERC20Upgradeable
 let deployer
+let user1
+let user2
 
 describe('MockERC20Upgradeable', function () {
     beforeEach(async function () {
