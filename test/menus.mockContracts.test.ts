@@ -119,9 +119,16 @@ describe('menus/mockContracts', function () {
 
         await serveMockContractCreatorSelector()
 
+        // The Solidity source uses the customName verbatim, but the deploy
+        // and test scripts go through kebab-case (the registry template
+        // references `test/test-Mock-ERC20.ts`, but a customName-bearing
+        // render routes to `test/test-mock-erc20.ts`). The kebab-case test
+        // pass would have caught a case-insensitive-only filesystem on
+        // macOS — the assertion uses the lowercase path the renderer
+        // actually writes.
         expect(fs.existsSync('contracts/MockERC20.sol')).to.equal(true)
-        expect(fs.existsSync('scripts/deploy-Mock-ERC20.ts')).to.equal(true)
-        expect(fs.existsSync('test/test-Mock-ERC20.ts')).to.equal(true)
+        expect(fs.existsSync('scripts/deploy-mock-erc20.ts')).to.equal(true)
+        expect(fs.existsSync('test/test-mock-erc20.ts')).to.equal(true)
     })
 
     it('Writes every contract when the user picks "All mock contracts"', async function () {
@@ -151,9 +158,11 @@ describe('menus/mockContracts', function () {
         for (const name of registryNames) {
             expect(fs.existsSync(`contracts/${name}.sol`), `missing contracts/${name}.sol`).to.equal(true)
         }
-        // Every entry except MockTransparentUpgradeableProxy has a Hardhat
-        // test script — confirm at least one of them was written.
-        expect(fs.existsSync('test/test-Mock-ERC20.ts')).to.equal(true)
+        // The Hardhat test script gets kebab-cased the same way as the
+        // deployment script. `MockERC20` → `test-mock-erc20.ts`. The
+        // first entry is enough to pin the behaviour; the registry loop
+        // above already covers every other .sol file.
+        expect(fs.existsSync('test/test-mock-erc20.ts')).to.equal(true)
     })
 
     it('Does not write anything when the user picks a contract but answers no to every artifact', async function () {
