@@ -327,7 +327,7 @@ export const DefaultFoundryTestUtilsList: string[] = [
     'utils/Vm.sol'
 ]
 
-export const DefaultGithubWorkflowsGroup: string[] = ['npm', 'yarn']
+export const DefaultGithubWorkflowsGroup: string[] = ['npm', 'yarn', 'pnpm', 'bun']
 
 export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
     {
@@ -351,6 +351,28 @@ export const DefaultGithubWorkflowsList: IDefaultGithubWorkflowsList[] = [
         title: 'Yarn - Foundry - Forge Test',
         file: 'foundry-yarn',
         group: 'yarn'
+    },
+    {
+        title: 'pnpm - Hardhat - Test & Coverage',
+        file: 'hardhat-pnpm',
+        group: 'pnpm',
+        requirement: ['solidity-coverage']
+    },
+    {
+        title: 'pnpm - Foundry - Forge Test',
+        file: 'foundry-pnpm',
+        group: 'pnpm'
+    },
+    {
+        title: 'Bun - Hardhat - Test & Coverage',
+        file: 'hardhat-bun',
+        group: 'bun',
+        requirement: ['solidity-coverage']
+    },
+    {
+        title: 'Bun - Foundry - Forge Test',
+        file: 'foundry-bun',
+        group: 'bun'
     }
 ]
 

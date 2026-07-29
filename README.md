@@ -133,9 +133,10 @@ export default defineConfig({
     -   Install/Uninstall other Hardhat plugins
 
         The plugin list targets Hardhat 3: the CLI installs the package with
-        npm/yarn, adds `import <plugin> from '<package>'` to your
-        `hardhat.config`, and registers it in the `plugins` array of
-        `defineConfig(...)` (Hardhat 3 dropped side-effect plugin registration).
+        npm/yarn/pnpm/bun (auto-detected from your lockfile), adds
+        `import <plugin> from '<package>'` to your `hardhat.config`, and
+        registers it in the `plugins` array of `defineConfig(...)` (Hardhat
+        3 dropped side-effect plugin registration).
 
           <details>
               <summary>Plugins offered</summary>
@@ -160,7 +161,7 @@ export default defineConfig({
 
           </details>
 
-    -   Create Github test workflows (for NPM and/or Yarn and for Hardhat test&coverage and/or Foundry test)
+    -   Create Github test workflows (for NPM, Yarn, pnpm, or Bun and for Hardhat test&coverage and/or Foundry test)
     -   Create Foundry settings, remapping and test utilities
           <details>
               <summary>More details on Foundry</summary>
@@ -215,6 +216,28 @@ export default defineConfig({
 -   Avalanche - Fuji (chainId: 43113)
 
 In 'More settings' you can also add a custom chain, create an issue or pull request to add other chains.
+
+### Package manager support
+
+The CLI picks the package manager it uses (for installing/removing plugins,
+adding the `foundry-test-utility`, and printing the equivalent `npx hardhat
+cli` command) by inspecting the lockfile at the project root, in this
+priority order:
+
+1. `pnpm-lock.yaml` → **pnpm** (`pnpm add -D <pkg>` / `pnpm remove <pkg>`)
+2. `bun.lock` / `bun.lockb` → **bun** (`bun add -d <pkg>` / `bun remove <pkg>`)
+3. `yarn.lock` → **yarn** (`yarn add <pkg> -D` / `yarn remove <pkg>`)
+4. `package-lock.json` → **npm** (`npm install <pkg> --save-dev` / `npm remove <pkg>`)
+5. no recognised lockfile → **npm** (default)
+
+pnpm and bun win over npm/yarn on purpose so a project that happens to
+also carry a `package-lock.json` (created when a contributor clones with
+npm) still resolves to the right manager. The same lookup drives the CI
+workflow generator: the `Create Github test workflows` menu and the
+`--addGithubTestWorkflow` flag now offer a Hardhat + Foundry workflow
+per supported package manager (`hardhat-pnpm.yml`, `foundry-pnpm.yml`,
+`hardhat-bun.yml`, `foundry-bun.yml`) in addition to the existing npm
+and yarn templates.
 
 ## CLI optional flags
 
@@ -592,13 +615,18 @@ hardhat-awesome-cli/
 │   ├── functionList.ts
 │   ├── index.ts
 │   ├── packageInstaller.ts
+│   ├── packageManager.ts
 │   ├── serveInquirer.ts
 │   ├── types.ts
 │   ├── utils.ts
 │   ├── githubWorkflows/
+│   │   ├── foundry-bun.yml
 │   │   ├── foundry-npm.yml
+│   │   ├── foundry-pnpm.yml
 │   │   ├── foundry-yarn.yml
+│   │   ├── hardhat-bun.yml
 │   │   ├── hardhat-npm.yml
+│   │   ├── hardhat-pnpm.yml
 │   │   └── hardhat-yarn.yml
 │   ├── mockContracts/
 │   │   ├── index.ts
