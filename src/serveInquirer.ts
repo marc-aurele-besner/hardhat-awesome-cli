@@ -424,6 +424,16 @@ const serveSettingSelector = async (env: any) => {
                         }`
                     buildNetworkConfig = JSON.parse(buildNetworkConfig)
                 }
+                // Always print this notice up front so users who expected to
+                // see their private key know why only a `****abcd` placeholder
+                // is rendered. Issue #176.
+                if (process.env.AWESOME_CLI_SHOW_SECRETS !== '1') {
+                    console.log(
+                        '\x1b[33m%s\x1b[0m',
+                        'Secrets (private keys, mnemonics) are masked with `****abcd`. Set ' +
+                            'AWESOME_CLI_SHOW_SECRETS=1 in your environment to see them in full.'
+                    )
+                }
                 console.table(buildNetworkConfig.networks[0])
             }
         })

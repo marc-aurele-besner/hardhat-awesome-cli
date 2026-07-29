@@ -154,6 +154,35 @@ export const listAllFunctionSelectors = async (hre: any, contractName: string) =
  */
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/**
+ * Sentinel returned by {@link redactSecret} when the secret is hidden.
+ *
+ * Used by callers that want to detect a redacted value (for example, to skip
+ * printing a placeholder RPC URL alongside a placeholder key) without having to
+ * know the masking format itself.
+ */
+export const REDACTED_SECRET = '****'
+
+/**
+ * Mask a secret (private key, mnemonic, API token) before it reaches the
+ * terminal. By default the value is replaced with `REDACTED_SECRET` and a
+ * short suffix taken from the end of the input, so a user can still tell two
+ * different keys apart without seeing them in full.
+ *
+ * - Empty / non-string inputs return an empty string.
+ * - Inputs of 4 characters or fewer are fully masked, since no safe suffix is
+ *   long enough to be useful.
+ * - Setting `AWESOME_CLI_SHOW_SECRETS=1` opts in to returning the original
+ *   value. This is intentionally opt-in: any code path that prints the result
+ *   of this helper should be safe even without the variable.
+ */
+export const redactSecret = (value: string): string => {
+    if (typeof value !== 'string' || value.length === 0) return ''
+    if (process.env.AWESOME_CLI_SHOW_SECRETS === '1') return value
+    if (value.length <= 4) return REDACTED_SECRET
+    return REDACTED_SECRET + value.slice(-4)
+}
+
 const DEFAULT_READABILITY_PAUSE_MS = 250
 
 /**
