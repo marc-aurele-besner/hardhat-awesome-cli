@@ -333,6 +333,30 @@ The flag value is `<contractName>[:renameLicense]` and round-trips through
 so the flag matches the menu flow without forcing the consumer to pass the
 full path.
 
+#### Add a custom chain flag
+
+The "Add a custom chain to the current chain selection" sub-flow writes a new
+entry to `hardhat-awesome-cli.json` under the next free `customChain{N}`
+slot (1..8). The same flow is reachable from the CLI with a single flag:
+
+```bash
+# Minimal payload — name + chainId, gas defaults to "auto"
+npx hardhat cli --addCustomChain '{"name":"My Chain","chainId":7777}'
+
+# Fully-specified payload — gas override + default RPC URL
+npx hardhat cli --addCustomChain '{"name":"My Chain","chainId":7777,"gas":"auto","defaultRpcUrl":"https://rpc.example.invalid"}'
+```
+
+The flag value is a JSON object with the user-visible fields (`name`,
+`chainId`, optional `gas`, optional `defaultRpcUrl`). The internal
+`chainName` slot is assigned automatically by `buildCustomChainEntry`, so
+both surfaces stay in lock-step and re-running the flag without a removal
+step just rolls over to the next free slot. `runAddCustomChain` returns
+`false` (and prints a yellow warning, mirroring the menu) when the input
+fails validation, every slot is already taken, or the chain collides with an
+existing default / activated chain — same as the menu, so the CLI dispatcher
+can surface failure without throwing.
+
 ### Current chain support
 
 -   Hardhat local (default local network)
@@ -379,6 +403,7 @@ and yarn templates.
 ## CLI optional flags
 
 -   --add-activated-chain Add chains from the chain selection (default: "")
+-   --add-custom-chain Add a custom chain to the user's activated chain list. Pass a JSON object {"name":"...","chainId":<int>,"gas":"auto","defaultRpcUrl":"..."}. The chainName slot (customChain1..customChain8) is picked automatically; gas defaults to "auto" and defaultRpcUrl is optional. (default: "")
 -   --add-custom-command Add a custom command to hardhat-awesome-cli.json. Pass a JSON object {"name":"...","description":"...","kind":"shell|hardhat","command":"..."}. (default: "")
 -   --add-deployment-script Scaffold a deployment script for the named contract. Pass the contract name, optionally followed by ":"-separated constructor arguments, e.g. "<ContractName>:<arg1>:<arg2>". (default: "")
 -   --add-foundry Create Foundry settings, remapping and test utilities (default: "")
