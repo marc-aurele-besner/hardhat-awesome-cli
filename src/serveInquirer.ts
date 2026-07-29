@@ -31,6 +31,7 @@ import {
 } from './config.ts'
 import MockContractsList from './mockContracts/index.ts'
 import detectPackage from './packageInstaller.ts'
+import { validateRename } from './renameMockContract.ts'
 import {
     IChain,
     IDefaultGithubWorkflowsList,
@@ -108,6 +109,11 @@ interface MockContractDetailsAnswer {
     mockDeploymentScript: string
     mockTestScript: string
     mockTestContractFoundry: string
+}
+interface MockContractRenameAnswer {
+    customName: string
+    constructorName: string
+    constructorSymbol: string
 }
 interface MainMenuAnswer {
     action: string
@@ -746,14 +752,148 @@ const serveMockContractCreatorSelector = async () => {
         }
     })()
     if (!mockContractsToAdd) return
-    for (const mockContract of mockContractsToAdd.mockContracts) {
-        await buildMockContract(mockContract)
+    for (const mockContractEntry of mockContractsSelectedDetail) {
+        // Issue #167: ask for a custom name and constructor arguments before
+        // writing the artifacts. Hitting Enter keeps the registry defaults so
+        // the menu stays backward-compatible with users who just want a stock
+        // `MockERC20` mock.
+        const renameAnswers = await collectRenameAnswers(mockContractEntry)
+        if (!renameAnswers) continue
+        await buildMockContract(mockContractEntry.name, renameAnswers)
         if (mockContractsToAdd.mockDeploymentScript === 'yes')
-            await buildMockDeploymentScriptOrTest(mockContract, 'deployment')
-        if (mockContractsToAdd.mockTestScript === 'yes') await buildMockDeploymentScriptOrTest(mockContract, 'test')
+            await buildMockDeploymentScriptOrTest(mockContractEntry.name, 'deployment', renameAnswers)
+        if (mockContractsToAdd.mockTestScript === 'yes')
+            await buildMockDeploymentScriptOrTest(mockContractEntry.name, 'test', renameAnswers)
         if (mockContractsToAdd.mockTestContractFoundry === 'yes')
-            await buildMockDeploymentScriptOrTest(mockContract, 'testForge')
+            await buildMockDeploymentScriptOrTest(mockContractEntry.name, 'testForge', renameAnswers)
+        displayFinalCliCommand(
+            'addCustomMockContract',
+            formatAddCustomMockContractFlag(
+                mockContractEntry.name,
+                renameAnswers.customName,
+                renameAnswers.constructorName,
+                renameAnswers.constructorSymbol
+            )
+        )
     }
+}
+
+/**
+ * Prompt the user for a custom contract name and constructor arguments, then
+ * validate the result. Returns `undefined` when the user did not supply
+ * anything (we bail out instead of forcing a name) so callers can skip the
+ * entry on Ctrl-C.
+ *
+ * Hitting Enter at every prompt keeps the registry defaults
+ * (`<registryName>`, `<registryName>`, `MOCK`).
+ */
+const collectRenameAnswers = async (
+    contract: IMockContractsList
+): Promise<{ customName: string; constructorName: string; constructorSymbol: string } | undefined> => {
+    const renameQuestions = [
+        {
+            type: 'input',
+            name: 'customName',
+            message: `Contract name (default: ${contract.name})`,
+            default: contract.name,
+            validate: (input: string) => validateRename(input, contract)
+        },
+        {
+            type: 'input',
+            name: 'constructorName',
+            message: `Constructor name (default: ${contract.name})`,
+            default: contract.name,
+            validate: (input: string) => (input.trim().length > 0 ? true : 'Constructor name cannot be empty')
+        },
+        {
+            type: 'input',
+            name: 'constructorSymbol',
+            message: `Constructor symbol (default: MOCK)`,
+            default: 'MOCK',
+            validate: (input: string) => (input.trim().length > 0 ? true : 'Constructor symbol cannot be empty')
+        }
+    ]
+    try {
+        const answer = await inquirer.prompt<MockContractRenameAnswer>(renameQuestions)
+        return answer
+    } catch {
+        // The user aborted the prompt (Ctrl-C) — leave the entry untouched
+        // rather than writing a partial artifact set.
+        return undefined
+    }
+}
+
+/**
+ * Render the value consumed by `--addCustomMockContract` so the printed
+ * CLI command round-trips through `parseAddCustomMockContractFlag`.
+ *
+ * Shape: `<registryName>:<customName>:<constructorName>:<constructorSymbol>`.
+ * `:` is used as the delimiter because contract names, constructor strings
+ * and symbols cannot contain it without becoming hard to escape.
+ */
+export const formatAddCustomMockContractFlag = (
+    registryName: string,
+    customName: string,
+    constructorName: string,
+    constructorSymbol: string
+): string => `${registryName}:${customName}:${constructorName}:${constructorSymbol}`
+
+/**
+ * Parse the `--addCustomMockContract` CLI flag value.
+ *
+ * Returns `undefined` when the value is malformed (wrong number of
+ * segments) so `serveCli` can fall through to the next flag instead of
+ * silently invoking the rename with garbage.
+ */
+export const parseAddCustomMockContractFlag = (
+    value: string | undefined
+): { registryName: string; customName: string; constructorName: string; constructorSymbol: string } | undefined => {
+    if (typeof value !== 'string') return undefined
+    const parts = value.split(':')
+    if (parts.length !== 4) return undefined
+    const [registryName, customName, constructorName, constructorSymbol] = parts
+    if (!registryName || !customName || !constructorName || !constructorSymbol) return undefined
+    return { registryName, customName, constructorName, constructorSymbol }
+}
+
+/**
+ * Generate a customized mock contract from a CLI flag (issue #167).
+ *
+ * Reuses the same rename renderer as the interactive flow but skips the
+ * inquirer prompts so the flag stays scriptable. The flag value is parsed
+ * via `parseAddCustomMockContractFlag`; a malformed value aborts the
+ * operation with a yellow warning rather than throwing.
+ */
+const runAddCustomMockContract = async (
+    registryName: string,
+    customName: string,
+    constructorName: string,
+    constructorSymbol: string
+): Promise<void> => {
+    const entry = MockContractsList?.find((contract) => contract.name === registryName)
+    if (!entry) {
+        console.log(
+            '\x1b[33m%s\x1b[0m',
+            `Unknown mock contract "${registryName}". Available: ${(MockContractsList ?? [])
+                .map((contract) => contract.name)
+                .join(', ')}`
+        )
+        return
+    }
+    const validation = validateRename(customName, entry)
+    if (validation !== true) {
+        console.log('\x1b[33m%s\x1b[0m', validation)
+        return
+    }
+    const options = {
+        customName,
+        constructorArgs: [constructorName, constructorSymbol]
+    }
+    await buildMockContract(registryName, options)
+    if (entry.deploymentScript) await buildMockDeploymentScriptOrTest(registryName, 'deployment', options)
+    if (entry.testScript) await buildMockDeploymentScriptOrTest(registryName, 'test', options)
+    if (entry.testContractFoundry && fs.existsSync('contracts/test') && fs.existsSync('foundry.toml'))
+        await buildMockDeploymentScriptOrTest(registryName, 'testForge', options)
 }
 
 const serveDeploymentContractCreatorSelector = async () => {}
@@ -807,6 +947,7 @@ interface ICliArgs {
     addActivatedChain?: string
     removeActivatedChain?: string
     getAccountBalance?: string
+    addCustomMockContract?: string
 }
 
 const serveInquirer = async (env: IHreContext) => {
@@ -928,6 +1069,22 @@ const serveCli = async (args: ICliArgs, env: IHreContext) => {
             return removeActivatedChain(args.removeActivatedChain)
         case isAffirmativeString(args.getAccountBalance):
             return serveAccountBalance(env)
+        case isPresentString(args.addCustomMockContract): {
+            const parsed = parseAddCustomMockContractFlag(args.addCustomMockContract)
+            if (!parsed) {
+                console.log(
+                    '\x1b[33m%s\x1b[0m',
+                    'Invalid --addCustomMockContract value. Expected "<registryName>:<customName>:<constructorName>:<constructorSymbol>".'
+                )
+                return
+            }
+            return runAddCustomMockContract(
+                parsed.registryName,
+                parsed.customName,
+                parsed.constructorName,
+                parsed.constructorSymbol
+            )
+        }
         default:
             return serveInquirer(env)
     }
