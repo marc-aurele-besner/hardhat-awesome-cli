@@ -113,9 +113,9 @@ export default defineConfig({
 
 ## CLI features
 
--   Run tests (Allow you you to run tests on all files or specific files in test/)
--   Run scripts (Allow you you to run scripts on specific files in scripts/)
--   Select scripts and tests to run (Allow you to select a script to execute and all or one test to perform afterward)
+-   Run tests (run all test files or a specific file under `test/`)
+-   Run scripts (run a specific script or every file under `scripts/`)
+-   Select scripts and tests to run (pick a script to execute and run all tests or one test after it)
 -   Flatten all your contract or a specific contract (offer to rename SPDX-License-Identifier -> SPDX-License-Flatten-Identifier to avoid multiple license identifier issue)
 -   Run Forge test on all or single test contracts if forge setting is detected
 -   Run coverage tests (Available only if solidity-coverage is installed and available as a task)
@@ -423,7 +423,7 @@ Return:
     deployer: string
     deploymentDate: Date
     chainId: number
-    blockHah?: string
+    blockHash?: string
     blockNumber?: number
     tag?: string
     extra?: any
@@ -477,7 +477,7 @@ Return:
         deployer: string
         deploymentDate: Date
         chainId: number
-        blockHah?: string
+        blockHash?: string
         blockNumber?: number
         tag?: string
         extra?: any
@@ -581,7 +581,7 @@ Return (also printed as a table with `console.table`):
 - Setup chains, RPC and accounts:
     - Activate/Disable chain to show on test/scripts options
     - Build .env file with rpc url and private key (or mnemonic)
-    - Add ".env.hardhat-awesome-cli" to .gitignore amd .npmignore (create .gitignore if do detected)
+    - Add ".env.hardhat-awesome-cli" to .gitignore and .npmignore (create .gitignore if not detected)
     - See all config for activated chain
     - Create Github test workflows
     - Create Foundry settings, remapping and test utilities
