@@ -49,33 +49,45 @@ describe('menus/workflows', function () {
 
     const sourceDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../src/githubWorkflows')
 
+    // Every workflow used in these tests is one of the Foundry entries:
+    // they have no `requirement` array, so the menu does not call
+    // `detectPackage` and never spawns `npm install`. The Hardhat
+    // workflows all require `solidity-coverage`, which would force a real
+    // registry round-trip mid-test and break CI.
+    //
+    // The behaviour we care about (file copy, directory creation, no
+    // overwrite) is identical across Foundry and Hardhat workflows — the
+    // only difference is the `requirement` follow-up.
+    const workflowFile = 'foundry-npm'
+    const workflowTitle = 'NPM - Foundry - Forge Test'
+
     it('Copies the requested workflow YAML into .github/workflows/<file>.yml', async function () {
         // Use the CLI flag path so we can drive it without the inquirer
         // prompt and inspect the file on disk deterministically.
-        await buildWorkflowsFromCommand('hardhat-npm')
+        await buildWorkflowsFromCommand(workflowFile)
 
-        const destination = path.join('.github', 'workflows', 'hardhat-npm.yml')
+        const destination = path.join('.github', 'workflows', workflowFile + '.yml')
         expect(fs.existsSync(destination)).to.equal(true)
-        const bundled = fs.readFileSync(path.join(sourceDir, 'hardhat-npm.yml'), 'utf8')
+        const bundled = fs.readFileSync(path.join(sourceDir, workflowFile + '.yml'), 'utf8')
         expect(fs.readFileSync(destination, 'utf8')).to.equal(bundled)
     })
 
     it('Creates the .github/workflows directory when it does not exist yet', async function () {
         expect(fs.existsSync('.github')).to.equal(false)
 
-        await buildWorkflowsFromCommand('foundry-npm')
+        await buildWorkflowsFromCommand(workflowFile)
 
         expect(fs.existsSync('.github')).to.equal(true)
         expect(fs.existsSync('.github/workflows')).to.equal(true)
-        expect(fs.existsSync('.github/workflows/foundry-npm.yml')).to.equal(true)
+        expect(fs.existsSync('.github/workflows/' + workflowFile + '.yml')).to.equal(true)
     })
 
     it('Does not overwrite a workflow that already exists at the destination', async function () {
         fs.mkdirSync('.github/workflows', { recursive: true })
-        const destination = path.join('.github/workflows/hardhat-npm.yml')
+        const destination = path.join('.github/workflows/' + workflowFile + '.yml')
         fs.writeFileSync(destination, '# user edits stay here')
 
-        await buildWorkflowsFromCommand('hardhat-npm')
+        await buildWorkflowsFromCommand(workflowFile)
 
         expect(fs.readFileSync(destination, 'utf8')).to.equal('# user edits stay here')
     })
@@ -100,18 +112,32 @@ describe('menus/workflows', function () {
         // End-to-end smoke test: the menu asks for a single list prompt
         // answering with the workflow title. The end result matches the
         // direct CLI flag path above.
-        //
-        // Pick a workflow with no `requirement` so the menu does not
-        // trigger an actual `npm install` mid-test. The Hardhat workflows
-        // all require `solidity-coverage`; the Foundry ones do not.
-        const target = DefaultGithubWorkflowsList.find((workflow) => workflow.file === 'foundry-npm')
-        expect(target).to.not.equal(undefined)
-
-        useInquirerStub([target!.title])
+        useInquirerStub([workflowTitle])
 
         await serveWorkflowBuilder()
 
-        const destination = path.join('.github/workflows/foundry-npm.yml')
+        const destination = path.join('.github/workflows/' + workflowFile + '.yml')
         expect(fs.existsSync(destination)).to.equal(true)
+    })
+
+    it('Does not trigger a package install when the workflow has no requirement', async function () {
+        // Lock in the Foundry-only decision above: calling
+        // `buildWorkflowsFromCommand` from a clean fixture must not call
+        // `detectPackage` (which would spawn `npm install`). A misstep
+        // here would silently rerun the CI failure we hit before
+        // switching to Foundry workflows.
+        //
+        // We assert the absence of a `node_modules/solidity-coverage`
+        // directory after the call — that is the only package that the
+        // Hardhat workflows in the registry try to install. If a future
+        // refactor accidentally re-introduces a Hardhat workflow here,
+        // npm would either fail (CI) or slow the test down by orders of
+        // magnitude (local); either way the test would have to be
+        // revisited.
+        expect(fs.existsSync('node_modules/solidity-coverage')).to.equal(false)
+
+        await buildWorkflowsFromCommand(workflowFile)
+
+        expect(fs.existsSync('node_modules/solidity-coverage')).to.equal(false)
     })
 })
