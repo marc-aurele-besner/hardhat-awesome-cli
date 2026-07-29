@@ -50,3 +50,21 @@ jobs:
         run: npm ci
       - name: Run test
         run: npm run test
+
+  smoke:
+    name: Smoke test (consumer install)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: NPM Clean Install
+        run: npm ci
+      - name: Run consumer smoke test
+        # Packs the package, installs it into a clean HH3 fixture under
+        # test/fixtures/smoke, and asserts the `cli` task loads. Catches
+        # regressions where the published layout (exports map, plugin entry,
+        # hook handlers) is no longer consumable by a fresh Hardhat project.
+        run: npm run smoke

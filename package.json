@@ -38,6 +38,7 @@
         "lint:fix": "prettier --write src/**/*.{js,ts} && prettier --write test/**/*.{js,ts} && eslint --fix src test",
         "lint": "eslint src test",
         "test": "mocha --exit --recursive 'test/**/*.test.ts'",
+        "smoke": "node scripts/smoke-test.mjs",
         "prepublishOnly": "tsc --project tsconfig.prod.json",
         "build": "tsc --project tsconfig.prod.json",
         "buidl": "tsc",
