@@ -38,7 +38,7 @@
         "lint:fix": "prettier --write src/**/*.{js,ts} && prettier --write test/**/*.{js,ts} && eslint --fix src test",
         "lint": "eslint src test",
         "test": "mocha --exit --recursive 'test/**/*.test.ts'",
-        "test:coverage": "c8 --reporter=text --reporter=lcov --reporter=html npm test",
+        "test:coverage": "c8 --reporter=text --reporter=lcov --reporter=html npm test && node scripts/postprocess-coverage.mjs",
         "smoke": "node scripts/smoke-test.mjs",
         "prepublishOnly": "tsc --project tsconfig.prod.json",
         "build": "tsc --project tsconfig.prod.json",
