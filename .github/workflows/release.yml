@@ -36,7 +36,7 @@ jobs:
       - name: NPM Clean Install
         run: npm ci
       - name: Run changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2.0.0
         with:
           publish: npm run build && npm publish
           commit: "chore(release): version packages"
