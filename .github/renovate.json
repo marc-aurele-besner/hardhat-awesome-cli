@@ -1,28 +1,54 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "labels": ["dependencies"],
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
-      "labels": ["formatter"],
-      "matchPackageNames": ["/prettier/"]
+      "labels": [
+        "formatter"
+      ],
+      "matchPackageNames": [
+        "/prettier/"
+      ]
     },
     {
-      "labels": ["linting"],
-      "matchPackageNames": ["/eslint/"]
+      "labels": [
+        "linting"
+      ],
+      "matchPackageNames": [
+        "/eslint/"
+      ]
     },
     {
-      "labels": ["types"],
-      "matchPackageNames": ["/@types/", "/typescript/"]
+      "labels": [
+        "types"
+      ],
+      "matchPackageNames": [
+        "/@types/",
+        "/typescript/"
+      ]
     },
     {
-      "matchDepTypes": ["optionalDependencies"],
-      "addLabels": ["optional"]
+      "matchDepTypes": [
+        "optionalDependencies"
+      ],
+      "addLabels": [
+        "optional"
+      ]
     },
     {
-      "matchDepTypes": ["minor", "patch", "devDependencies"],
+      "matchDepTypes": [
+        "minor",
+        "patch",
+        "devDependencies"
+      ],
       "automerge": true,
       "automergeType": "pr"
     }
-  ]
+  ],
+  "minimumReleaseAge": "1 day"
 }
