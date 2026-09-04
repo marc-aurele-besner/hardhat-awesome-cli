@@ -264,9 +264,11 @@ describe('buildCustomCommands (issue #172)', function () {
             //
             // Cold-start `npx hardhat --version` walks npm to resolve the
             // package and then loads Hardhat — easily 5–10 s on a fresh CI
-            // runner with no warm npx cache. Bump the per-test timeout well
-            // above the 6 s project default so this smoke test stays reliable.
-            this.timeout(30000)
+            // runner with no warm npx cache, and can stretch past 30 s on
+            // cold runners that have to download `hardhat@3.x` from scratch.
+            // Bump the per-test timeout well above the 6 s project default so
+            // this smoke test stays reliable.
+            this.timeout(120000)
             const entry: ICustomCommand = { name: 'hh-version', kind: 'hardhat', command: '--version' }
             await runCustomCommand(entry)
             // If we got here without throwing, the child exited cleanly.
