@@ -102,6 +102,7 @@ export default defineConfig({
 > [`test/`](./test/).
 
 ## CLI features
+- [Continuum-AI-Corp/OrcaReplay](https://github.com/Continuum-AI-Corp/OrcaReplay) — a single static CLI that records and replays agent–provider traffic.
 
 -   Run tests (run all test files or a specific file under `test/`)
 -   Run scripts (run a specific script or every file under `scripts/`)
