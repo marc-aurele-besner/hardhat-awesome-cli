@@ -78,7 +78,7 @@
     "overrides": {
         "adm-zip": "^0.6.1",
         "brace-expansion": "^5.0.12",
-        "js-yaml": "^5.0.0",
+        "js-yaml": "^5.4.1",
         "read-yaml-file": {
             "js-yaml": "^5.0.0"
         },
