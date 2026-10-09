@@ -76,7 +76,7 @@
         "inquirer": "^14.0.0"
     },
     "overrides": {
-        "adm-zip": "^0.6.0",
+        "adm-zip": "^0.6.1",
         "js-yaml": "^5.0.0",
         "read-yaml-file": {
             "js-yaml": "^5.0.0"
